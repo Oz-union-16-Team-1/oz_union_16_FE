@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run build || {
+  echo "❌ Husky - Pre-Push 에러 발생!"
+  exit 1
+}
