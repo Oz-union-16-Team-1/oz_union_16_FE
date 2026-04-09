@@ -30,6 +30,12 @@ export default defineConfig([
     },
   },
   js.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
 ]);
