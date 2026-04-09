@@ -1,1 +1,74 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@theme {
+  --color-point-red: #e50914;
+  --color-point-hover: #b20710;
+
+  --color-bg-main: #ffffff;
+  --color-bg-surface: #fafafa;
+  --color-text-main: #121212;
+  --color-text-sub: #4d4d4d;
+  --color-border-main: #e1e1e2;
+
+  .dark {
+    --color-bg-main: #141414;
+    --color-bg-surface: #1f1f1f;
+    --color-text-main: #ffffff;
+    --color-text-sub: #b3b3b3;
+    --color-border-main: #333333;
+  }
+}
+
+@layer components {
+  /* 기존 버튼 및 입력창 */
+  .btn-point {
+    @apply bg-point-red text-white px-6 py-3 rounded-md font-bold 
+          hover:bg-point-hover transition-all duration-200 
+          disabled:bg-gray-600 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply border border-border-main text-text-main px-6 py-3 rounded-md font-medium 
+          hover:bg-bg-surface transition-all;
+  }
+
+  .input-base {
+    @apply w-full bg-bg-surface border border-border-main text-text-main px-4 py-2 rounded-md
+          focus:outline-none focus:border-point-red transition-all;
+  }
+
+  /* --- 추가된 실무 클래스 --- */
+
+  /* 1. 설문/매칭 진행 바 (Progress Bar) */
+  .progress-bar {
+    @apply h-2 w-full bg-border-main rounded-full overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full bg-point-red transition-all duration-300;
+  }
+
+  /* 2. 챗봇 말풍선 (사용자/상대방) */
+  .chat-bubble-user {
+    @apply bg-point-red text-white p-3 rounded-lg rounded-tr-none max-w-[80%];
+  }
+  .chat-bubble-bot {
+    @apply bg-bg-surface border border-border-main text-text-main p-3 rounded-lg rounded-tl-none max-w-[80%];
+  }
+
+  /* 3. 게임 카드 및 컨텐츠 박스 */
+  .card-base {
+    @apply bg-bg-surface border border-border-main rounded-xl p-4 shadow-sm
+          hover:scale-[1.02] hover:border-point-red transition-all duration-300;
+  }
+
+  /* 4. 스크롤바 커스텀 (다크모드 최적화) */
+  .custom-scrollbar {
+    @apply scrollbar-thin scrollbar-thumb-border-main scrollbar-track-transparent;
+  }
+
+  /* 5. 선택지 버튼 (설문조사 답변용) */
+  .answer-item {
+    @apply w-full p-4 bg-bg-surface border-2 border-transparent rounded-lg text-left
+          hover:border-point-red hover:text-point-red transition-all cursor-pointer;
+  }
+}
