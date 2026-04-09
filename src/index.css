@@ -1,1 +1,85 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@theme {
+  /* 브랜드 컬러 */
+  --color-point-red: #e50914;
+  --color-point-hover: #b20710;
+
+  /* 라이트 모드 설정 */
+  --color-bg-main: #ffffff;
+  --color-bg-surface: #fafafa;
+  --color-text-main: #121212;
+  --color-text-sub: #4d4d4d;
+  --color-border-main: #e1e1e2;
+
+  /* 다크 모드 설정 */
+  --color-bg-main-dark: #141414;
+  --color-bg-surface-dark: #1f1f1f;
+  --color-text-main-dark: #ffffff;
+  --color-text-sub-dark: #b3b3b3;
+  --color-border-main-dark: #333333;
+}
+
+/* 다크 모드 변수 매핑 */
+@layer base {
+  .dark {
+    --color-bg-main: var(--color-bg-main-dark);
+    --color-bg-surface: var(--color-bg-surface-dark);
+    --color-text-main: var(--color-text-main-dark);
+    --color-text-sub: var(--color-text-sub-dark);
+    --color-border-main: var(--color-border-main-dark);
+  }
+}
+
+/* 공통 컴포넌트 클래스 */
+@layer components {
+  /* 메인 포인트 버튼 */
+  .btn-point {
+    @apply bg-point-red text-white px-6 py-3 rounded-md font-bold 
+          hover:bg-point-hover transition-all duration-200 
+          disabled:bg-gray-600 disabled:cursor-not-allowed;
+  }
+
+  /* 보조/라인 버튼 */
+  .btn-outline {
+    @apply border border-border-main text-text-main px-6 py-3 rounded-md font-medium 
+          hover:bg-bg-surface transition-all;
+  }
+
+  /* 입력창 공통 */
+  .input-base {
+    @apply w-full bg-bg-surface border border-border-main text-text-main px-4 py-2 rounded-md
+          focus:outline-none focus:border-point-red transition-all;
+  }
+
+  /* 진행 바 */
+  .progress-bar {
+    @apply h-2 w-full bg-border-main rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-point-red transition-all duration-300;
+  }
+
+  /* 사용자 말풍선 */
+  .chat-bubble-user {
+    @apply bg-point-red text-white p-3 rounded-lg rounded-tr-none max-w-[80%];
+  }
+
+  /* 챗봇 말풍선 */
+  .chat-bubble-bot {
+    @apply bg-bg-surface border border-border-main text-text-main p-3 rounded-lg rounded-tl-none max-w-[80%];
+  }
+
+  /* 카드형 레이아웃 */
+  .card-base {
+    @apply bg-bg-surface border border-border-main rounded-xl p-4 shadow-sm
+          hover:scale-[1.02] hover:border-point-red transition-all duration-300;
+  }
+
+  /* 설문조사 답변 항목 */
+  .answer-item {
+    @apply w-full p-4 bg-bg-surface border-2 border-transparent rounded-lg text-left
+          hover:border-point-red hover:text-point-red transition-all cursor-pointer;
+  }
+}
