@@ -75,6 +75,9 @@ jobs:
                 "hj-devlog")
                   MENTIONS="$MENTIONS <@452332808631746561>"
                   ;;
+                "JinMyeong99")
+                  MENTIONS="$MENTIONS <@1224946488845795370>"
+                  ;;
                 *)
                   MENTIONS="$MENTIONS @$login"
                   ;;
@@ -84,10 +87,11 @@ jobs:
             # 만약 요청된 리뷰어가 없으면 현재 리뷰어로 대체
             if [ -z "$MENTIONS" ]; then
               case "$CURRENT_REVIEWER" in
-                "chen4023") MENTIONS="<@683563560063991848>" ;;
-                "sysysysyb") MENTIONS="<@950597490086924368>" ;;
+                "chen4023") MENTIONS="<@950597490086924368>" ;;
+                "sysysysyb") MENTIONS="<@1419497006753124382>" ;;
                 "ninanochichi") MENTIONS="<@1304754118199480381>" ;;
                 "hj-devlog") MENTIONS="<@452332808631746561>" ;;
+                "JinMyeong99") MENTIONS="<@1224946488845795370>" ;;
                 *) MENTIONS="@$CURRENT_REVIEWER" ;;
               esac
             fi
@@ -164,16 +168,19 @@ jobs:
           # PR 작성자 Discord ID 매핑
           case "${{ github.event.pull_request.user.login }}" in
             "chen4023")
-              AUTHOR_MENTION="<@683563560063991848>"
+              AUTHOR_MENTION="<@950597490086924368>"
               ;;
             "sysysysyb")
-              AUTHOR_MENTION="<@950597490086924368>"
+              AUTHOR_MENTION="<@1419497006753124382>"
               ;;
             "ninanochichi")
               AUTHOR_MENTION="<@1304754118199480381>"
               ;;
             "hj-devlog")
               AUTHOR_MENTION="<@452332808631746561>"
+              ;;
+            "JinMyeong99")
+              AUTHOR_MENTION="<@1224946488845795370>"
               ;;
             *)
               AUTHOR_MENTION="@${{ github.event.pull_request.user.login }}"
@@ -214,16 +221,19 @@ jobs:
           # PR 작성자 Discord ID 매핑
           case "${{ github.event.pull_request.user.login }}" in
             "chen4023")
-              AUTHOR_MENTION="<@683563560063991848>"
+              AUTHOR_MENTION="<@950597490086924368>"
               ;;
             "sysysysyb")
-              AUTHOR_MENTION="<@950597490086924368>"
+              AUTHOR_MENTION="<@1419497006753124382>"
               ;;
             "ninanochichi")
               AUTHOR_MENTION="<@1304754118199480381>"
               ;;
             "hj-devlog")
               AUTHOR_MENTION="<@452332808631746561>"
+              ;;
+            "JinMyeong99")
+              AUTHOR_MENTION="<@1224946488845795370>"
               ;;
             *)
               AUTHOR_MENTION="@${{ github.event.pull_request.user.login }}"
