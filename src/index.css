@@ -1,6 +1,13 @@
+@import 'pretendard/dist/web/variable/pretendardvariable.css';
 @import 'tailwindcss';
 
 @theme {
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', sans-serif;
+
   /* 브랜드 컬러 */
   --color-point-red: #e50914;
   --color-point-hover: #b20710;
@@ -22,6 +29,17 @@
 
 /* 다크 모드 변수 매핑 */
 @layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    font-family: inherit;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   .dark {
     --color-bg-main: var(--color-bg-main-dark);
     --color-bg-surface: var(--color-bg-surface-dark);
@@ -35,51 +53,45 @@
 @layer components {
   /* 메인 포인트 버튼 */
   .btn-point {
-    @apply bg-point-red text-white px-6 py-3 rounded-md font-bold 
-          hover:bg-point-hover transition-all duration-200 
-          disabled:bg-gray-600 disabled:cursor-not-allowed;
+    @apply bg-point-red hover:bg-point-hover rounded-md px-6 py-3 font-bold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:bg-gray-600;
   }
 
   /* 보조/라인 버튼 */
   .btn-outline {
-    @apply border border-border-main text-text-main px-6 py-3 rounded-md font-medium 
-          hover:bg-bg-surface transition-all;
+    @apply border-border-main text-text-main hover:bg-bg-surface rounded-md border px-6 py-3 font-medium transition-all;
   }
 
   /* 입력창 공통 */
   .input-base {
-    @apply w-full bg-bg-surface border border-border-main text-text-main px-4 py-2 rounded-md
-          focus:outline-none focus:border-point-red transition-all;
+    @apply bg-bg-surface border-border-main text-text-main focus:border-point-red w-full rounded-md border px-4 py-2 transition-all focus:outline-none;
   }
 
   /* 진행 바 */
   .progress-bar {
-    @apply h-2 w-full bg-border-main rounded-full overflow-hidden;
+    @apply bg-border-main h-2 w-full overflow-hidden rounded-full;
   }
 
   .progress-fill {
-    @apply h-full bg-point-red transition-all duration-300;
+    @apply bg-point-red h-full transition-all duration-300;
   }
 
   /* 사용자 말풍선 */
   .chat-bubble-user {
-    @apply bg-point-red text-white p-3 rounded-lg rounded-tr-none max-w-[80%];
+    @apply bg-point-red max-w-[80%] rounded-lg rounded-tr-none p-3 text-white;
   }
 
   /* 챗봇 말풍선 */
   .chat-bubble-bot {
-    @apply bg-bg-surface border border-border-main text-text-main p-3 rounded-lg rounded-tl-none max-w-[80%];
+    @apply bg-bg-surface border-border-main text-text-main max-w-[80%] rounded-lg rounded-tl-none border p-3;
   }
 
   /* 카드형 레이아웃 */
   .card-base {
-    @apply bg-bg-surface border border-border-main rounded-xl p-4 shadow-sm
-          hover:scale-[1.02] hover:border-point-red transition-all duration-300;
+    @apply bg-bg-surface border-border-main hover:border-point-red rounded-xl border p-4 shadow-sm transition-all duration-300 hover:scale-[1.02];
   }
 
   /* 설문조사 답변 항목 */
   .answer-item {
-    @apply w-full p-4 bg-bg-surface border-2 border-transparent rounded-lg text-left
-          hover:border-point-red hover:text-point-red transition-all cursor-pointer;
+    @apply bg-bg-surface hover:border-point-red hover:text-point-red w-full cursor-pointer rounded-lg border-2 border-transparent p-4 text-left transition-all;
   }
 }
