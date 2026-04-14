@@ -8,26 +8,15 @@
     'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol', sans-serif;
 
-  /* 브랜드 컬러 */
-  --color-point-red: #e50914;
-  --color-point-hover: #b20710;
-
-  /* 라이트 모드 설정 */
-  --color-bg-main: #ffffff;
-  --color-bg-surface: #fafafa;
-  --color-text-main: #121212;
-  --color-text-sub: #4d4d4d;
-  --color-border-main: #e1e1e2;
-
-  /* 다크 모드 설정 */
-  --color-bg-main-dark: #141414;
-  --color-bg-surface-dark: #1f1f1f;
-  --color-text-main-dark: #ffffff;
-  --color-text-sub-dark: #b3b3b3;
-  --color-border-main-dark: #333333;
+  --color-header-bg: #000000;
+  --color-header-accent: #c81010;
+  --color-header-accent-hover: #a60d0d;
+  --color-header-button-border: #1a1a1a;
+  --color-header-text: #ffffff;
+  --color-header-shadow-glow: rgba(255, 255, 255, 0.14);
+  --color-header-shadow-depth: rgba(0, 0, 0, 0.32);
 }
 
-/* 다크 모드 변수 매핑 */
 @layer base {
   html {
     font-family: var(--font-sans);
@@ -39,59 +28,36 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-
-  .dark {
-    --color-bg-main: var(--color-bg-main-dark);
-    --color-bg-surface: var(--color-bg-surface-dark);
-    --color-text-main: var(--color-text-main-dark);
-    --color-text-sub: var(--color-text-sub-dark);
-    --color-border-main: var(--color-border-main-dark);
-  }
 }
 
-/* 공통 컴포넌트 클래스 */
 @layer components {
-  /* 메인 포인트 버튼 */
-  .btn-point {
-    @apply bg-point-red hover:bg-point-hover rounded-md px-6 py-3 font-bold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:bg-gray-600;
+  .header-shell {
+    background-color: var(--color-header-bg);
+    box-shadow:
+      0 0 32px var(--color-header-shadow-glow),
+      0 0 18px var(--color-header-shadow-depth);
   }
 
-  /* 보조/라인 버튼 */
-  .btn-outline {
-    @apply border-border-main text-text-main hover:bg-bg-surface rounded-md border px-6 py-3 font-medium transition-all;
+  .header-logo {
+    color: var(--color-header-accent);
   }
 
-  /* 입력창 공통 */
-  .input-base {
-    @apply bg-bg-surface border-border-main text-text-main focus:border-point-red w-full rounded-md border px-4 py-2 transition-all focus:outline-none;
+  .header-btn-outline {
+    border-color: var(--color-header-text);
+    color: var(--color-header-text);
   }
 
-  /* 진행 바 */
-  .progress-bar {
-    @apply bg-border-main h-2 w-full overflow-hidden rounded-full;
+  .header-btn-outline:hover {
+    background-color: rgb(255 255 255 / 0.1);
   }
 
-  .progress-fill {
-    @apply bg-point-red h-full transition-all duration-300;
+  .header-btn-solid {
+    border-color: var(--color-header-button-border);
+    background-color: var(--color-header-accent);
+    color: var(--color-header-text);
   }
 
-  /* 사용자 말풍선 */
-  .chat-bubble-user {
-    @apply bg-point-red max-w-[80%] rounded-lg rounded-tr-none p-3 text-white;
-  }
-
-  /* 챗봇 말풍선 */
-  .chat-bubble-bot {
-    @apply bg-bg-surface border-border-main text-text-main max-w-[80%] rounded-lg rounded-tl-none border p-3;
-  }
-
-  /* 카드형 레이아웃 */
-  .card-base {
-    @apply bg-bg-surface border-border-main hover:border-point-red rounded-xl border p-4 shadow-sm transition-all duration-300 hover:scale-[1.02];
-  }
-
-  /* 설문조사 답변 항목 */
-  .answer-item {
-    @apply bg-bg-surface hover:border-point-red hover:text-point-red w-full cursor-pointer rounded-lg border-2 border-transparent p-4 text-left transition-all;
+  .header-btn-solid:hover {
+    background-color: var(--color-header-accent-hover);
   }
 }
