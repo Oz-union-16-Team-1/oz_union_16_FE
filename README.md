@@ -1,73 +1,105 @@
-# React + TypeScript + Vite
+# PGTI Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PGTI는 사용자 취향에 맞는 게임을 탐색하고 추천받는 웹 서비스입니다.
+이 저장소는 React + TypeScript + Vite 기반 프론트엔드입니다.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- React Router
+- TanStack Query
+- Zustand
+- Axios
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Node.js 20 사용을 권장합니다. CI도 Node.js 20 기준으로 실행됩니다.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+로컬 개발 서버가 출력하는 URL로 접속합니다.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Verification
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+PR을 올리기 전에 최소한 아래 명령을 실행합니다.
+
+```bash
+npm run lint
+npm run build
 ```
+
+UI 변경이 있으면 브라우저에서 직접 확인하고 PR에 스크린샷을 첨부합니다.
+
+## Branch Rules
+
+브랜치 이름은 `scripts/validate-branch-name.mjs` 기준을 따릅니다.
+
+```text
+main
+dev
+feat/<slug>
+fix/<slug>
+docs/<slug>
+refactor/<slug>
+test/<slug>
+chore/<slug>
+release/<value>
+hotfix/<value>
+```
+
+예시:
+
+```text
+feat/main-page
+docs/team-context
+fix/#10-login-redirect
+```
+
+## Commit Rules
+
+커밋 메시지는 `commit-msg` hook에서 아래 형식을 검사합니다.
+
+```text
+type(scope): subject
+```
+
+예시:
+
+```text
+docs(context): add team context guide
+feat(main-page): add top games section
+```
+
+허용 type:
+
+```text
+feat, fix, docs, style, refactor, test, chore, perf, ci, revert
+```
+
+## PR Flow
+
+1. `dev`에서 작업 브랜치를 만듭니다.
+2. 작업 전 관련 요구사항과 API 명세를 확인합니다.
+3. 작은 단위로 구현하고 `npm run lint`, `npm run build`를 실행합니다.
+4. PR 템플릿에 변경 내용, 테스트 결과, API/요구사항 영향을 작성합니다.
+5. UI 변경은 스크린샷을 첨부합니다.
+
+## Team Context
+
+팀 공용 컨텍스트는 Markdown 문서로 관리합니다.
+
+- `AGENTS.md`: 팀원과 AI 에이전트가 먼저 읽는 진입 문서
+- `docs/ai/project-context.md`: 서비스와 화면 맥락
+- `docs/ai/api-contract.md`: API 계약과 불확실성
+- `docs/ai/workflow.md`: 작업 흐름
+- `docs/ai/code-quality.md`: 코드 품질 기준
+- `docs/ai/task-template.md`: 기능 시작 전 미니 계획 템플릿
+
+원칙은 짧은 진입 문서와 상세 문서 분리입니다.
+`AGENTS.md`에 모든 내용을 몰아넣지 말고, 필요한 상세 문서를 참조합니다.
