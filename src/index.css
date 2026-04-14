@@ -15,6 +15,25 @@
   --color-header-text: #ffffff;
   --color-header-shadow-glow: rgba(255, 255, 255, 0.14);
   --color-header-shadow-depth: rgba(0, 0, 0, 0.32);
+
+  --color-login-page: #000000;
+  --color-login-field: #1a1a1a;
+  --color-login-field-border: #262626;
+  --color-login-divider: #262626;
+  --color-login-divider-line: #3a3a3a;
+  --color-login-divider-text: #a3a3a3;
+  --color-login-helper: #a3a3a3;
+  --color-login-outline: rgba(255, 255, 255, 0.12);
+  --color-login-label: #8f8f8f;
+  --color-login-muted: #676767;
+  --color-login-google: #1a1a1a;
+  --color-login-google-border: #1a1a1a;
+  --color-login-kakao: #fee500;
+  --color-login-kakao-text: #000000;
+  --color-login-naver: #03c75a;
+  --color-login-primary: #f20f17;
+  --color-login-primary-hover: #dd0d14;
+  --shadow-login-primary: rgba(242, 15, 23, 0.42);
 }
 
 @layer base {
@@ -59,5 +78,87 @@
 
   .header-btn-solid:hover {
     background-color: var(--color-header-accent-hover);
+  }
+}
+
+@utility bg-login-page {
+  background-color: var(--color-login-page);
+}
+
+@utility bg-login-field {
+  background-color: var(--color-login-field);
+}
+
+@utility bg-login-divider {
+  background-color: var(--color-login-divider);
+}
+
+@utility bg-login-divider-line {
+  background-color: var(--color-login-divider-line);
+}
+
+@utility bg-login-google {
+  background-color: var(--color-login-google);
+}
+
+@utility bg-login-kakao {
+  background-color: var(--color-login-kakao);
+}
+
+@utility bg-login-naver {
+  background-color: var(--color-login-naver);
+}
+
+@utility bg-login-primary {
+  background-color: var(--color-login-primary);
+}
+
+@utility bg-login-primary-hover {
+  background-color: var(--color-login-primary-hover);
+}
+
+@utility text-login-label {
+  color: var(--color-login-label);
+}
+
+@utility text-login-muted {
+  color: var(--color-login-muted);
+}
+
+@utility text-login-helper {
+  color: var(--color-login-helper);
+}
+
+@utility text-login-divider-label {
+  color: var(--color-login-divider-text);
+}
+
+@utility text-login-kakao-label {
+  color: var(--color-login-kakao-text);
+}
+
+@utility border-login-divider {
+  border-color: var(--color-login-divider);
+}
+
+@utility border-login-field {
+  border-color: var(--color-login-field-border);
+}
+
+@utility border-login-outline {
+  border-color: var(--color-login-outline);
+}
+
+@utility border-login-google {
+  border-color: var(--color-login-google-border);
+}
+
+@utility shadow-login-primary {
+  box-shadow: 0 10px 24px -10px var(--shadow-login-primary);
+}
+
+@utility placeholder-login-muted {
+  &::placeholder {
+    color: var(--color-login-muted);
   }
 }
