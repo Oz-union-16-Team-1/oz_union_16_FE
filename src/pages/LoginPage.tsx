@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
-import Header from '../components/common/Header';
+import AuthInputField from '../components/auth/AuthInputField';
+import SocialLoginButton from '../components/login/SocialLoginButton';
+import AuthLayout from '../components/layout/AuthLayout';
 
 const GoogleIcon = () => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
@@ -40,141 +41,86 @@ const NaverIcon = () => (
   </svg>
 );
 
-type SocialLoginButtonProps = {
-  label: string;
-  icon: ReactNode;
-  className: string;
-  labelClassName?: string;
-};
-
-const SocialLoginButton = ({
-  label,
-  icon,
-  className,
-  labelClassName = '',
-}: SocialLoginButtonProps) => (
-  <button
-    type="button"
-    className={`flex w-full items-center justify-center gap-3 rounded-full px-0 transition-transform duration-200 hover:-translate-y-0.5 ${className}`}
-  >
-    {icon}
-    <span
-      className={`text-[18px] leading-[150%] font-normal ${labelClassName}`}
-    >
-      {label}
-    </span>
-  </button>
-);
-
 function LoginPage() {
   return (
-    <div className="bg-login-page min-h-screen text-white">
-      <Header fixed={false} />
+    <AuthLayout title="Log In">
+      <div className="mt-12 space-y-4">
+        <SocialLoginButton
+          label="Google로 로그인하기"
+          icon={<GoogleIcon />}
+          className="bg-login-google border-login-google h-[61px] border"
+          labelClassName="text-white"
+        />
+        <SocialLoginButton
+          label="카카오로 로그인하기"
+          icon={<KakaoIcon />}
+          className="bg-login-kakao h-[59px]"
+          labelClassName="text-login-kakao-label"
+        />
+        <SocialLoginButton
+          label="네이버로 로그인하기"
+          icon={<NaverIcon />}
+          className="bg-login-naver h-[59px]"
+          labelClassName="text-white"
+        />
+      </div>
 
-      <main className="flex min-h-[calc(100vh-7rem)] items-start justify-center px-6 pt-8 pb-16 sm:px-8 sm:pt-12">
-        <section className="w-full max-w-[440px]">
-          <h1 className="text-center text-[34px] leading-none font-semibold sm:text-[46px]">
-            Log In
-          </h1>
+      <div className="my-8 flex h-[34px] items-center gap-4 py-2">
+        <div className="bg-login-divider-line h-px flex-1" />
+        <span className="text-login-divider-label text-xs leading-5 font-normal tracking-[0.18em]">
+          OR
+        </span>
+        <div className="bg-login-divider-line h-px flex-1" />
+      </div>
 
-          <div className="mt-12 space-y-4">
-            <SocialLoginButton
-              label="Google로 로그인하기"
-              icon={<GoogleIcon />}
-              className="bg-login-google border-login-google h-[61px] border"
-              labelClassName="text-white"
-            />
-            <SocialLoginButton
-              label="카카오로 로그인하기"
-              icon={<KakaoIcon />}
-              className="bg-login-kakao h-[59px]"
-              labelClassName="text-login-kakao-label"
-            />
-            <SocialLoginButton
-              label="네이버로 로그인하기"
-              icon={<NaverIcon />}
-              className="bg-login-naver h-[59px]"
-              labelClassName="text-white"
-            />
-          </div>
+      <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
+        <AuthInputField
+          id="login-id"
+          name="id"
+          label="아이디"
+          type="text"
+          autoComplete="username"
+          placeholder="ID"
+        />
 
-          <div className="my-8 flex h-[34px] items-center gap-4 py-2">
-            <div className="bg-login-divider-line h-px flex-1" />
-            <span className="text-login-divider-label text-[12px] leading-[150%] font-normal tracking-[0.18em]">
-              OR
-            </span>
-            <div className="bg-login-divider-line h-px flex-1" />
-          </div>
+        <AuthInputField
+          id="login-password"
+          name="password"
+          label="비밀번호"
+          type="password"
+          autoComplete="current-password"
+          placeholder="PASSWORD"
+        />
 
-          <form
-            className="space-y-5"
-            onSubmit={(event) => event.preventDefault()}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            className="text-login-muted text-sm font-medium transition-colors hover:text-white/80"
           >
-            <div className="space-y-3">
-              <label
-                htmlFor="login-id"
-                className="text-login-label block text-[15px] font-medium"
-              >
-                아이디
-              </label>
-              <input
-                id="login-id"
-                name="id"
-                type="text"
-                autoComplete="username"
-                placeholder="ID"
-                className="placeholder-login-muted bg-login-field border-login-field h-[56px] w-full rounded-[12px] border px-4 text-base text-white transition outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              />
-            </div>
+            아이디/비밀번호를 잊어버리셨나요?
+          </button>
+        </div>
 
-            <div className="space-y-3">
-              <label
-                htmlFor="login-password"
-                className="text-login-label block text-[15px] font-medium"
-              >
-                비밀번호
-              </label>
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="PASSWORD"
-                className="placeholder-login-muted bg-login-field border-login-field h-[56px] w-full rounded-[12px] border px-4 text-base text-white transition outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              />
-            </div>
+        <button
+          type="submit"
+          className="shadow-login-primary bg-login-primary hover:bg-login-primary-hover mt-4 h-14 w-full rounded-full text-lg leading-7 font-semibold text-white transition-colors"
+        >
+          로그인
+        </button>
+      </form>
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-login-muted text-sm font-medium transition-colors hover:text-white/80"
-              >
-                아이디/비밀번호를 잊어버리셨나요?
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              className="shadow-login-primary bg-login-primary hover:bg-login-primary-hover mt-4 h-[56px] w-full rounded-full text-[18px] leading-[150%] font-semibold text-white transition-colors"
-            >
-              로그인
-            </button>
-          </form>
-
-          <div className="border-login-divider mt-8 border-t pt-8">
-            <p className="text-login-helper text-center text-[14px] leading-[150%] font-normal">
-              아직 PGTI 회원이 아니신가요?
-            </p>
-            <button
-              type="button"
-              className="border-login-outline mt-5 h-14 w-full rounded-full border bg-transparent text-[18px] leading-[150%] font-semibold text-white transition-colors hover:border-white/25 hover:bg-white/5"
-            >
-              회원가입
-            </button>
-          </div>
-        </section>
-      </main>
-    </div>
+      <div className="border-login-divider mt-8 border-t pt-8">
+        <p className="text-login-helper text-center text-sm leading-5 font-normal">
+          아직 PGTI 회원이 아니신가요?
+        </p>
+        <button
+          type="button"
+          className="border-login-outline mt-5 h-14 w-full rounded-full border bg-transparent text-lg leading-7 font-semibold text-white transition-colors hover:border-white/25 hover:bg-white/5"
+        >
+          회원가입
+        </button>
+      </div>
+    </AuthLayout>
   );
 }
 
