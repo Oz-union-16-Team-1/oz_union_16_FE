@@ -80,6 +80,43 @@ const extractFieldErrorMessage = (
   return null;
 };
 
+const extractFieldErrors = (
+  value?: string | Record<string, string[]>,
+): Record<string, string> => {
+  if (!value || typeof value === 'string') {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([fieldName, messages]) => {
+        if (typeof messages === 'string') {
+          return [fieldName, messages];
+        }
+
+        if (Array.isArray(messages) && messages[0]) {
+          return [fieldName, messages[0]];
+        }
+
+        return null;
+      })
+      .filter((entry): entry is [string, string] => Boolean(entry)),
+  );
+};
+
+export const extractAuthApiFieldErrors = (error: unknown) => {
+  if (!(error instanceof AxiosError)) {
+    return {};
+  }
+
+  const data = error.response?.data as ErrorResponseBody | undefined;
+
+  return {
+    ...extractFieldErrors(data?.detail),
+    ...extractFieldErrors(data?.error_detail),
+  };
+};
+
 export const extractAuthApiErrorMessage = (error: unknown) => {
   if (!(error instanceof AxiosError)) {
     return '요청을 처리하는 중 알 수 없는 오류가 발생했습니다.';

@@ -1,19 +1,141 @@
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+
 import AuthButton from '../components/auth/AuthButton';
 import AuthDivider from '../components/auth/AuthDivider';
+import AuthFormMessage from '../components/auth/AuthFormMessage';
 import AuthLinkButton from '../components/auth/AuthLinkButton';
 import AuthLayout from '../components/layout/AuthLayout';
 import AuthInputField from '../components/auth/AuthInputField';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import { ROUTES } from '../constants/routes';
+import {
+  extractAuthApiErrorMessage,
+  extractAuthApiFieldErrors,
+} from '../features/auth/api/auth';
+import { useLoginMutation } from '../features/auth/api/useAuthApi';
+import type { LoginRequest } from '../features/auth/types/auth';
+import { setAuthTokens } from '../utils/auth';
+
+type LoginFieldName = keyof LoginRequest;
+type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
+type LoginTouchedState = Record<LoginFieldName, boolean>;
+type LoginLocationState = {
+  noticeMessage?: string;
+};
+
+const getLoginFieldErrors = (
+  values: LoginRequest,
+  touchedState: LoginTouchedState,
+) => {
+  const trimmedLoginId = values.login_id.trim();
+  const trimmedPassword = values.password.trim();
+
+  return {
+    login_id:
+      touchedState.login_id && !trimmedLoginId ? '아이디를 입력해주세요.' : '',
+    password:
+      touchedState.password && !trimmedPassword
+        ? '비밀번호를 입력해주세요.'
+        : '',
+  } satisfies Record<LoginFieldName, string>;
+};
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const loginMutation = useLoginMutation();
+  const [formValues, setFormValues] = useState<LoginRequest>({
+    login_id: '',
+    password: '',
+  });
+  const [touchedState, setTouchedState] = useState<LoginTouchedState>({
+    login_id: false,
+    password: false,
+  });
+  const [apiFieldErrors, setApiFieldErrors] = useState<LoginFieldErrors>({});
+  const [formMessage, setFormMessage] = useState('');
+  const locationState = location.state as LoginLocationState | null;
+  const [noticeMessage, setNoticeMessage] = useState(
+    locationState?.noticeMessage ?? '',
+  );
+  const fieldErrors = getLoginFieldErrors(formValues, touchedState);
+  const resolvedFieldErrors: Record<LoginFieldName, string> = {
+    login_id: apiFieldErrors.login_id ?? fieldErrors.login_id,
+    password: apiFieldErrors.password ?? fieldErrors.password,
+  };
+
+  const handleChange = (fieldName: LoginFieldName, value: string) => {
+    setFormValues((previous) => ({
+      ...previous,
+      [fieldName]: value,
+    }));
+
+    setApiFieldErrors((previous) => {
+      if (!previous[fieldName]) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [fieldName]: '',
+      };
+    });
+
+    setFormMessage('');
+    setNoticeMessage('');
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextTouchedState = {
+      login_id: true,
+      password: true,
+    } satisfies LoginTouchedState;
+
+    setTouchedState(nextTouchedState);
+    setApiFieldErrors({});
+    setFormMessage('');
+    setNoticeMessage('');
+
+    const nextFieldErrors = getLoginFieldErrors(formValues, nextTouchedState);
+    const hasLocalError = Object.values(nextFieldErrors).some(Boolean);
+
+    if (hasLocalError) {
+      return;
+    }
+
+    const payload: LoginRequest = {
+      login_id: formValues.login_id.trim(),
+      password: formValues.password.trim(),
+    };
+
+    try {
+      const response = await loginMutation.mutateAsync(payload);
+
+      setAuthTokens(response.access_token, response.refresh_token);
+      navigate(ROUTES.HOME);
+    } catch (error) {
+      const nextApiFieldErrors = extractAuthApiFieldErrors(error);
+
+      if (Object.keys(nextApiFieldErrors).length > 0) {
+        setApiFieldErrors(nextApiFieldErrors);
+        return;
+      }
+
+      setFormMessage(extractAuthApiErrorMessage(error));
+    }
+  };
+
   return (
     <AuthLayout title="Log In">
       <AuthSocialLoginGroup className="mt-10" />
 
       <AuthDivider className="my-7" />
 
-      <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <AuthInputField
           id="login-id"
           name="login_id"
@@ -21,6 +143,16 @@ function LoginPage() {
           type="text"
           autoComplete="username"
           placeholder="ID"
+          value={formValues.login_id}
+          onChange={(event) => handleChange('login_id', event.target.value)}
+          onBlur={() =>
+            setTouchedState((previous) => ({
+              ...previous,
+              login_id: true,
+            }))
+          }
+          errorMessage={resolvedFieldErrors.login_id}
+          disabled={loginMutation.isPending}
           containerClassName="pt-1"
         />
 
@@ -31,7 +163,23 @@ function LoginPage() {
           type="password"
           autoComplete="current-password"
           placeholder="PASSWORD"
+          value={formValues.password}
+          onChange={(event) => handleChange('password', event.target.value)}
+          onBlur={() =>
+            setTouchedState((previous) => ({
+              ...previous,
+              password: true,
+            }))
+          }
+          errorMessage={resolvedFieldErrors.password}
+          disabled={loginMutation.isPending}
         />
+
+        {noticeMessage ? (
+          <AuthFormMessage tone="success">{noticeMessage}</AuthFormMessage>
+        ) : null}
+
+        {formMessage ? <AuthFormMessage>{formMessage}</AuthFormMessage> : null}
 
         <div className="flex justify-end">
           <button
@@ -42,8 +190,12 @@ function LoginPage() {
           </button>
         </div>
 
-        <AuthButton type="submit" className="mt-4 w-full">
-          로그인
+        <AuthButton
+          type="submit"
+          className="mt-4 w-full"
+          disabled={loginMutation.isPending}
+        >
+          {loginMutation.isPending ? '로그인 중...' : '로그인'}
         </AuthButton>
       </form>
 
