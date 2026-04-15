@@ -16,7 +16,7 @@ function LoginPage() {
       <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
         <AuthInputField
           id="login-id"
-          name="id"
+          name="login_id"
           label="아이디"
           type="text"
           autoComplete="username"

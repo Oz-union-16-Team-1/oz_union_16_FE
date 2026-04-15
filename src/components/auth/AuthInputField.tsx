@@ -1,33 +1,21 @@
-import type { ChangeEventHandler, FocusEventHandler, ReactNode } from 'react';
+import type { InputHTMLAttributes, ReactNode } from 'react';
 
 type AuthInputFieldProps = {
   id: string;
-  name: string;
   label: string;
-  type: 'text' | 'password' | 'email';
-  autoComplete?: string;
-  placeholder: string;
-  value?: string;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
-  onBlur?: FocusEventHandler<HTMLInputElement>;
   errorMessage?: string;
   action?: ReactNode;
   containerClassName?: string;
-};
+} & InputHTMLAttributes<HTMLInputElement>;
 
 function AuthInputField({
   id,
-  name,
   label,
-  type,
-  autoComplete,
-  placeholder,
-  value,
-  onChange,
-  onBlur,
   errorMessage,
   action,
   containerClassName = '',
+  className = '',
+  ...inputProps
 }: AuthInputFieldProps) {
   return (
     <div className={`space-y-2.5 ${containerClassName}`}>
@@ -40,15 +28,9 @@ function AuthInputField({
       <div className="flex items-stretch gap-3">
         <input
           id={id}
-          name={name}
-          type={type}
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
+          {...inputProps}
           aria-invalid={Boolean(errorMessage)}
-          className={`placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${
+          className={`placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${className} ${
             errorMessage
               ? 'border-red-500 focus-visible:ring-red-500/20'
               : 'border-login-field focus-visible:ring-white/20'

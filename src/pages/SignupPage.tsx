@@ -8,33 +8,44 @@ import AuthInputActionButton from '../components/auth/AuthInputActionButton';
 import AuthRadioGroup from '../components/auth/AuthRadioGroup';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import AuthLayout from '../components/layout/AuthLayout';
+import type { AuthGender } from '../features/auth/types/auth';
+
+const signupGenderOptions = [
+  { label: '남성', value: 'M' },
+  { label: '여성', value: 'W' },
+] as const;
 
 function SignupPage() {
   const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [passwordCheck, setPasswordCheck] = useState('');
+  const [gender, setGender] = useState<AuthGender | ''>('');
   const [passwordTouched, setPasswordTouched] = useState(false);
-  const [passwordConfirmTouched, setPasswordConfirmTouched] = useState(false);
+  const [passwordCheckTouched, setPasswordCheckTouched] = useState(false);
+  const [genderTouched, setGenderTouched] = useState(false);
 
   const trimmedPassword = password.trim();
-  const trimmedPasswordConfirm = passwordConfirm.trim();
+  const trimmedPasswordCheck = passwordCheck.trim();
 
   const passwordError =
-    passwordTouched && trimmedPassword.length > 0 && trimmedPassword.length < 8
+    passwordTouched && trimmedPassword.length > 0 && trimmedPassword.length <= 8
       ? '비밀번호가 8자 이하입니다.'
       : '';
 
-  const passwordConfirmError =
-    passwordConfirmTouched &&
+  const passwordCheckError =
+    passwordCheckTouched &&
     trimmedPassword.length > 0 &&
-    trimmedPasswordConfirm.length > 0 &&
-    trimmedPassword !== trimmedPasswordConfirm
+    trimmedPasswordCheck.length > 0 &&
+    trimmedPassword !== trimmedPasswordCheck
       ? '비밀번호와 일치하지 않습니다.'
       : '';
+
+  const genderError = genderTouched && !gender ? '성별을 선택해주세요.' : '';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPasswordTouched(true);
-    setPasswordConfirmTouched(true);
+    setPasswordCheckTouched(true);
+    setGenderTouched(true);
   };
 
   return (
@@ -61,7 +72,7 @@ function SignupPage() {
 
         <AuthInputField
           id="signup-id"
-          name="id"
+          name="login_id"
           label="아이디"
           type="text"
           autoComplete="username"
@@ -94,26 +105,24 @@ function SignupPage() {
 
         <AuthInputField
           id="signup-password-confirm"
-          name="passwordConfirm"
+          name="password_check"
           label="비밀번호 확인"
           type="password"
           autoComplete="new-password"
           placeholder="비밀번호를 한번 더 입력하세요"
-          value={passwordConfirm}
-          onChange={(event) => setPasswordConfirm(event.target.value)}
-          onBlur={() => setPasswordConfirmTouched(true)}
-          errorMessage={passwordConfirmError}
+          value={passwordCheck}
+          onChange={(event) => setPasswordCheck(event.target.value)}
+          onBlur={() => setPasswordCheckTouched(true)}
+          errorMessage={passwordCheckError}
         />
 
         <AuthRadioGroup
           label="성별"
           name="gender"
-          defaultValue="UNSPECIFIED"
-          options={[
-            { label: '선택안함', value: 'UNSPECIFIED' },
-            { label: '남성', value: 'MALE' },
-            { label: '여성', value: 'FEMALE' },
-          ]}
+          value={gender}
+          options={signupGenderOptions}
+          onChange={(event) => setGender(event.target.value as AuthGender)}
+          errorMessage={genderError}
         />
 
         <AuthButton type="submit" className="mt-2 w-full">
