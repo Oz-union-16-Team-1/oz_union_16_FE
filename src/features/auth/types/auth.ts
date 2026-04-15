@@ -1,36 +1,42 @@
-export type AuthGender = 'UNSPECIFIED' | 'MALE' | 'FEMALE';
-
-export interface AuthUser {
-  id: number;
-  name: string;
-  nickname: string;
-  gender: AuthGender;
-}
+export type AuthGender = 'M' | 'W';
 
 export interface LoginRequest {
-  id: string;
+  login_id: string;
   password: string;
 }
 
 export interface LoginResponse {
   access_token: string;
-  user: AuthUser;
+  refresh_token: string;
+}
+
+export interface LogoutResponse {
+  detail: string;
 }
 
 export interface SignupRequest {
+  login_id: string;
+  password_check: string;
   name: string;
-  id: string;
   nickname: string;
   password: string;
   gender: AuthGender;
 }
 
 export interface SignupResponse {
-  access_token: string;
-  user: AuthUser;
+  detail: string;
+}
+
+export interface CheckNicknameDuplicateRequest {
+  nickname: string;
+}
+
+export interface CheckIdDuplicateRequest {
+  login_id: string;
 }
 
 export interface DuplicateCheckResponse {
-  available: boolean;
-  message: string;
+  detail: string;
 }
+
+export type { ErrorResponseBody } from './api';

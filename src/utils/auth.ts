@@ -1,40 +1,35 @@
-const ACCESS_TOKEN_KEYS = ['accessToken', 'access_token'] as const;
-const PRIMARY_ACCESS_TOKEN_KEY = ACCESS_TOKEN_KEYS[0];
+import {
+  clearLegacyAuthStorage,
+  getLegacyAccessTokenFromStorage,
+  getLegacyRefreshTokenFromStorage,
+  useAuthStore,
+} from '../store/useAuthStore';
 
 export const getAccessToken = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
+  return (
+    useAuthStore.getState().accessToken ?? getLegacyAccessTokenFromStorage()
+  );
+};
 
-  for (const key of ACCESS_TOKEN_KEYS) {
-    const token = window.localStorage.getItem(key);
+export const getRefreshToken = () => {
+  return (
+    useAuthStore.getState().refreshToken ?? getLegacyRefreshTokenFromStorage()
+  );
+};
 
-    if (token) {
-      return token;
-    }
-  }
-
-  return null;
+export const setAuthTokens = (accessToken: string, refreshToken: string) => {
+  useAuthStore.getState().setAuthTokens(accessToken, refreshToken);
+  clearLegacyAuthStorage();
 };
 
 export const setAccessToken = (token: string) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.localStorage.setItem(PRIMARY_ACCESS_TOKEN_KEY, token);
-
-  for (const key of ACCESS_TOKEN_KEYS.slice(1)) {
-    window.localStorage.removeItem(key);
-  }
+  useAuthStore.getState().setAccessToken(token);
+  clearLegacyAuthStorage();
 };
 
 export const clearAccessToken = () => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  for (const key of ACCESS_TOKEN_KEYS) {
-    window.localStorage.removeItem(key);
-  }
+  useAuthStore.getState().clearAuthTokens();
+  clearLegacyAuthStorage();
 };
+
+export const clearAuthTokens = clearAccessToken;

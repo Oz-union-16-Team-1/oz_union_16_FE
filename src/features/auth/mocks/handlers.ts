@@ -1,18 +1,24 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { AUTH_BASE_PATH } from '../constants/auth';
 import type {
   AuthGender,
-  AuthUser,
+  CheckIdDuplicateRequest,
+  CheckNicknameDuplicateRequest,
   LoginRequest,
+  LogoutResponse,
   SignupRequest,
 } from '../types/auth';
 
-type MockUserRecord = AuthUser & {
+type MockUserRecord = {
+  id: number;
   loginId: string;
   password: string;
+  name: string;
+  nickname: string;
+  gender: AuthGender;
+  suspended?: boolean;
 };
-
-const AUTH_BASE_PATH = '/api/v1/auth';
 
 const mockUsers = new Map<string, MockUserRecord>([
   [
@@ -23,7 +29,7 @@ const mockUsers = new Map<string, MockUserRecord>([
       password: 'demo1234',
       name: 'PGTI 데모',
       nickname: '데모유저',
-      gender: 'UNSPECIFIED',
+      gender: 'M',
     },
   ],
   [
@@ -34,14 +40,27 @@ const mockUsers = new Map<string, MockUserRecord>([
       password: 'demo1234',
       name: '기존 사용자',
       nickname: '중복닉네임',
-      gender: 'FEMALE',
+      gender: 'W',
+    },
+  ],
+  [
+    'suspended-user',
+    {
+      id: 3,
+      loginId: 'suspended-user',
+      password: 'demo1234',
+      name: '정지 사용자',
+      nickname: '정지계정',
+      gender: 'M',
+      suspended: true,
     },
   ],
 ]);
 
-const validGenders: AuthGender[] = ['UNSPECIFIED', 'MALE', 'FEMALE'];
+const validGenders: AuthGender[] = ['M', 'W'];
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
+const createRefreshToken = (loginId: string) => `mock-refresh-token-${loginId}`;
 
 const getDuplicateError = (message: string) =>
   HttpResponse.json(
@@ -51,10 +70,12 @@ const getDuplicateError = (message: string) =>
     { status: 409 },
   );
 
-const getValidationError = (message: string) =>
+const getFieldValidationError = (fieldName: string, message: string) =>
   HttpResponse.json(
     {
-      error_detail: message,
+      detail: {
+        [fieldName]: [message],
+      },
     },
     { status: 400 },
   );
@@ -70,57 +91,121 @@ const getUnauthorizedError = (message: string) =>
 const findUserByNickname = (nickname: string) =>
   [...mockUsers.values()].find((user) => user.nickname === nickname);
 
-export const authHandlers = [
+const loginHandlers = [
   http.post(`${AUTH_BASE_PATH}/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
-    const loginId = body.id.trim();
+    const loginId = body.login_id.trim();
     const password = body.password.trim();
 
-    if (!loginId || !password) {
-      return getValidationError('아이디와 비밀번호를 입력해 주세요.');
+    if (!loginId) {
+      return getFieldValidationError(
+        'login_id',
+        '"login_id"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (!password) {
+      return getFieldValidationError(
+        'password',
+        '"password"이 필드는 필수 항목입니다.',
+      );
     }
 
     const user = mockUsers.get(loginId);
 
     if (!user || user.password !== password) {
-      return getUnauthorizedError('아이디 또는 비밀번호가 올바르지 않습니다.');
+      return getUnauthorizedError(
+        '로그인 아이디 또는 비밀번호가 올바르지 않습니다.',
+      );
+    }
+
+    if (user.suspended) {
+      return HttpResponse.json(
+        {
+          error_detail: '정지된 계정입니다.',
+        },
+        { status: 403 },
+      );
     }
 
     await delay(500);
 
     return HttpResponse.json({
       access_token: createAccessToken(user.loginId),
-      user: {
-        id: user.id,
-        name: user.name,
-        nickname: user.nickname,
-        gender: user.gender,
-      },
+      refresh_token: createRefreshToken(user.loginId),
     });
   }),
+];
 
+const signupHandlers = [
   http.post(`${AUTH_BASE_PATH}/signup`, async ({ request }) => {
     const body = (await request.json()) as SignupRequest;
-    const loginId = body.id.trim();
+    const loginId = body.login_id.trim();
     const name = body.name.trim();
     const nickname = body.nickname.trim();
     const password = body.password.trim();
+    const passwordCheck = body.password_check.trim();
     const gender = body.gender;
 
-    if (!loginId || !name || !nickname || !password) {
-      return getValidationError('필수 입력값을 모두 입력해 주세요.');
+    if (!loginId) {
+      return getFieldValidationError(
+        'login_id',
+        '"login_id"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (!password) {
+      return getFieldValidationError(
+        'password',
+        '"password"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (!passwordCheck) {
+      return getFieldValidationError(
+        'password_check',
+        '"password_check"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (!nickname) {
+      return getFieldValidationError(
+        'nickname',
+        '"nickname"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (!name) {
+      return getFieldValidationError(
+        'name',
+        '"name"이 필드는 필수 항목입니다.',
+      );
     }
 
     if (!validGenders.includes(gender)) {
-      return getValidationError('올바른 성별 값을 선택해 주세요.');
+      return getFieldValidationError(
+        'gender',
+        '"gender"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (password.length <= 8) {
+      return getFieldValidationError('password', '비밀번호가 8자 이하입니다.');
+    }
+
+    if (password !== passwordCheck) {
+      return getFieldValidationError(
+        'password_check',
+        '비밀번호와 일치하지 않습니다.',
+      );
     }
 
     if (mockUsers.has(loginId)) {
-      return getDuplicateError('이미 사용 중인 아이디입니다.');
+      return getDuplicateError('이미 중복된 회원가입 내역이 존재합니다.');
     }
 
     if (findUserByNickname(nickname)) {
-      return getDuplicateError('이미 사용 중인 닉네임입니다.');
+      return getDuplicateError('이미 중복된 닉네임이 존재합니다.');
     }
 
     const createdUser: MockUserRecord = {
@@ -136,52 +221,87 @@ export const authHandlers = [
 
     await delay(600);
 
-    return HttpResponse.json({
-      access_token: createAccessToken(createdUser.loginId),
-      user: {
-        id: createdUser.id,
-        name: createdUser.name,
-        nickname: createdUser.nickname,
-        gender: createdUser.gender,
+    return HttpResponse.json(
+      {
+        detail: '회원가입이 완료되었습니다.',
       },
-    });
+      { status: 201 },
+    );
   }),
+];
 
-  http.get(`${AUTH_BASE_PATH}/check-id`, async ({ request }) => {
-    const url = new URL(request.url);
-    const value = url.searchParams.get('value')?.trim() ?? '';
+const logoutHandlers = [
+  http.post(`${AUTH_BASE_PATH}/logout`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+
+    if (!authorization?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        {
+          error_detail: '인증 정보가 유효하지 않거나 만료되었습니다.',
+        } satisfies LogoutResponse | { error_detail: string },
+        { status: 401 },
+      );
+    }
+
+    await delay(200);
+
+    return HttpResponse.json({
+      detail: '로그아웃 되었습니다.',
+    } satisfies LogoutResponse);
+  }),
+];
+
+const duplicateCheckHandlers = [
+  http.post(`${AUTH_BASE_PATH}/check-id`, async ({ request }) => {
+    const body = (await request.json()) as CheckIdDuplicateRequest;
+    const value = body.login_id.trim();
 
     if (!value) {
-      return getValidationError('확인할 아이디를 입력해 주세요.');
+      return getFieldValidationError(
+        'login_id',
+        '"login_id"이 필드는 필수 항목입니다.',
+      );
     }
 
     await delay(250);
 
+    if (mockUsers.has(value)) {
+      return getDuplicateError('중복된 아이디가 존재합니다.');
+    }
+
     return HttpResponse.json({
-      available: !mockUsers.has(value),
-      message: mockUsers.has(value)
-        ? '이미 사용 중인 아이디입니다.'
-        : '사용 가능한 아이디입니다.',
+      detail: '사용가능한 아이디 입니다.',
     });
   }),
 
-  http.get(`${AUTH_BASE_PATH}/check-nickname`, async ({ request }) => {
-    const url = new URL(request.url);
-    const value = url.searchParams.get('value')?.trim() ?? '';
+  http.post(`${AUTH_BASE_PATH}/check-nickname`, async ({ request }) => {
+    const body = (await request.json()) as CheckNicknameDuplicateRequest;
+    const value = body.nickname.trim();
 
     if (!value) {
-      return getValidationError('확인할 닉네임을 입력해 주세요.');
+      return getFieldValidationError(
+        'nickname',
+        '"nickname"이 필드는 필수 항목입니다.',
+      );
     }
 
     await delay(250);
 
     const isDuplicate = Boolean(findUserByNickname(value));
 
+    if (isDuplicate) {
+      return getDuplicateError('중복된 닉네임이 존재합니다.');
+    }
+
     return HttpResponse.json({
-      available: !isDuplicate,
-      message: isDuplicate
-        ? '이미 사용 중인 닉네임입니다.'
-        : '사용 가능한 닉네임입니다.',
+      detail: '사용가능한 닉네임 입니다.',
     });
   }),
+];
+
+export const authHandlers = [
+  ...loginHandlers,
+  ...signupHandlers,
+  ...logoutHandlers,
+  ...duplicateCheckHandlers,
 ];
