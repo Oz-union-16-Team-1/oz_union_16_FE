@@ -1,23 +1,29 @@
 import axios from 'axios';
 
+import { apiBaseUrl } from '../lib/env';
+import { getAccessToken } from '../utils/auth';
+
 export const api = axios.create({
-  // 나중에 진짜 주소 넣는곳
-  baseURL: 'https://api.example.com',
-  timeout: 5000, // 5초 넘으면 연결 끊기
+  baseURL: apiBaseUrl,
+  timeout: 7000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 요청(Request) 인터셉터
 api.interceptors.request.use(
   (config) => {
+    const token = getAccessToken();
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// 응답(Response) 인터셉터
 api.interceptors.response.use(
   (response) => response,
   (error) => {
