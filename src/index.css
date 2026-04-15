@@ -150,6 +150,24 @@
     background: transparent;
   }
 
+  .recommendation-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+
+  .recommendation-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .recommendation-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .recommendation-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
   .genre-menu-scrollbar {
     scrollbar-color: rgb(255 255 255 / 0.22) transparent;
     scrollbar-width: thin;
