@@ -33,11 +33,11 @@ function AuthRadioGroup({
       <legend className="text-login-label block text-sm font-medium">
         {label}
       </legend>
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1 sm:flex-nowrap sm:justify-between">
         {options.map((option) => (
           <label
             key={option.value}
-            className="group flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-2"
+            className="group flex min-w-0 flex-1 cursor-pointer items-center justify-start gap-2 sm:justify-center"
           >
             <input
               type="radio"
@@ -59,7 +59,7 @@ function AuthRadioGroup({
             >
               <span className="bg-login-primary h-2 w-2 rounded-full opacity-0 transition-opacity peer-checked:opacity-100" />
             </span>
-            <span className="text-login-helper truncate text-sm/5 font-medium transition-colors group-hover:text-white/85 peer-checked:text-white peer-disabled:opacity-60">
+            <span className="text-login-helper text-sm/5 font-medium transition-colors group-hover:text-white/85 peer-checked:text-white peer-disabled:opacity-60">
               {option.label}
             </span>
           </label>
