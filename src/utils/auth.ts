@@ -1,17 +1,35 @@
-const ACCESS_TOKEN_KEYS = ['accessToken', 'access_token'] as const;
+import {
+  clearLegacyAuthStorage,
+  getLegacyAccessTokenFromStorage,
+  getLegacyRefreshTokenFromStorage,
+  useAuthStore,
+} from '../store/useAuthStore';
 
 export const getAccessToken = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  for (const key of ACCESS_TOKEN_KEYS) {
-    const token = window.localStorage.getItem(key);
-
-    if (token) {
-      return token;
-    }
-  }
-
-  return null;
+  return (
+    useAuthStore.getState().accessToken ?? getLegacyAccessTokenFromStorage()
+  );
 };
+
+export const getRefreshToken = () => {
+  return (
+    useAuthStore.getState().refreshToken ?? getLegacyRefreshTokenFromStorage()
+  );
+};
+
+export const setAuthTokens = (accessToken: string, refreshToken: string) => {
+  useAuthStore.getState().setAuthTokens(accessToken, refreshToken);
+  clearLegacyAuthStorage();
+};
+
+export const setAccessToken = (token: string) => {
+  useAuthStore.getState().setAccessToken(token);
+  clearLegacyAuthStorage();
+};
+
+export const clearAccessToken = () => {
+  useAuthStore.getState().clearAuthTokens();
+  clearLegacyAuthStorage();
+};
+
+export const clearAuthTokens = clearAccessToken;
