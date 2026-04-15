@@ -11,7 +11,7 @@ function LoginPage() {
     <AuthLayout title="Log In">
       <AuthSocialLoginGroup className="mt-10" />
 
-      <AuthDivider label="OR" className="my-7" />
+      <AuthDivider className="my-7" />
 
       <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
         <AuthInputField

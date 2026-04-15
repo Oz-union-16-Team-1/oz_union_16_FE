@@ -57,7 +57,7 @@ function SignupPage() {
     >
       <AuthSocialLoginGroup className="mt-7" />
 
-      <AuthDivider label="OR" className="my-6" />
+      <AuthDivider className="my-6" />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <AuthInputField
@@ -77,7 +77,7 @@ function SignupPage() {
           type="text"
           autoComplete="username"
           placeholder="아이디를 입력하세요"
-          action={<AuthInputActionButton label="중복확인" />}
+          action={<AuthInputActionButton>중복확인</AuthInputActionButton>}
         />
 
         <AuthInputField
@@ -87,7 +87,7 @@ function SignupPage() {
           type="text"
           autoComplete="nickname"
           placeholder="닉네임을 입력하세요"
-          action={<AuthInputActionButton label="중복확인" />}
+          action={<AuthInputActionButton>중복확인</AuthInputActionButton>}
         />
 
         <AuthInputField

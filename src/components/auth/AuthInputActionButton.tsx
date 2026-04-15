@@ -1,13 +1,15 @@
+import type { ReactNode } from 'react';
+
 import AuthButton from './AuthButton';
 
 type AuthInputActionButtonProps = {
-  label: string;
+  children: ReactNode;
 };
 
-function AuthInputActionButton({ label }: AuthInputActionButtonProps) {
+function AuthInputActionButton({ children }: AuthInputActionButtonProps) {
   return (
     <AuthButton variant="secondary" className="w-24 shrink-0">
-      {label}
+      {children}
     </AuthButton>
   );
 }
