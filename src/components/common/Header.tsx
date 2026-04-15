@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import profileImg from '../../assets/프로필 이미지.png';
+import { ROUTES } from '../../constants/routes';
 
 type HeaderProps = {
   isLoggedIn?: boolean;
@@ -27,22 +28,22 @@ const Header = ({ isLoggedIn = false, fixed = true }: HeaderProps) => {
         <div className="flex items-center gap-2 sm:gap-3">
           {!isLoggedIn ? (
             <>
-              <button
-                type="button"
+              <Link
+                to={`/${ROUTES.LOGIN}`}
                 className="header-btn-outline flex h-9 w-20 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all"
               >
                 <span className="text-[13px] leading-[150%] font-normal sm:text-sm">
                   로그인
                 </span>
-              </button>
-              <button
-                type="button"
+              </Link>
+              <Link
+                to={`/${ROUTES.SIGNUP}`}
                 className="header-btn-solid flex h-9 w-22 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all"
               >
                 <span className="text-[13px] leading-[150%] font-normal sm:text-sm">
                   회원가입
                 </span>
-              </button>
+              </Link>
             </>
           ) : (
             <div className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all">

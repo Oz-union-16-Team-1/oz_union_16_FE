@@ -33,6 +33,9 @@
   --color-login-naver: #03c75a;
   --color-login-primary: #f20f17;
   --color-login-primary-hover: #dd0d14;
+  --color-auth-panel: #111111;
+  --color-auth-panel-border: rgba(255, 255, 255, 0.08);
+  --shadow-auth-panel: rgba(0, 0, 0, 0.34);
   --shadow-login-primary: rgba(242, 15, 23, 0.42);
   --color-surface-elevated: rgba(255, 255, 255, 0.04);
   --color-surface-border: rgba(255, 255, 255, 0.08);
@@ -212,6 +215,10 @@
   background-color: var(--color-login-primary-hover);
 }
 
+@utility bg-auth-panel {
+  background-color: var(--color-auth-panel);
+}
+
 @utility text-login-label {
   color: var(--color-login-label);
 }
@@ -246,6 +253,18 @@
 
 @utility border-login-google {
   border-color: var(--color-login-google-border);
+}
+
+@utility border-login-primary {
+  border-color: var(--color-login-primary);
+}
+
+@utility border-auth-panel {
+  border-color: var(--color-auth-panel-border);
+}
+
+@utility shadow-auth-panel {
+  box-shadow: 0 28px 60px -28px var(--shadow-auth-panel);
 }
 
 @utility shadow-login-primary {

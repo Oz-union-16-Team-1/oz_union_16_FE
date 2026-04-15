@@ -16,12 +16,10 @@ function SocialLoginButton({
   return (
     <button
       type="button"
-      className={`flex w-full items-center justify-center gap-3 rounded-full px-0 transition-transform duration-200 hover:-translate-y-0.5 ${className}`}
+      className={`flex w-full items-center justify-center gap-3 rounded-full px-0 transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 ${className}`}
     >
       {icon}
-      <span className={`text-lg leading-7 font-normal ${labelClassName}`}>
-        {label}
-      </span>
+      <span className={`text-lg/7 font-normal ${labelClassName}`}>{label}</span>
     </button>
   );
 }
