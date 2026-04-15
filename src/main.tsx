@@ -13,6 +13,7 @@ import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
       {
         path: ROUTES.LOGIN,
         element: <LoginPage />,
+      },
+      {
+        path: ROUTES.SIGNUP,
+        element: <SignupPage />,
       },
     ],
   },
