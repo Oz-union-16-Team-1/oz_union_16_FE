@@ -357,13 +357,13 @@ function SignupPage() {
       title="Join"
       subtitle="회원가입 후 취향 기반 게임 추천을 시작해보세요"
       withPanel
-      subtitleClassName="mx-auto max-w-[290px]"
+      subtitleClassName="mx-auto max-w-[290px] sm:max-w-[320px]"
     >
-      <AuthSocialLoginGroup className="mt-7" />
+      <AuthSocialLoginGroup className="mt-6 sm:mt-7" />
 
-      <AuthDivider className="my-6" />
+      <AuthDivider className="my-5 sm:my-6" />
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
         <AuthInputField
           id="signup-name"
           name="name"
@@ -518,7 +518,7 @@ function SignupPage() {
 
         <AuthButton
           type="submit"
-          className="mt-2 w-full"
+          className="mt-1 w-full sm:mt-2"
           disabled={isSubmitting}
         >
           {isSubmitting ? '회원가입 중...' : '회원가입'}

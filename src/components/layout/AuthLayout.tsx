@@ -23,13 +23,13 @@ function AuthLayout({
   const content = (
     <>
       <h1
-        className={`text-center text-4xl leading-none font-semibold sm:text-5xl ${titleClassName}`}
+        className={`text-center text-[clamp(2rem,4.8vw,3rem)] leading-none font-semibold ${titleClassName}`}
       >
         {title}
       </h1>
       {subtitle ? (
         <p
-          className={`text-login-helper mt-3 text-center text-sm/5 font-normal ${subtitleClassName}`}
+          className={`text-login-helper mt-2.5 text-center text-sm/5 font-normal sm:mt-3 ${subtitleClassName}`}
         >
           {subtitle}
         </p>
@@ -42,10 +42,10 @@ function AuthLayout({
     <div className="bg-login-page flex min-h-screen flex-col text-white">
       <Header fixed={false} />
 
-      <main className="flex flex-1 items-start justify-center px-6 pt-8 pb-16 sm:px-8 sm:pt-12">
+      <main className="flex flex-1 items-start justify-center px-[clamp(1rem,5vw,20rem)] pt-6 pb-14 sm:pt-10 sm:pb-16">
         {withPanel ? (
           <section
-            className={`bg-auth-panel border-auth-panel shadow-auth-panel w-full max-w-[520px] rounded-3xl border px-5 py-6 backdrop-blur-sm sm:px-8 sm:py-8 ${panelClassName}`}
+            className={`bg-auth-panel border-auth-panel shadow-auth-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
           >
             <div className="mx-auto w-full max-w-[440px]">{content}</div>
           </section>

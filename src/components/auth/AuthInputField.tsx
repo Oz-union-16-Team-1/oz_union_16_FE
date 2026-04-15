@@ -31,14 +31,14 @@ function AuthInputField({
       : 'text-login-helper';
 
   return (
-    <div className={`space-y-2.5 ${containerClassName}`}>
+    <div className={`space-y-2 ${containerClassName} sm:space-y-2.5`}>
       <label
         htmlFor={id}
         className="text-login-label block text-sm font-medium"
       >
         {label}
       </label>
-      <div className="flex items-stretch gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <input
           id={id}
           {...inputProps}

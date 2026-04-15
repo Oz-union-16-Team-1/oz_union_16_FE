@@ -45,23 +45,23 @@ const NaverIcon = () => (
 
 function AuthSocialLoginGroup({ className = '' }: AuthSocialLoginGroupProps) {
   return (
-    <div className={`space-y-3.5 ${className}`}>
+    <div className={`space-y-3 ${className} sm:space-y-3.5`}>
       <SocialLoginButton
         label="Google로 로그인하기"
         icon={<GoogleIcon />}
-        className="bg-login-google border-login-google h-[61px] border"
+        className="bg-login-google border-login-google h-14 border sm:h-[61px]"
         labelClassName="text-white"
       />
       <SocialLoginButton
         label="카카오로 로그인하기"
         icon={<KakaoIcon />}
-        className="bg-login-kakao h-[59px]"
+        className="bg-login-kakao h-14 sm:h-[59px]"
         labelClassName="text-login-kakao-label"
       />
       <SocialLoginButton
         label="네이버로 로그인하기"
         icon={<NaverIcon />}
-        className="bg-login-naver h-[59px]"
+        className="bg-login-naver h-14 sm:h-[59px]"
         labelClassName="text-white"
       />
     </div>

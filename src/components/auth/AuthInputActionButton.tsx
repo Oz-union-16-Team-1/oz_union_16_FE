@@ -15,7 +15,7 @@ function AuthInputActionButton({
     <AuthButton
       type={type}
       variant="secondary"
-      className="w-24 shrink-0"
+      className="w-full sm:w-24 sm:shrink-0"
       {...props}
     >
       {children}

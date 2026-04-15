@@ -131,9 +131,9 @@ function LoginPage() {
 
   return (
     <AuthLayout title="Log In">
-      <AuthSocialLoginGroup className="mt-10" />
+      <AuthSocialLoginGroup className="mt-8 sm:mt-10" />
 
-      <AuthDivider className="my-7" />
+      <AuthDivider className="my-6 sm:my-7" />
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <AuthInputField
@@ -199,11 +199,14 @@ function LoginPage() {
         </AuthButton>
       </form>
 
-      <div className="border-login-divider mt-9 border-t pt-7">
+      <div className="border-login-divider mt-8 border-t pt-6 sm:mt-9 sm:pt-7">
         <p className="text-login-helper text-center text-sm/5 font-normal">
           아직 PGTI 회원이 아니신가요?
         </p>
-        <AuthLinkButton to={`/${ROUTES.SIGNUP}`} className="mt-5 w-full">
+        <AuthLinkButton
+          to={`/${ROUTES.SIGNUP}`}
+          className="mt-4 w-full sm:mt-5"
+        >
           회원가입
         </AuthLinkButton>
       </div>
