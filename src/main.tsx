@@ -7,7 +7,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import { ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
+import GameDetailPlaceholder from './pages/game/GameDetailPlaceholder';
 import MatchingListPage from './pages/matching/MatchingListPage';
+import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
 import LoginPage from './pages/LoginPage';
@@ -22,7 +24,11 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>랜딩 페이지</div>,
+        element: <MainPage />,
+      },
+      {
+        path: 'games/:gameId',
+        element: <GameDetailPlaceholder />,
       },
       {
         path: ROUTES.SURVEY,
