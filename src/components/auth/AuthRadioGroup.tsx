@@ -14,6 +14,7 @@ type AuthRadioGroupProps = {
   onChange?: ChangeEventHandler<HTMLInputElement>;
   errorMessage?: string;
   required?: boolean;
+  disabled?: boolean;
 };
 
 function AuthRadioGroup({
@@ -25,6 +26,7 @@ function AuthRadioGroup({
   onChange,
   errorMessage,
   required = false,
+  disabled = false,
 }: AuthRadioGroupProps) {
   return (
     <fieldset className="space-y-3.5">
@@ -35,7 +37,7 @@ function AuthRadioGroup({
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-2"
+            className="group flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-2"
           >
             <input
               type="radio"
@@ -47,16 +49,17 @@ function AuthRadioGroup({
               }
               onChange={onChange}
               required={required}
+              disabled={disabled}
               className="peer sr-only"
             />
             <span
-              className={`peer-checked:border-login-primary flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+              className={`peer-checked:border-login-primary flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors group-hover:border-white/25 peer-disabled:opacity-60 ${
                 errorMessage ? 'border-red-500' : 'border-login-field'
               }`}
             >
               <span className="bg-login-primary h-2 w-2 rounded-full opacity-0 transition-opacity peer-checked:opacity-100" />
             </span>
-            <span className="text-login-helper truncate text-sm/5 font-medium transition-colors peer-checked:text-white">
+            <span className="text-login-helper truncate text-sm/5 font-medium transition-colors group-hover:text-white/85 peer-checked:text-white peer-disabled:opacity-60">
               {option.label}
             </span>
           </label>

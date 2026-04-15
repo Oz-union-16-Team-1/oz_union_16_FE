@@ -30,7 +30,7 @@ const Header = ({ isLoggedIn = false, fixed = true }: HeaderProps) => {
             <>
               <Link
                 to={`/${ROUTES.LOGIN}`}
-                className="header-btn-outline flex h-9 w-20 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all"
+                className="header-btn-outline flex h-9 w-20 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
               >
                 <span className="text-[13px] leading-[150%] font-normal sm:text-sm">
                   로그인
@@ -38,7 +38,7 @@ const Header = ({ isLoggedIn = false, fixed = true }: HeaderProps) => {
               </Link>
               <Link
                 to={`/${ROUTES.SIGNUP}`}
-                className="header-btn-solid flex h-9 w-22 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all"
+                className="header-btn-solid flex h-9 w-22 cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
               >
                 <span className="text-[13px] leading-[150%] font-normal sm:text-sm">
                   회원가입
