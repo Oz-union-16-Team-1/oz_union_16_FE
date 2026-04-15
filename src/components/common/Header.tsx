@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import profileImg from '../../assets/프로필 이미지.png';
 
 type HeaderProps = {
