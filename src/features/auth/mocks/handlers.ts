@@ -5,6 +5,10 @@ import type {
   AuthGender,
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  CurrentUserProfileResponse,
+  DeleteAccountResponse,
   LoginRequest,
   LogoutResponse,
   SignupRequest,
@@ -61,6 +65,21 @@ const validGenders: AuthGender[] = ['M', 'W'];
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
 const createRefreshToken = (loginId: string) => `mock-refresh-token-${loginId}`;
+
+const getAuthorizedUser = (authorization: string | null) => {
+  if (!authorization?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authorization.replace('Bearer ', '').trim();
+  const loginId = token.replace(/^mock-access-token-/, '');
+
+  if (!loginId || loginId === token) {
+    return null;
+  }
+
+  return mockUsers.get(loginId) ?? null;
+};
 
 const getDuplicateError = (message: string) =>
   HttpResponse.json(
@@ -251,6 +270,113 @@ const logoutHandlers = [
   }),
 ];
 
+const accountHandlers = [
+  http.get(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError(
+        '인증 정보가 유효하지 않거나 만료되었습니다.',
+      );
+    }
+
+    await delay(180);
+
+    return HttpResponse.json({
+      login_id: user.loginId,
+      name: user.name,
+      nickname: user.nickname,
+      gender: user.gender,
+    } satisfies CurrentUserProfileResponse);
+  }),
+
+  http.post(`${AUTH_BASE_PATH}/change-password`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError(
+        '인증 정보가 유효하지 않거나 만료되었습니다.',
+      );
+    }
+
+    const body = (await request.json()) as ChangePasswordRequest;
+    const currentPassword = body.current_password.trim();
+    const nextPassword = body.new_password.trim();
+    const nextPasswordConfirm = body.new_password_confirm.trim();
+
+    if (!currentPassword) {
+      return getFieldValidationError(
+        'current_password',
+        '현재 비밀번호를 입력해주세요.',
+      );
+    }
+
+    if (!nextPassword) {
+      return getFieldValidationError(
+        'new_password',
+        '새 비밀번호를 입력해주세요.',
+      );
+    }
+
+    if (!nextPasswordConfirm) {
+      return getFieldValidationError(
+        'new_password_confirm',
+        '새 비밀번호를 한번 더 입력해주세요.',
+      );
+    }
+
+    if (user.password !== currentPassword) {
+      return getFieldValidationError(
+        'current_password',
+        '현재 비밀번호가 일치하지 않습니다.',
+      );
+    }
+
+    if (nextPassword.length <= 8) {
+      return getFieldValidationError(
+        'new_password',
+        '비밀번호가 8자 이하입니다.',
+      );
+    }
+
+    if (nextPassword !== nextPasswordConfirm) {
+      return getFieldValidationError(
+        'new_password_confirm',
+        '비밀번호와 일치하지 않습니다.',
+      );
+    }
+
+    user.password = nextPassword;
+
+    await delay(350);
+
+    return HttpResponse.json({
+      detail: '비밀번호가 변경되었습니다.',
+    } satisfies ChangePasswordResponse);
+  }),
+
+  http.post(`${AUTH_BASE_PATH}/delete-account`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError(
+        '인증 정보가 유효하지 않거나 만료되었습니다.',
+      );
+    }
+
+    await delay(400);
+
+    mockUsers.delete(user.loginId);
+
+    return HttpResponse.json({
+      detail: `${user.nickname} 계정이 탈퇴 처리되었습니다.`,
+    } satisfies DeleteAccountResponse);
+  }),
+];
+
 const duplicateCheckHandlers = [
   http.post(`${AUTH_BASE_PATH}/check-id`, async ({ request }) => {
     const body = (await request.json()) as CheckIdDuplicateRequest;
@@ -303,5 +429,6 @@ export const authHandlers = [
   ...loginHandlers,
   ...signupHandlers,
   ...logoutHandlers,
+  ...accountHandlers,
   ...duplicateCheckHandlers,
 ];

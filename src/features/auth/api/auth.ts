@@ -5,6 +5,10 @@ import { AUTH_BASE_PATH } from '../constants/auth';
 import type {
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  CurrentUserProfileResponse,
+  DeleteAccountResponse,
   DuplicateCheckResponse,
   ErrorResponseBody,
   LoginRequest,
@@ -25,6 +29,31 @@ export const login = async (payload: LoginRequest) => {
 
 export const logout = async () => {
   const response = await api.post<LogoutResponse>(`${AUTH_BASE_PATH}/logout`);
+
+  return response.data;
+};
+
+export const getCurrentUserProfile = async () => {
+  const response = await api.get<CurrentUserProfileResponse>(
+    `${AUTH_BASE_PATH}/me`,
+  );
+
+  return response.data;
+};
+
+export const changePassword = async (payload: ChangePasswordRequest) => {
+  const response = await api.post<ChangePasswordResponse>(
+    `${AUTH_BASE_PATH}/change-password`,
+    payload,
+  );
+
+  return response.data;
+};
+
+export const deleteAccount = async () => {
+  const response = await api.post<DeleteAccountResponse>(
+    `${AUTH_BASE_PATH}/delete-account`,
+  );
 
   return response.data;
 };
