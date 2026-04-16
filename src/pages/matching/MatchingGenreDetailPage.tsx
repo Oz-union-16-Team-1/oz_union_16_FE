@@ -1,10 +1,13 @@
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
-import { useMatchCandidatesQuery } from '../../features/matching/api/useMatchingApi';
+import {
+  useMatchCandidatesQuery,
+  useSubmitMatchResponsesMutation,
+} from '../../features/matching/api/useMatchingApi';
 import MatchingGuideCards from '../../features/matching/components/MatchingGuideCards';
 import MatchingMediaPanel from '../../features/matching/components/MatchingMediaPanel';
 import MatchingRatingStars from '../../features/matching/components/MatchingRatingStars';
@@ -19,6 +22,7 @@ import { getAccessToken } from '../../utils/auth';
 
 function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
+  const navigate = useNavigate();
   const hasAccessToken = Boolean(getAccessToken());
   const isMockMode = isMockServiceWorkerEnabled();
   const canAccessPage = isMockMode || hasAccessToken;
@@ -29,6 +33,8 @@ function MatchingGenreDetailPage() {
     genre?.genreId ?? null,
     canAccessPage,
   );
+  const submitMatchResponsesMutation = useSubmitMatchResponsesMutation();
+  const resetSubmitMatchResponsesMutation = submitMatchResponsesMutation.reset;
   const candidates = useMemo(
     () => matchCandidatesQuery.data?.results ?? [],
     [matchCandidatesQuery.data?.results],
@@ -47,6 +53,7 @@ function MatchingGenreDetailPage() {
   const toggleLiked = useMatchingStore((state) => state.toggleLiked);
   const goNext = useMatchingStore((state) => state.goNext);
   const goPrevious = useMatchingStore((state) => state.goPrevious);
+  const resetFlow = useMatchingStore((state) => state.resetFlow);
 
   useEffect(() => {
     if (!genre || candidates.length === 0) {
@@ -54,7 +61,8 @@ function MatchingGenreDetailPage() {
     }
 
     initializeFlow(genre, candidates);
-  }, [genre, candidates, initializeFlow]);
+    resetSubmitMatchResponsesMutation();
+  }, [genre, candidates, initializeFlow, resetSubmitMatchResponsesMutation]);
 
   const displayCandidates =
     selectedGenreSlug === genre?.slug &&
@@ -75,6 +83,48 @@ function MatchingGenreDetailPage() {
   const isLastCard = totalSteps > 0 && safeIndex === totalSteps - 1;
   const hasSelectedRating = currentEvaluation?.rating !== null;
   const canGoPrevious = safeIndex > 0;
+  const allCandidatesRated =
+    displayCandidates.length > 0 &&
+    displayCandidates.every(
+      (candidate) => evaluationsByGameId[candidate.game_id]?.rating !== null,
+    );
+  const likedCount = displayCandidates.filter(
+    (candidate) => evaluationsByGameId[candidate.game_id]?.isLiked,
+  ).length;
+  const ratedCount = displayCandidates.filter(
+    (candidate) => evaluationsByGameId[candidate.game_id]?.rating !== null,
+  ).length;
+  const submitErrorMessage = submitMatchResponsesMutation.error
+    ? extractApiErrorMessage(submitMatchResponsesMutation.error)
+    : null;
+  const isCompleted = submitMatchResponsesMutation.isSuccess;
+
+  const handleRestart = () => {
+    resetFlow();
+    submitMatchResponsesMutation.reset();
+
+    if (genre && candidates.length > 0) {
+      initializeFlow(genre, candidates);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!allCandidatesRated || displayCandidates.length === 0) {
+      return;
+    }
+
+    try {
+      await submitMatchResponsesMutation.mutateAsync({
+        match_result: displayCandidates.map((candidate) => ({
+          game_id: candidate.game_id,
+          rating: evaluationsByGameId[candidate.game_id]!.rating!,
+          is_liked: evaluationsByGameId[candidate.game_id]!.isLiked,
+        })),
+      });
+    } catch {
+      return;
+    }
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -163,6 +213,87 @@ function MatchingGenreDetailPage() {
               다른 장르 보기
             </Link>
           </section>
+        ) : isCompleted ? (
+          <section className="mx-auto max-w-[920px]">
+            <div className="survey-panel px-6 py-8 sm:px-8 sm:py-10">
+              <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
+                Matching Complete
+              </p>
+              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
+                매칭 평가가 모두 저장되었어요.
+              </h1>
+              <p className="mt-4 max-w-[56ch] text-sm leading-7 break-keep text-white/60 sm:text-base">
+                {genre.title} 장르에서 남긴 평가를 바탕으로 추천 결과를 확인할
+                수 있어요. 다른 장르를 둘러보거나, 같은 장르를 다시 평가해도
+                괜찮습니다.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-5">
+                  <p className="text-[11px] font-medium tracking-[0.22em] text-white/34 uppercase">
+                    Rated
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white">
+                    {ratedCount}
+                  </p>
+                  <p className="mt-2 text-sm text-white/52">
+                    평가를 완료한 게임 수
+                  </p>
+                </div>
+
+                <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-5">
+                  <p className="text-[11px] font-medium tracking-[0.22em] text-white/34 uppercase">
+                    Liked
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white">
+                    {likedCount}
+                  </p>
+                  <p className="mt-2 text-sm text-white/52">
+                    좋아요 표시한 게임 수
+                  </p>
+                </div>
+
+                <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-5">
+                  <p className="text-[11px] font-medium tracking-[0.22em] text-white/34 uppercase">
+                    Genre
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">
+                    {genre.title}
+                  </p>
+                  <p className="mt-2 text-sm text-white/52">
+                    이번에 완료한 장르 매칭
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=match`)
+                  }
+                  className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212]"
+                >
+                  추천 결과 보기
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+                >
+                  같은 장르 다시하기
+                </button>
+                <Link
+                  to={`/${ROUTES.MATCHING_LIST}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+                >
+                  <ChevronLeft size={16} />
+                  다른 장르 보기
+                </Link>
+              </div>
+            </div>
+          </section>
         ) : (
           <section className="mx-auto max-w-[980px]">
             <div className="text-center">
@@ -193,12 +324,12 @@ function MatchingGenreDetailPage() {
 
               {currentCandidate && currentEvaluation ? (
                 <article className="survey-panel flex flex-col px-6 py-7 sm:px-8 sm:py-8">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
                         Candidate {safeIndex + 1}
                       </p>
-                      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-white sm:text-[30px]">
+                      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[30px]">
                         {currentCandidate.title}
                       </h2>
                     </div>
@@ -211,7 +342,7 @@ function MatchingGenreDetailPage() {
                           ? '좋아요 해제'
                           : '좋아요 추가'
                       }
-                      className={`inline-flex h-12 w-12 items-center justify-center rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
+                      className={`mt-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
                         currentEvaluation.isLiked
                           ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
                           : 'border-white/10 bg-white/[0.03] text-white/54 hover:border-white/20 hover:text-white/80'
@@ -256,13 +387,19 @@ function MatchingGenreDetailPage() {
                     <p className="text-sm leading-7 break-keep text-white/64">
                       {isLastCard
                         ? currentEvaluation.rating === null
-                          ? '마지막 카드입니다. 별점을 남겨두면 다음 단계에서 제출과 완료 흐름을 연결할 수 있어요.'
-                          : '마지막 카드까지 평가를 남겼어요. 제출과 완료는 다음 단계에서 이어집니다.'
+                          ? '마지막 카드입니다. 별점을 선택하면 모든 평가를 한 번에 제출할 수 있어요.'
+                          : '마지막 카드까지 평가를 남겼어요. 제출하면 추천 결과를 바로 확인할 수 있어요.'
                         : currentEvaluation.rating === null
                           ? '현재 카드의 별점을 먼저 선택해 주세요.'
                           : '별점과 좋아요는 바로 저장되고, 이전 카드로 돌아가 수정할 수도 있어요.'}
                     </p>
                   </div>
+
+                  {submitErrorMessage ? (
+                    <p className="mt-4 text-sm leading-6 break-keep text-[#ffc2c2]">
+                      {submitErrorMessage}
+                    </p>
+                  ) : null}
 
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-8">
                     <button
@@ -276,9 +413,27 @@ function MatchingGenreDetailPage() {
                     </button>
 
                     {isLastCard ? (
-                      <p className="text-right text-sm leading-6 break-keep text-white/48 sm:max-w-[22ch]">
-                        다음 단계에서 제출과 완료 화면이 연결될 예정입니다.
-                      </p>
+                      <div className="flex flex-col items-end gap-3">
+                        <p className="text-right text-sm leading-6 break-keep text-white/48 sm:max-w-[30ch]">
+                          5개 게임의 평가가 모두 준비되면 제출할 수 있어요.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void handleSubmit()}
+                          disabled={
+                            !allCandidatesRated ||
+                            submitMatchResponsesMutation.isPending
+                          }
+                          className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:cursor-not-allowed disabled:bg-[#5c1a1a] disabled:text-white/44"
+                        >
+                          {submitMatchResponsesMutation.isPending
+                            ? '제출 중...'
+                            : '제출하기'}
+                          {!submitMatchResponsesMutation.isPending ? (
+                            <ChevronRight size={16} />
+                          ) : null}
+                        </button>
+                      </div>
                     ) : (
                       <button
                         type="button"
