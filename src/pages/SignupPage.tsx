@@ -366,13 +366,25 @@ function SignupPage() {
 
       <AuthDivider className="my-5 sm:my-6" />
 
-      <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
+      <form
+        className="space-y-3.5 sm:space-y-4"
+        autoComplete="off"
+        onSubmit={handleSubmit}
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -z-10 h-0 w-0 overflow-hidden opacity-0"
+        >
+          <input type="text" tabIndex={-1} autoComplete="username" />
+          <input type="password" tabIndex={-1} autoComplete="new-password" />
+        </div>
+
         <AuthInputField
           id="signup-name"
           name="name"
           label="이름"
           type="text"
-          autoComplete="name"
+          autoComplete="off"
           placeholder="이름을 입력하세요"
           value={formValues.name}
           onChange={(event) => handleFieldChange('name', event.target.value)}
@@ -392,7 +404,7 @@ function SignupPage() {
           name="login_id"
           label="아이디"
           type="text"
-          autoComplete="username"
+          autoComplete="new-password"
           placeholder="아이디를 입력하세요"
           value={formValues.login_id}
           onChange={(event) =>
@@ -436,7 +448,7 @@ function SignupPage() {
           name="nickname"
           label="닉네임"
           type="text"
-          autoComplete="nickname"
+          autoComplete="off"
           placeholder="닉네임을 입력하세요"
           value={formValues.nickname}
           onChange={(event) =>
