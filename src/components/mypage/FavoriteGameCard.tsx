@@ -1,16 +1,17 @@
 import { Heart } from 'lucide-react';
-import { Link } from 'react-router';
 
 import type { FavoriteGamePreview } from '../../features/mypage/types';
 
 type FavoriteGameCardProps = {
   game: FavoriteGamePreview;
+  onClick?: (game: FavoriteGamePreview) => void;
 };
 
-function FavoriteGameCard({ game }: FavoriteGameCardProps) {
+function FavoriteGameCard({ game, onClick }: FavoriteGameCardProps) {
   return (
-    <Link
-      to={`/games/${game.gameId}`}
+    <button
+      type="button"
+      onClick={() => onClick?.(game)}
       className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover flex h-full flex-col overflow-hidden rounded-[24px] border transition duration-200"
     >
       <div className="bg-mypage-soft relative aspect-[16/10] overflow-hidden">
@@ -37,7 +38,7 @@ function FavoriteGameCard({ game }: FavoriteGameCardProps) {
         <h3 className="text-lg/7 font-semibold text-white">{game.title}</h3>
         <p className="text-mypage-muted text-sm/6">{game.summary}</p>
       </div>
-    </Link>
+    </button>
   );
 }
 

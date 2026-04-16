@@ -302,6 +302,13 @@ function MyPage() {
     }
   };
 
+  const handleFavoriteGameCardClick = () => {
+    setToast({
+      tone: 'success',
+      message: '게임 상세 페이지는 현재 준비 중입니다.',
+    });
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
@@ -359,7 +366,11 @@ function MyPage() {
             {favoriteCount > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {mockFavoriteGames.map((game) => (
-                  <FavoriteGameCard key={game.gameId} game={game} />
+                  <FavoriteGameCard
+                    key={game.gameId}
+                    game={game}
+                    onClick={handleFavoriteGameCardClick}
+                  />
                 ))}
               </div>
             ) : (
@@ -391,6 +402,7 @@ function MyPage() {
           message={toast.message}
           tone={toast.tone}
           onClose={() => setToast(null)}
+          variant="fixedCenter"
         />
       ) : null}
 
