@@ -69,10 +69,10 @@ type GameDetail = {
 명세의 상세 응답에는 `create_date`와 예시의 `created_date`처럼 표기 차이가 있습니다.
 화면에서는 해당 값을 직접 사용하지 말고, 필요해지면 API 정규화 함수에서 처리합니다.
 
-## Known Uncertainties
+## Contract Notes and Uncertainties
 
-- `GET /api/v1/games/list`에는 요구사항상 장르 필터가 필요하지만 현재 명세에는 장르 파라미터가 없습니다.
-- `GET /api/v1/games/list/top100`은 `genre_id`가 비어 있거나 유효 범위를 벗어나면 전체 조회로 처리됩니다. 일반 목록 API에도 같은 규칙이 적용되는지는 확정되지 않았습니다.
+- `GET /api/v1/games/list/top100`과 `GET /api/v1/games/list`는 선택 장르가 있을 때 `genre_id`를 전달합니다.
+- `genre_id`는 1~14 범위를 사용하고, 전체 조회는 `genre_id`를 보내지 않습니다. 유효하지 않은 값은 `400 Bad Request`로 처리합니다.
 - 상세 응답 필드명은 `title`, 목록 응답 필드명은 `name`으로 다릅니다.
 - 좋아요 상태는 상세 응답의 `is_liked`와 별도 `like-status` API가 함께 존재합니다. 상세 조회 응답을 우선 사용하고, 백엔드 정책이 바뀌면 별도 조회로 전환합니다.
 
@@ -81,6 +81,6 @@ type GameDetail = {
 ## Temporary Frontend Defaults
 
 - 초기 장르 필터는 `전체`로 표시합니다.
-- TOP 100 전체 조회는 `genre_id`를 보내지 않는 방식으로 우선 구현하고, 장르 선택 시 명세의 장르 ID를 전달합니다.
-- 일반 검색 목록은 백엔드 확정 전까지 `search`, `fuzzy`, `sort`, `page`, `page_size`만 사용합니다.
+- TOP 100과 일반 검색 목록의 전체 조회는 `genre_id`를 보내지 않고, 장르 선택 시 명세의 장르 ID를 전달합니다.
+- 일반 검색 목록은 `search`, `fuzzy`, `sort`, `page`, `page_size`를 유지하고, 장르 선택 시 `genre_id`를 함께 전달합니다.
 - API URL과 응답 필드명은 컴포넌트 내부가 아니라 API 모듈에서만 다룹니다.
