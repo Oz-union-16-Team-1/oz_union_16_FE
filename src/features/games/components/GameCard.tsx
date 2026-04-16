@@ -1,24 +1,25 @@
-import { Link } from 'react-router';
 import { useState } from 'react';
 import type { GameListItem } from '../types';
 
 type GameCardProps = {
   game: GameListItem;
+  onSelectGame: (game: GameListItem) => void;
 };
 
 const formatRating = (rating: number | null) =>
   typeof rating === 'number' ? rating.toFixed(1) : 'N/A';
 
-const GameCard = ({ game }: GameCardProps) => {
+const GameCard = ({ game, onSelectGame }: GameCardProps) => {
   const genreLabel = game.genres.length > 0 ? game.genres[0] : 'N/A';
   const [isImageUnavailable, setIsImageUnavailable] = useState(false);
   const thumbnailUrl = isImageUnavailable ? null : game.thumbnailUrl;
 
   return (
-    <Link
-      to={`/games/${game.gameId}`}
-      className="group grid h-full w-full snap-start scroll-ml-2 grid-rows-[minmax(0,1fr)_92px] overflow-hidden rounded-lg border border-white/5 bg-[#141414] text-white transition hover:border-[#d20b12]/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
-      aria-label={`${game.name} 상세 페이지로 이동`}
+    <button
+      type="button"
+      onClick={() => onSelectGame(game)}
+      className="group grid h-full w-full cursor-pointer snap-start scroll-ml-2 grid-rows-[minmax(0,1fr)_92px] overflow-hidden rounded-lg border border-white/5 bg-[#141414] text-left text-white transition hover:border-[#d20b12]/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
+      aria-label={`${game.name} 상세 정보 열기`}
     >
       <div className="relative aspect-4/5 overflow-hidden bg-[#090909]">
         {thumbnailUrl ? (
@@ -50,7 +51,7 @@ const GameCard = ({ game }: GameCardProps) => {
           {formatRating(game.rating)}
         </span>
       </div>
-    </Link>
+    </button>
   );
 };
 

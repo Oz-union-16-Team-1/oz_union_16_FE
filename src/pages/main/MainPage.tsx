@@ -12,6 +12,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper';
 import Header from '../../components/common/Header';
 import GameCard from '../../features/games/components/GameCard';
+import GameDetailModal from '../../features/games/components/GameDetailModal';
 import { getTopGames, searchGames } from '../../features/games/gameApi';
 import { GAME_GENRE_FILTERS } from '../../features/games/genres';
 import { useDebouncedValue } from '../../features/games/hooks/useDebouncedValue';
@@ -26,6 +27,7 @@ const MainPage = () => {
   const hasAccessToken = Boolean(getAccessToken());
   const [searchText, setSearchText] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<GameGenreFilter>('전체');
+  const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const debouncedSearchText = useDebouncedValue(
     searchText.trim(),
     SEARCH_DEBOUNCE_MS,
@@ -90,6 +92,7 @@ const MainPage = () => {
               <GameCarousel
                 key={`${debouncedSearchText}-${selectedGenre}`}
                 games={games}
+                onSelectGame={setSelectedGame}
               />
             ) : (
               <div className="px-[clamp(1rem,5vw,20rem)]">
@@ -124,6 +127,14 @@ const MainPage = () => {
           </section>
         </section>
       </main>
+
+      {selectedGame ? (
+        <GameDetailModal
+          key={selectedGame.gameId}
+          game={selectedGame}
+          onClose={() => setSelectedGame(null)}
+        />
+      ) : null}
     </div>
   );
 };
@@ -202,9 +213,10 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
 
 type GameCarouselProps = {
   games: GameListItem[];
+  onSelectGame: (game: GameListItem) => void;
 };
 
-const GameCarousel = ({ games }: GameCarouselProps) => {
+const GameCarousel = ({ games, onSelectGame }: GameCarouselProps) => {
   const swiperRef = useRef<SwiperInstance | null>(null);
 
   const scrollCards = (direction: 'previous' | 'next') => {
@@ -270,7 +282,7 @@ const GameCarousel = ({ games }: GameCarouselProps) => {
         >
           {games.map((game) => (
             <SwiperSlide key={game.gameId} className="h-auto!">
-              <GameCard game={game} />
+              <GameCard game={game} onSelectGame={onSelectGame} />
             </SwiperSlide>
           ))}
         </Swiper>
