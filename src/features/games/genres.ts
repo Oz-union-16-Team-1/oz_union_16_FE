@@ -18,6 +18,26 @@ export const GAME_GENRE_FILTERS = [
 
 export type GameGenreFilter = (typeof GAME_GENRE_FILTERS)[number];
 
+export const GAME_GENRE_ID_MAP: Record<
+  Exclude<GameGenreFilter, '전체'>,
+  number
+> = {
+  액션: 1,
+  어드벤처: 2,
+  RPG: 3,
+  슈팅: 4,
+  전략: 5,
+  시뮬레이션: 6,
+  스포츠: 7,
+  레이싱: 8,
+  퍼즐: 9,
+  플랫폼: 10,
+  '대전 / 격투': 11,
+  '카드 / 보드': 12,
+  '음악 / 리듬': 13,
+  '비주얼 노벨': 14,
+};
+
 const GENRE_ALIASES: Record<Exclude<GameGenreFilter, '전체'>, string[]> = {
   액션: ['액션', 'action'],
   어드벤처: ['어드벤처', 'adventure'],
@@ -36,6 +56,9 @@ const GENRE_ALIASES: Record<Exclude<GameGenreFilter, '전체'>, string[]> = {
 };
 
 const normalizeGenreKeyword = (value: string) => value.trim().toLowerCase();
+
+export const getGameGenreId = (selectedGenre: GameGenreFilter) =>
+  selectedGenre === '전체' ? undefined : GAME_GENRE_ID_MAP[selectedGenre];
 
 export const matchesGenreFilter = (
   genres: string[],

@@ -1,5 +1,5 @@
 import { api } from '../../api/axios';
-import { matchesGenreFilter } from './genres';
+import { getGameGenreId, matchesGenreFilter } from './genres';
 import { mockTopGames } from './mockGames';
 import type {
   GameDetail,
@@ -15,6 +15,12 @@ const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_SORT = 'rating_desc';
 
 const hasApiBaseUrl = Boolean(import.meta.env.VITE_API_BASE_URL);
+
+const getGenreQueryParams = (genre: GetTopGamesParams['genre'] = '전체') => {
+  const genreId = getGameGenreId(genre);
+
+  return genreId ? { genre_id: genreId } : {};
+};
 
 const getMockDetail = async (gameId: number) => {
   const { getMockGameDetail } = await import('./mockGameDetails');
@@ -89,11 +95,12 @@ export const getTopGames = async ({
   try {
     const response = await api.get<GameListResponse>(
       '/api/v1/games/list/top100',
+      {
+        params: getGenreQueryParams(genre),
+      },
     );
 
-    return filterGames(response.data.results.map(normalizeGameListItem), {
-      genre,
-    });
+    return response.data.results.map(normalizeGameListItem);
   } catch {
     return filterGames(mockTopGames, { genre });
   }
@@ -118,13 +125,11 @@ export const searchGames = async ({
         sort,
         page,
         page_size: pageSize,
+        ...getGenreQueryParams(genre),
       },
     });
 
-    return filterGames(response.data.results.map(normalizeGameListItem), {
-      search,
-      genre,
-    });
+    return response.data.results.map(normalizeGameListItem);
   } catch {
     return filterGames(mockTopGames, { search, genre });
   }
