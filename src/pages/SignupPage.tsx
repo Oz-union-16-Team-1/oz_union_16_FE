@@ -413,9 +413,17 @@ function SignupPage() {
           action={
             <AuthInputActionButton
               onClick={handleCheckLoginIdDuplicate}
-              disabled={checkIdDuplicateMutation.isPending || isSubmitting}
+              disabled={
+                checkIdDuplicateMutation.isPending ||
+                isSubmitting ||
+                isLoginIdVerified
+              }
             >
-              {checkIdDuplicateMutation.isPending ? '확인 중...' : '중복확인'}
+              {checkIdDuplicateMutation.isPending
+                ? '확인 중...'
+                : isLoginIdVerified
+                  ? '확인완료'
+                  : '중복확인'}
             </AuthInputActionButton>
           }
         />
@@ -450,12 +458,16 @@ function SignupPage() {
             <AuthInputActionButton
               onClick={handleCheckNicknameDuplicate}
               disabled={
-                checkNicknameDuplicateMutation.isPending || isSubmitting
+                checkNicknameDuplicateMutation.isPending ||
+                isSubmitting ||
+                isNicknameVerified
               }
             >
               {checkNicknameDuplicateMutation.isPending
                 ? '확인 중...'
-                : '중복확인'}
+                : isNicknameVerified
+                  ? '확인완료'
+                  : '중복확인'}
             </AuthInputActionButton>
           }
         />
