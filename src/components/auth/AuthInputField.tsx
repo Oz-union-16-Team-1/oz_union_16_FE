@@ -9,6 +9,7 @@ type AuthInputFieldProps = {
   helperMessage?: string;
   helperMessageTone?: AuthInputFieldMessageTone;
   action?: ReactNode;
+  toast?: ReactNode;
   containerClassName?: string;
 } & InputHTMLAttributes<HTMLInputElement>;
 
@@ -19,6 +20,7 @@ function AuthInputField({
   helperMessage,
   helperMessageTone = 'muted',
   action,
+  toast,
   containerClassName = '',
   className = '',
   ...inputProps
@@ -38,7 +40,7 @@ function AuthInputField({
       >
         {label}
       </label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <input
           id={id}
           {...inputProps}
@@ -50,6 +52,7 @@ function AuthInputField({
           }`}
         />
         {action}
+        {toast}
       </div>
       {resolvedMessage ? (
         <p className={`pl-1 text-sm/5 font-medium ${resolvedMessageClassName}`}>

@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import AuthButton from '../components/auth/AuthButton';
@@ -10,6 +10,7 @@ import AuthInputField from '../components/auth/AuthInputField';
 import AuthRadioGroup from '../components/auth/AuthRadioGroup';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import AuthLayout from '../components/layout/AuthLayout';
+import ToastMessage from '../components/mypage/ToastMessage';
 import { ROUTES } from '../constants/routes';
 import {
   getCurrentUserProfile,
@@ -38,6 +39,12 @@ type DuplicateCheckState = {
   message: string;
   tone: 'success' | 'error' | null;
 };
+
+type DuplicateCheckToastState = {
+  message: string;
+  tone: 'success' | 'error';
+  anchor: 'login_id' | 'nickname';
+} | null;
 
 const signupGenderOptions = [
   { label: '남성', value: 'M' },
@@ -132,6 +139,8 @@ function SignupPage() {
     useState<DuplicateCheckState>(initialDuplicateCheckState);
   const [nicknameCheckState, setNicknameCheckState] =
     useState<DuplicateCheckState>(initialDuplicateCheckState);
+  const [duplicateCheckToast, setDuplicateCheckToast] =
+    useState<DuplicateCheckToastState>(null);
 
   const trimmedLoginId = formValues.login_id.trim();
   const trimmedNickname = formValues.nickname.trim();
@@ -169,6 +178,18 @@ function SignupPage() {
   };
 
   const isSubmitting = signupMutation.isPending || loginMutation.isPending;
+
+  useEffect(() => {
+    if (!duplicateCheckToast) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setDuplicateCheckToast(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeout);
+  }, [duplicateCheckToast]);
 
   const clearApiFieldError = (fieldName: SignupFieldName) => {
     setApiFieldErrors((previous) => {
@@ -253,6 +274,11 @@ function SignupPage() {
         message: response.detail,
         tone: 'success',
       });
+      setDuplicateCheckToast({
+        message: response.detail,
+        tone: 'success',
+        anchor: 'login_id',
+      });
       clearApiFieldError('login_id');
     } catch (error) {
       const fieldErrors = extractAuthApiFieldErrors(error);
@@ -262,6 +288,11 @@ function SignupPage() {
         verifiedValue: null,
         message,
         tone: 'error',
+      });
+      setDuplicateCheckToast({
+        message,
+        tone: 'error',
+        anchor: 'login_id',
       });
     }
   };
@@ -287,6 +318,11 @@ function SignupPage() {
         message: response.detail,
         tone: 'success',
       });
+      setDuplicateCheckToast({
+        message: response.detail,
+        tone: 'success',
+        anchor: 'nickname',
+      });
       clearApiFieldError('nickname');
     } catch (error) {
       const fieldErrors = extractAuthApiFieldErrors(error);
@@ -296,6 +332,11 @@ function SignupPage() {
         verifiedValue: null,
         message,
         tone: 'error',
+      });
+      setDuplicateCheckToast({
+        message,
+        tone: 'error',
+        anchor: 'nickname',
       });
     }
   };
@@ -482,6 +523,16 @@ function SignupPage() {
                   : '중복확인'}
             </AuthInputActionButton>
           }
+          toast={
+            duplicateCheckToast?.anchor === 'login_id' ? (
+              <ToastMessage
+                message={duplicateCheckToast.message}
+                tone={duplicateCheckToast.tone}
+                onClose={() => setDuplicateCheckToast(null)}
+                variant="absoluteCenter"
+              />
+            ) : null
+          }
         />
 
         <AuthInputField
@@ -526,6 +577,16 @@ function SignupPage() {
                   ? '확인완료'
                   : '중복확인'}
             </AuthInputActionButton>
+          }
+          toast={
+            duplicateCheckToast?.anchor === 'nickname' ? (
+              <ToastMessage
+                message={duplicateCheckToast.message}
+                tone={duplicateCheckToast.tone}
+                onClose={() => setDuplicateCheckToast(null)}
+                variant="absoluteCenter"
+              />
+            ) : null
           }
         />
 
