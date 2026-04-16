@@ -26,7 +26,12 @@ import {
 } from '../../features/auth/api/useAuthApi';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import { mockFavoriteGames } from '../../features/mypage/mockData';
-import { clearAuthTokens, getAccessToken } from '../../utils/auth';
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getAuthAccount,
+  setAuthAccount,
+} from '../../utils/auth';
 
 type PasswordTouchedState = Record<PasswordChangeFieldName, boolean>;
 type PasswordFieldErrors = Partial<Record<PasswordChangeFieldName, string>>;
@@ -99,6 +104,7 @@ function MyPage() {
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
   const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
+  const storedAccount = getAuthAccount();
 
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
   const [passwordValues, setPasswordValues] = useState<PasswordChangeValues>(
@@ -138,6 +144,17 @@ function MyPage() {
       window.clearTimeout(timeout);
     };
   }, [toast]);
+
+  useEffect(() => {
+    if (profileQuery.data) {
+      setAuthAccount(profileQuery.data);
+      return;
+    }
+
+    if (profileQuery.isError) {
+      setAuthAccount(null);
+    }
+  }, [profileQuery.data, profileQuery.isError]);
 
   useEffect(() => {
     if (!isPasswordPanelOpen || passwordPanelMessage?.tone !== 'success') {
@@ -292,7 +309,9 @@ function MyPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
         <MyPageProfileSection
-          nickname={profileQuery.data?.nickname ?? '회원'}
+          nickname={
+            profileQuery.data?.nickname ?? storedAccount?.nickname ?? '회원'
+          }
           isProfileLoading={profileQuery.isLoading}
           isLoggingOut={isLogoutPending}
           isPasswordPanelOpen={isPasswordPanelOpen}

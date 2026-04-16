@@ -12,6 +12,7 @@ import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
 import {
+  getCurrentUserProfile,
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
 } from '../features/auth/api/auth';
@@ -22,7 +23,7 @@ import {
   useSignupMutation,
 } from '../features/auth/api/useAuthApi';
 import type { AuthGender, SignupRequest } from '../features/auth/types/auth';
-import { setAuthTokens } from '../utils/auth';
+import { setAuthAccount, setAuthTokens } from '../utils/auth';
 
 type SignupFormValues = Omit<SignupRequest, 'gender'> & {
   gender: AuthGender | '';
@@ -340,6 +341,8 @@ function SignupPage() {
       });
 
       setAuthTokens(loginResponse.access_token, loginResponse.refresh_token);
+      const profile = await getCurrentUserProfile();
+      setAuthAccount(profile);
       navigate(ROUTES.HOME);
     } catch {
       navigate(`/${ROUTES.LOGIN}`, {

@@ -11,12 +11,13 @@ import AuthInputField from '../components/auth/AuthInputField';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import { ROUTES } from '../constants/routes';
 import {
+  getCurrentUserProfile,
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
 } from '../features/auth/api/auth';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
-import { setAuthTokens } from '../utils/auth';
+import { setAuthAccount, setAuthTokens } from '../utils/auth';
 
 type LoginFieldName = keyof LoginRequest;
 type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
@@ -116,6 +117,8 @@ function LoginPage() {
       const response = await loginMutation.mutateAsync(payload);
 
       setAuthTokens(response.access_token, response.refresh_token);
+      const profile = await getCurrentUserProfile();
+      setAuthAccount(profile);
       navigate(ROUTES.HOME);
     } catch (error) {
       const nextApiFieldErrors = extractAuthApiFieldErrors(error);
