@@ -367,3 +367,11 @@ export const matchingMockCandidatesByGenreId: Record<
     ),
   ],
 };
+
+export const matchingMockCandidates = Object.values(
+  matchingMockCandidatesByGenreId,
+).flat();
+
+export const matchingMockCandidateMapById = new Map(
+  matchingMockCandidates.map((candidate) => [candidate.game_id, candidate]),
+);

@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
+import type { MatchResultItem } from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
 import type { SurveyResultItem } from '../../features/survey/types/survey';
@@ -41,7 +43,30 @@ const getDisplayPrice = (gameId: number) =>
 
 const FALLBACK_HIGHLIGHTS = ['몰입감', '스토리', '액션', '전략'];
 
-const getRecommendationHighlights = (items: SurveyResultItem[]) => {
+type RecommendationDisplayItem = {
+  game_id: number;
+  title: string;
+  genres: string[];
+  thumbnail_url: string | null;
+  rating: number | null;
+  is_liked: boolean;
+};
+
+const normalizeResultItem = (
+  item: SurveyResultItem | MatchResultItem,
+): RecommendationDisplayItem =>
+  'title' in item
+    ? item
+    : {
+        game_id: item.game_id,
+        title: item.name,
+        genres: item.genres,
+        thumbnail_url: item.thumbnail_url,
+        rating: item.rating,
+        is_liked: item.is_liked,
+      };
+
+const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
   const genreCounts = new Map<string, number>();
 
   items.forEach((item) => {
@@ -65,7 +90,7 @@ const getRecommendationHighlights = (items: SurveyResultItem[]) => {
 };
 
 type RecommendationRowProps = {
-  item: SurveyResultItem;
+  item: RecommendationDisplayItem;
 };
 
 function RecommendationRow({ item }: RecommendationRowProps) {
@@ -75,7 +100,7 @@ function RecommendationRow({ item }: RecommendationRowProps) {
         {item.thumbnail_url ? (
           <img
             src={item.thumbnail_url}
-            alt={item.name}
+            alt={item.title}
             className="h-[94px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] sm:h-[88px]"
           />
         ) : (
@@ -88,7 +113,7 @@ function RecommendationRow({ item }: RecommendationRowProps) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 className="truncate text-[22px] font-semibold tracking-[-0.02em] text-white sm:text-[26px]">
-            {item.name}
+            {item.title}
           </h2>
 
           <div className="inline-flex items-center gap-1.5 rounded-full border border-[#702525]/40 bg-[#190a0a]/55 px-2.5 py-1 text-[12px] font-semibold text-white/88">
@@ -126,7 +151,7 @@ function RecommendationRow({ item }: RecommendationRowProps) {
 
         <button
           type="button"
-          aria-label={`${item.name} 상세 보기 준비 중`}
+          aria-label={`${item.title} 상세 보기 준비 중`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-white/42 transition group-hover:border-white/8 group-hover:bg-white/[0.03] group-hover:text-white/82"
         >
           <ChevronRight size={18} />
@@ -137,7 +162,7 @@ function RecommendationRow({ item }: RecommendationRowProps) {
 }
 
 type RecommendationBackdropProps = {
-  items: SurveyResultItem[];
+  items: RecommendationDisplayItem[];
 };
 
 function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
@@ -145,7 +170,7 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
     items.length > 0
       ? [...items, ...items].slice(0, 12).map((item, index) => ({
           id: `${item.game_id}-${index}`,
-          title: item.name,
+          title: item.title,
           thumbnail: item.thumbnail_url,
         }))
       : FALLBACK_BACKDROP_ITEMS;
@@ -180,10 +205,21 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 function RecommendationListPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  const source = searchParams.get('source');
+  const isMatchSource = source === 'match';
   const isMockMode = isMockServiceWorkerEnabled();
   const hasAccessToken = Boolean(getAccessToken());
   const canAccessPage = isMockMode || hasAccessToken;
 
+  const surveyResultsQuery = useSurveyResultsInfinite(
+    sessionId,
+    !isMatchSource && canAccessPage,
+  );
+  const matchResultsQuery = useMatchResultsInfinite(
+    'rating_desc',
+    isMatchSource && canAccessPage,
+  );
+  const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;
   const {
     data,
     error,
@@ -191,12 +227,26 @@ function RecommendationListPage() {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-  } = useSurveyResultsInfinite(sessionId);
+  } = activeQuery;
 
-  const recommendationItems = data?.pages.flatMap((page) => page.results) ?? [];
+  const surveyItems =
+    surveyResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
+  const matchItems =
+    matchResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
+  const recommendationItems = (isMatchSource ? matchItems : surveyItems).map(
+    normalizeResultItem,
+  );
   const totalCount = data?.pages[0]?.count ?? 0;
   const recommendationHighlights =
     getRecommendationHighlights(recommendationItems);
+  const errorMessage = error ? extractApiErrorMessage(error) : null;
+  const shouldShowMatchEntryCta =
+    isMatchSource &&
+    !isLoading &&
+    Boolean(
+      errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
+      recommendationItems.length === 0,
+    );
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -215,8 +265,9 @@ function RecommendationListPage() {
                 게임 추천 리스트
               </h1>
               <p className="mt-4 max-w-[620px] text-sm leading-7 break-keep text-white/58 sm:text-base">
-                설문에서 드러난 취향을 바탕으로, 지금 바로 플레이하고 싶어질
-                만한 게임들을 차분하게 정리해뒀어요.
+                {isMatchSource
+                  ? '매칭 평가에서 남긴 별점과 좋아요를 바탕으로, 바로 확인해볼 만한 결과를 정리했어요.'
+                  : '설문에서 드러난 취향을 바탕으로, 지금 바로 플레이하고 싶어질 만한 게임들을 차분하게 정리해뒀어요.'}
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5">
                 {recommendationHighlights.map((highlight) => (
@@ -238,7 +289,9 @@ function RecommendationListPage() {
                 {totalCount > 0 ? totalCount : '...'}
               </p>
               <p className="mt-2 text-sm leading-6 break-keep text-white/52">
-                현재 설문 응답을 기준으로 정리된 추천 결과예요.
+                {isMatchSource
+                  ? '현재 매칭 평가를 기준으로 정리된 추천 결과예요.'
+                  : '현재 설문 응답을 기준으로 정리된 추천 결과예요.'}
               </p>
             </aside>
           </div>
@@ -250,10 +303,10 @@ function RecommendationListPage() {
               </h2>
               <p className="mt-4 text-base leading-7 break-keep text-white/60">
                 실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를
-                켜두면 설문부터 추천 결과까지 전체 흐름을 확인할 수 있습니다.
+                켜두면 추천 결과 흐름을 확인할 수 있습니다.
               </p>
             </section>
-          ) : !sessionId ? (
+          ) : !sessionId && !isMatchSource ? (
             <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
               <h2 className="text-2xl font-bold text-white">
                 먼저 설문을 완료해 주세요.
@@ -268,6 +321,22 @@ function RecommendationListPage() {
                 설문 페이지로 이동
               </Link>
             </section>
+          ) : shouldShowMatchEntryCta ? (
+            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+              <h2 className="text-2xl font-bold text-white">
+                먼저 매칭 평가를 완료해 주세요.
+              </h2>
+              <p className="mt-4 text-base leading-7 break-keep text-white/60">
+                장르별 매칭에서 5개 게임 평가를 제출하면 추천 결과를 이
+                페이지에서 바로 확인할 수 있어요.
+              </p>
+              <Link
+                to={`/${ROUTES.MATCHING_LIST}`}
+                className="mt-6 inline-flex rounded-2xl bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              >
+                매칭 페이지로 이동
+              </Link>
+            </section>
           ) : (
             <section className="overflow-hidden rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               <div className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
@@ -277,8 +346,9 @@ function RecommendationListPage() {
                       Refined For You
                     </p>
                     <p className="mt-3 text-sm leading-6 break-keep text-white/56">
-                      마음에 드는 게임을 비교해보고, 더보기로 결과를 이어서
-                      확인해보세요.
+                      {isMatchSource
+                        ? '평가를 바탕으로 정리된 결과를 비교해보고 마음에 드는 게임을 골라보세요.'
+                        : '마음에 드는 게임을 비교해보고, 더보기로 결과를 이어서 확인해보세요.'}
                     </p>
                   </div>
 
@@ -296,11 +366,13 @@ function RecommendationListPage() {
                 </div>
               ) : error ? (
                 <div className="px-4 py-12 text-[#ffc2c2] sm:px-6 lg:px-7">
-                  {extractApiErrorMessage(error)}
+                  {errorMessage}
                 </div>
               ) : recommendationItems.length === 0 ? (
                 <div className="px-4 py-12 text-white/55 sm:px-6 lg:px-7">
-                  추천 결과가 아직 없습니다.
+                  {isMatchSource
+                    ? '매칭 추천 결과가 아직 없습니다.'
+                    : '추천 결과가 아직 없습니다.'}
                 </div>
               ) : (
                 <>
