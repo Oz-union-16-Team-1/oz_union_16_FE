@@ -120,6 +120,7 @@ const MainPage = () => {
               title="설문 조사"
               description="설문에 참여하고 나에게 꼭 맞는 게임을 찾아보세요!"
               buttonLabel="설문 조사 하러가기"
+              to={`/${ROUTES.SURVEY}`}
             />
             <RecommendationCta
               icon={Search}
