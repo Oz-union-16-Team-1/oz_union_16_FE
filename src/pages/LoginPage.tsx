@@ -133,12 +133,12 @@ function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Log In">
-      <AuthSocialLoginGroup className="mt-8 sm:mt-10" />
+    <AuthLayout title="Log In" withPanel panelClassName="max-w-[500px]">
+      <AuthSocialLoginGroup className="mt-6 sm:mt-7" />
 
-      <AuthDivider className="my-6 sm:my-7" />
+      <AuthDivider className="my-5 sm:my-6" />
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
         <AuthInputField
           id="login-id"
           name="login_id"
@@ -195,14 +195,14 @@ function LoginPage() {
 
         <AuthButton
           type="submit"
-          className="mt-4 w-full"
+          className="mt-3.5 w-full sm:mt-4"
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? '로그인 중...' : '로그인'}
         </AuthButton>
       </form>
 
-      <div className="border-login-divider mt-8 border-t pt-6 sm:mt-9 sm:pt-7">
+      <div className="border-login-divider mt-6 border-t pt-5 sm:mt-7 sm:pt-6">
         <p className="text-login-helper text-center text-sm/5 font-normal">
           아직 PGTI 회원이 아니신가요?
         </p>
