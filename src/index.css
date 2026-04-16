@@ -37,6 +37,18 @@
   --color-auth-panel-border: rgba(255, 255, 255, 0.08);
   --shadow-auth-panel: rgba(0, 0, 0, 0.34);
   --shadow-login-primary: rgba(242, 15, 23, 0.42);
+  --color-mypage-panel: rgba(10, 10, 10, 0.92);
+  --color-mypage-panel-border: rgba(255, 255, 255, 0.08);
+  --color-mypage-divider: rgba(255, 255, 255, 0.1);
+  --color-mypage-card: rgba(255, 255, 255, 0.03);
+  --color-mypage-card-hover: rgba(255, 255, 255, 0.05);
+  --color-mypage-soft: #101010;
+  --color-mypage-muted: #a3a3a3;
+  --color-mypage-accent-soft: rgba(242, 15, 23, 0.14);
+  --color-mypage-overlay: rgba(0, 0, 0, 0.72);
+  --color-mypage-danger: #7c1515;
+  --color-mypage-danger-hover: #931919;
+  --shadow-mypage-float: rgba(0, 0, 0, 0.48);
   --color-surface-elevated: rgba(255, 255, 255, 0.04);
   --color-surface-border: rgba(255, 255, 255, 0.08);
   --color-surface-strong: rgba(255, 255, 255, 0.06);
@@ -190,28 +202,26 @@
     background-color: rgb(255 255 255 / 0.32);
   }
 
-  .game-detail-modal-scrollbar {
-    scrollbar-color: rgb(255 255 255 / 0.24) transparent;
+  .mypage-scrollbar {
+    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
     scrollbar-width: thin;
   }
 
-  .game-detail-modal-scrollbar::-webkit-scrollbar {
+  .mypage-scrollbar::-webkit-scrollbar {
     width: 8px;
   }
 
-  .game-detail-modal-scrollbar::-webkit-scrollbar-track {
+  .mypage-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .game-detail-modal-scrollbar::-webkit-scrollbar-thumb {
-    border: 2px solid #111111;
+  .mypage-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.14);
     border-radius: 999px;
-    background-color: rgb(255 255 255 / 0.18);
-    background-clip: padding-box;
   }
 
-  .game-detail-modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(255 255 255 / 0.34);
+  .mypage-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(255 255 255 / 0.26);
   }
 }
 
@@ -261,6 +271,38 @@
   background-color: var(--color-auth-panel);
 }
 
+@utility bg-mypage-panel {
+  background-color: var(--color-mypage-panel);
+}
+
+@utility bg-mypage-card {
+  background-color: var(--color-mypage-card);
+}
+
+@utility bg-mypage-card-hover {
+  background-color: var(--color-mypage-card-hover);
+}
+
+@utility bg-mypage-soft {
+  background-color: var(--color-mypage-soft);
+}
+
+@utility bg-mypage-accent-soft {
+  background-color: var(--color-mypage-accent-soft);
+}
+
+@utility bg-mypage-overlay {
+  background-color: var(--color-mypage-overlay);
+}
+
+@utility bg-mypage-danger {
+  background-color: var(--color-mypage-danger);
+}
+
+@utility bg-mypage-danger-hover {
+  background-color: var(--color-mypage-danger-hover);
+}
+
 @utility text-login-label {
   color: var(--color-login-label);
 }
@@ -279,6 +321,14 @@
 
 @utility text-login-kakao-label {
   color: var(--color-login-kakao-text);
+}
+
+@utility text-login-primary {
+  color: var(--color-login-primary);
+}
+
+@utility text-mypage-muted {
+  color: var(--color-mypage-muted);
 }
 
 @utility border-login-divider {
@@ -305,12 +355,30 @@
   border-color: var(--color-auth-panel-border);
 }
 
+@utility border-mypage-panel {
+  border-color: var(--color-mypage-panel-border);
+}
+
+@utility border-mypage-divider {
+  border-color: var(--color-mypage-divider);
+}
+
+@utility border-mypage-card {
+  border-color: var(--color-mypage-panel-border);
+}
+
 @utility shadow-auth-panel {
   box-shadow: 0 28px 60px -28px var(--shadow-auth-panel);
 }
 
 @utility shadow-login-primary {
   box-shadow: 0 10px 24px -10px var(--shadow-login-primary);
+}
+
+@utility shadow-mypage-float {
+  box-shadow:
+    0 24px 45px -22px var(--shadow-mypage-float),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 @utility placeholder-login-muted {
