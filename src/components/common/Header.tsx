@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
-import profileImg from '../../assets/프로필 이미지.png';
 import { ROUTES } from '../../constants/routes';
+import HeaderProfileMenu from './HeaderProfileMenu';
 
 type HeaderProps = {
   isLoggedIn?: boolean;
@@ -46,13 +46,7 @@ const Header = ({ isLoggedIn = false, fixed = true }: HeaderProps) => {
               </Link>
             </>
           ) : (
-            <div className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all">
-              <img
-                src={profileImg}
-                alt="Profile"
-                className="h-full w-full object-cover"
-              />
-            </div>
+            <HeaderProfileMenu />
           )}
         </div>
       </div>
