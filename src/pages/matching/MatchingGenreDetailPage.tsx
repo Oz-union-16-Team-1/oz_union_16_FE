@@ -1,13 +1,18 @@
-import { ChevronLeft, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { useMatchCandidatesQuery } from '../../features/matching/api/useMatchingApi';
+import MatchingGuideCards from '../../features/matching/components/MatchingGuideCards';
+import MatchingMediaPanel from '../../features/matching/components/MatchingMediaPanel';
+import MatchingRatingStars from '../../features/matching/components/MatchingRatingStars';
 import {
   getMatchingGenreBySlug,
   isMatchingGenreSlug,
 } from '../../features/matching/genres';
+import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 import { getAccessToken } from '../../utils/auth';
@@ -24,7 +29,52 @@ function MatchingGenreDetailPage() {
     genre?.genreId ?? null,
     canAccessPage,
   );
-  const candidates = matchCandidatesQuery.data?.results ?? [];
+  const candidates = useMemo(
+    () => matchCandidatesQuery.data?.results ?? [],
+    [matchCandidatesQuery.data?.results],
+  );
+  const selectedGenreSlug = useMatchingStore(
+    (state) => state.selectedGenreSlug,
+  );
+  const selectedGenreId = useMatchingStore((state) => state.selectedGenreId);
+  const flowCandidates = useMatchingStore((state) => state.candidates);
+  const currentIndex = useMatchingStore((state) => state.currentIndex);
+  const evaluationsByGameId = useMatchingStore(
+    (state) => state.evaluationsByGameId,
+  );
+  const initializeFlow = useMatchingStore((state) => state.initializeFlow);
+  const setRating = useMatchingStore((state) => state.setRating);
+  const toggleLiked = useMatchingStore((state) => state.toggleLiked);
+  const goNext = useMatchingStore((state) => state.goNext);
+  const goPrevious = useMatchingStore((state) => state.goPrevious);
+
+  useEffect(() => {
+    if (!genre || candidates.length === 0) {
+      return;
+    }
+
+    initializeFlow(genre, candidates);
+  }, [genre, candidates, initializeFlow]);
+
+  const displayCandidates =
+    selectedGenreSlug === genre?.slug &&
+    selectedGenreId === genre?.genreId &&
+    flowCandidates.length > 0
+      ? flowCandidates
+      : candidates;
+  const totalSteps = displayCandidates.length;
+  const safeIndex =
+    totalSteps > 0 ? Math.min(currentIndex, totalSteps - 1) : currentIndex;
+  const currentCandidate = displayCandidates[safeIndex];
+  const currentEvaluation = currentCandidate
+    ? (evaluationsByGameId[currentCandidate.game_id] ?? {
+        rating: null,
+        isLiked: currentCandidate.is_liked,
+      })
+    : null;
+  const isLastCard = totalSteps > 0 && safeIndex === totalSteps - 1;
+  const hasSelectedRating = currentEvaluation?.rating !== null;
+  const canGoPrevious = safeIndex > 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -117,110 +167,135 @@ function MatchingGenreDetailPage() {
           <section className="mx-auto max-w-[980px]">
             <div className="text-center">
               <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
-                Matching Candidates
+                {safeIndex + 1} / {totalSteps} 단계
               </p>
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[44px]">
-                {genre.title} 후보 게임이 준비되었어요
+                매칭 과정을 따라가세요
               </h1>
               <p className="mt-4 text-sm leading-7 break-keep text-white/58 sm:text-base">
-                최신 명세 기준으로 후보 조회 계약과 MSW 연동이 먼저 연결된
-                상태입니다. 다음 단계에서는 이 5개 게임을 실제로 평가하는
-                인터랙션 화면이 붙게 됩니다.
+                5개의 게임을 차례대로 평가하고, 마음에 드는 게임은 하트로
+                표시해둘 수 있어요.
               </p>
             </div>
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <article className="overflow-hidden rounded-[28px] border border-white/8 bg-[#0d0d0f] shadow-[0_26px_52px_rgba(0,0,0,0.28)]">
-                <div className="relative">
-                  <img
-                    src={genre.thumbnailUrl}
-                    alt={genre.title}
-                    className="aspect-[16/9] w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,10,0.14),rgba(8,8,10,0.76))]" />
-                  <div className="absolute right-0 bottom-0 left-0 p-6 sm:p-8">
-                    <p className="text-[11px] font-medium tracking-[0.22em] text-white/64 uppercase">
-                      {genre.subtitle}
-                    </p>
-                    <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-[40px]">
-                      {genre.title}
-                    </h2>
-                    <p className="mt-4 max-w-[56ch] text-sm leading-7 break-keep text-white/70 sm:text-base">
-                      {genre.description}
-                    </p>
-                  </div>
-                </div>
-              </article>
-
-              <article className="survey-panel px-6 py-8 sm:px-8 sm:py-9">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-semibold tracking-[0.18em] text-white/52 uppercase">
-                  <Sparkles size={14} />
-                  Candidates Ready
-                </div>
-                <h2 className="mt-5 text-2xl font-semibold tracking-[-0.02em] text-white sm:text-[30px]">
-                  총 {matchCandidatesQuery.data?.count ?? candidates.length}개의
-                  평가 대상
-                </h2>
-                <p className="mt-3 text-base leading-7 break-keep text-white/60">
-                  지금은 후보 조회 단계까지만 연결된 상태예요. 다음 단계에서
-                  별점과 좋아요를 남기며 실제 매칭을 진행하게 됩니다.
-                </p>
-                <div className="mt-6 rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-5">
-                  <p className="text-sm leading-7 break-keep text-white/68">
-                    `GET /api/v1/match/candidates?genre_id={genre.genreId}`
-                    계약과 MSW 데이터가 연결되어, 장르별 5개 후보를 안정적으로
-                    불러올 수 있어요.
-                  </p>
-                </div>
-              </article>
+            <div className="mt-10">
+              <MatchingGuideCards />
             </div>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {candidates.map((candidate) => (
-                <article
-                  key={candidate.game_id}
-                  className="overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.9),rgba(10,10,11,0.96))] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
-                >
-                  {candidate.thumbnail_url ? (
-                    <img
-                      src={candidate.thumbnail_url}
-                      alt={candidate.title}
-                      className="aspect-[16/9] w-full object-cover"
-                    />
-                  ) : (
-                    <div className="aspect-[16/9] w-full bg-[#151517]" />
-                  )}
-                  <div className="px-5 py-5">
-                    <p className="text-[11px] font-medium tracking-[0.2em] text-white/34 uppercase">
-                      Candidate {candidate.game_id}
+            <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+              {currentCandidate ? (
+                <MatchingMediaPanel
+                  candidate={currentCandidate}
+                  genreTitle={genre.title}
+                  stepLabel={`${safeIndex + 1} / ${totalSteps} 단계`}
+                />
+              ) : null}
+
+              {currentCandidate && currentEvaluation ? (
+                <article className="survey-panel flex flex-col px-6 py-7 sm:px-8 sm:py-8">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
+                        Candidate {safeIndex + 1}
+                      </p>
+                      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-white sm:text-[30px]">
+                        {currentCandidate.title}
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleLiked(currentCandidate.game_id)}
+                      aria-pressed={currentEvaluation.isLiked}
+                      aria-label={
+                        currentEvaluation.isLiked
+                          ? '좋아요 해제'
+                          : '좋아요 추가'
+                      }
+                      className={`inline-flex h-12 w-12 items-center justify-center rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
+                        currentEvaluation.isLiked
+                          ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
+                          : 'border-white/10 bg-white/[0.03] text-white/54 hover:border-white/20 hover:text-white/80'
+                      }`}
+                    >
+                      <Heart
+                        size={20}
+                        fill={
+                          currentEvaluation.isLiked ? 'currentColor' : 'none'
+                        }
+                      />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/46">
+                    <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
+                      장르 {currentCandidate.genres.join(' · ')}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
+                      평균 평점 {currentCandidate.rating?.toFixed(1) ?? 'N/A'}
+                    </span>
+                  </div>
+
+                  <div className="mt-8">
+                    <p className="text-sm font-semibold text-white">
+                      이 게임은 얼마나 끌리나요?
                     </p>
-                    <h3 className="mt-3 text-xl font-semibold tracking-[-0.02em] text-white">
-                      {candidate.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 break-keep text-white/56">
-                      {candidate.genres.join(' · ')}
+                    <p className="mt-2 text-sm leading-6 break-keep text-white/55">
+                      별점을 남기면 다음 카드로 넘어갈 수 있어요.
                     </p>
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/44">
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
-                        평점 {candidate.rating?.toFixed(1) ?? 'N/A'}
-                      </span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
-                        좋아요 {candidate.is_liked ? 'ON' : 'OFF'}
-                      </span>
+                    <div className="mt-5">
+                      <MatchingRatingStars
+                        value={currentEvaluation.rating}
+                        onRate={(rating) =>
+                          setRating(currentCandidate.game_id, rating)
+                        }
+                      />
                     </div>
                   </div>
+
+                  <div className="mt-8 rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-5">
+                    <p className="text-sm leading-7 break-keep text-white/64">
+                      {isLastCard
+                        ? currentEvaluation.rating === null
+                          ? '마지막 카드입니다. 별점을 남겨두면 다음 단계에서 제출과 완료 흐름을 연결할 수 있어요.'
+                          : '마지막 카드까지 평가를 남겼어요. 제출과 완료는 다음 단계에서 이어집니다.'
+                        : currentEvaluation.rating === null
+                          ? '현재 카드의 별점을 먼저 선택해 주세요.'
+                          : '별점과 좋아요는 바로 저장되고, 이전 카드로 돌아가 수정할 수도 있어요.'}
+                    </p>
+                  </div>
+
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-8">
+                    <button
+                      type="button"
+                      onClick={goPrevious}
+                      disabled={!canGoPrevious}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
+                    >
+                      <ChevronLeft size={16} />
+                      이전
+                    </button>
+
+                    {isLastCard ? (
+                      <p className="text-right text-sm leading-6 break-keep text-white/48 sm:max-w-[22ch]">
+                        다음 단계에서 제출과 완료 화면이 연결될 예정입니다.
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={goNext}
+                        disabled={!hasSelectedRating}
+                        className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:cursor-not-allowed disabled:bg-[#5c1a1a] disabled:text-white/44"
+                      >
+                        다음
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
+                  </div>
                 </article>
-              ))}
+              ) : null}
             </div>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => void matchCandidatesQuery.refetch()}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
-              >
-                후보 다시 불러오기
-              </button>
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"

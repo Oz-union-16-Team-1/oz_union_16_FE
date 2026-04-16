@@ -33,3 +33,15 @@ export interface MatchingCandidatesResponse {
   next: string | null;
   results: MatchingCandidateItem[];
 }
+
+export type MatchingRatingValue = 1 | 2 | 3 | 4 | 5;
+
+export interface MatchingEvaluationValue {
+  rating: MatchingRatingValue | null;
+  isLiked: boolean;
+}
+
+export type MatchingEvaluationsByGameId = Record<
+  number,
+  MatchingEvaluationValue
+>;
