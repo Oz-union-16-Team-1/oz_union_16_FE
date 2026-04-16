@@ -26,6 +26,7 @@ import {
 } from '../../features/auth/api/useAuthApi';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import { mockFavoriteGames } from '../../features/mypage/mockData';
+import type { FavoriteGamePreview } from '../../features/mypage/types';
 import {
   clearAuthTokens,
   getAccessToken,
@@ -117,6 +118,9 @@ function MyPage() {
   const [passwordPanelMessage, setPasswordPanelMessage] =
     useState<PasswordPanelMessage>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [favoriteGames, setFavoriteGames] = useState(mockFavoriteGames);
+  const [selectedFavoriteGame, setSelectedFavoriteGame] =
+    useState<FavoriteGamePreview | null>(null);
 
   const localFieldErrors = useMemo(
     () => getPasswordFieldErrors(passwordValues, touchedState),
@@ -184,7 +188,7 @@ function MyPage() {
     );
   }
 
-  const favoriteCount = mockFavoriteGames.length;
+  const favoriteCount = favoriteGames.length;
 
   const resetPasswordPanel = () => {
     setPasswordValues(initialPasswordValues);
@@ -309,6 +313,21 @@ function MyPage() {
     });
   };
 
+  const handleFavoriteGameDeleteConfirm = () => {
+    if (!selectedFavoriteGame) {
+      return;
+    }
+
+    setFavoriteGames((current) =>
+      current.filter((game) => game.gameId !== selectedFavoriteGame.gameId),
+    );
+    setSelectedFavoriteGame(null);
+    setToast({
+      tone: 'success',
+      message: '찜한 게임이 목록에서 삭제되었습니다.',
+    });
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
@@ -365,11 +384,12 @@ function MyPage() {
           <div className="mypage-scrollbar mt-5 max-h-[720px] overflow-y-auto pr-1">
             {favoriteCount > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
-                {mockFavoriteGames.map((game) => (
+                {favoriteGames.map((game) => (
                   <FavoriteGameCard
                     key={game.gameId}
                     game={game}
                     onClick={handleFavoriteGameCardClick}
+                    onFavoriteClick={setSelectedFavoriteGame}
                   />
                 ))}
               </div>
@@ -416,6 +436,15 @@ function MyPage() {
         onConfirm={() => {
           void handleDeleteAccount();
         }}
+      />
+      <ConfirmModal
+        open={Boolean(selectedFavoriteGame)}
+        title="찜한 게임을 삭제할까요?"
+        description={`'${selectedFavoriteGame?.title ?? ''}'을(를) 찜한 목록에서 삭제하시겠습니까?`}
+        confirmLabel="예"
+        cancelLabel="아니오"
+        onClose={() => setSelectedFavoriteGame(null)}
+        onConfirm={handleFavoriteGameDeleteConfirm}
       />
     </div>
   );
