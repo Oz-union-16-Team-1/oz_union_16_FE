@@ -22,6 +22,8 @@ import type { GameGenreFilter } from '../../features/games/genres';
 import 'swiper/swiper.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const GENRE_FILTER_MENU_ID = 'game-genre-filter-menu';
+const CTA_PENDING_MESSAGE = '준비 중입니다.';
 
 const MainPage = () => {
   const hasAccessToken = Boolean(getAccessToken());
@@ -163,8 +165,8 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
     >
       <button
         type="button"
-        aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={GENRE_FILTER_MENU_ID}
         onClick={() => setIsOpen((current) => !current)}
         className="flex h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/25 bg-[#0f0f0f] px-3 text-left text-sm font-semibold text-white shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition hover:border-[#d20b12]/70 hover:bg-[#151515] focus-visible:border-[#d20b12] focus-visible:ring-2 focus-visible:ring-[#d20b12]/30 focus-visible:outline-none sm:h-11"
       >
@@ -179,18 +181,18 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
 
       {isOpen ? (
         <ul
-          role="listbox"
-          aria-label="게임 장르 선택"
+          id={GENRE_FILTER_MENU_ID}
           className="genre-menu-scrollbar absolute top-full left-0 z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-white/15 bg-[#101010] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
         >
           {GAME_GENRE_FILTERS.map((genre) => {
             const isSelected = genre === selectedGenre;
 
             return (
-              <li key={genre} role="option" aria-selected={isSelected}>
+              <li key={genre}>
                 <button
                   type="button"
                   onClick={() => selectGenre(genre)}
+                  aria-label={isSelected ? `${genre} 선택됨` : `${genre} 선택`}
                   className={`flex min-h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 text-left text-sm transition ${
                     isSelected
                       ? 'bg-[#d20b12] font-semibold text-white'
@@ -368,6 +370,9 @@ const RecommendationCta = ({
   buttonLabel,
 }: RecommendationCtaProps) => {
   const Icon = icon;
+  const showPendingMessage = () => {
+    window.alert(CTA_PENDING_MESSAGE);
+  };
 
   return (
     <article className="flex min-h-65 flex-col items-center justify-center rounded-lg border border-[#3a0b0d] bg-[#050505] px-6 py-9 text-center sm:min-h-70">
@@ -386,9 +391,9 @@ const RecommendationCta = ({
       </p>
       <button
         type="button"
-        disabled
+        onClick={showPendingMessage}
         title="준비 중입니다."
-        className="mt-7 h-11 cursor-pointer rounded-md bg-[#d20b12] px-7 text-sm font-semibold text-white transition disabled:cursor-pointer disabled:opacity-70"
+        className="hover:bg-header-accent-hover mt-7 h-11 cursor-pointer rounded-md bg-[#d20b12] px-7 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
       >
         {buttonLabel}
       </button>
