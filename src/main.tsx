@@ -7,7 +7,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App';
 import { ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
-import GameDetailPlaceholder from './pages/game/GameDetailPlaceholder';
 import MatchingListPage from './pages/matching/MatchingListPage';
 import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
@@ -26,10 +25,6 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <MainPage />,
-      },
-      {
-        path: 'games/:gameId',
-        element: <GameDetailPlaceholder />,
       },
       {
         path: ROUTES.SURVEY,
