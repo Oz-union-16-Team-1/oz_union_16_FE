@@ -14,6 +14,7 @@ import RecommendationListPage from './pages/recommendation/RecommendationListPag
 import SurveyPage from './pages/survey/SurveyPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import MyPage from './pages/mypage/MyPage';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
       {
         path: ROUTES.SIGNUP,
         element: <SignupPage />,
+      },
+      {
+        path: ROUTES.MY_PAGE,
+        element: <MyPage />,
       },
     ],
   },
