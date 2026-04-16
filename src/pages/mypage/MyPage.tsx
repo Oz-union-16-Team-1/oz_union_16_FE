@@ -30,9 +30,9 @@ import type { FavoriteGamePreview } from '../../features/mypage/types';
 import {
   clearAuthTokens,
   getAccessToken,
-  getAuthAccount,
   setAuthAccount,
 } from '../../utils/auth';
+import { useAuthStore } from '../../store/useAuthStore';
 
 type PasswordTouchedState = Record<PasswordChangeFieldName, boolean>;
 type PasswordFieldErrors = Partial<Record<PasswordChangeFieldName, string>>;
@@ -105,7 +105,7 @@ function MyPage() {
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
   const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
-  const storedAccount = getAuthAccount();
+  const storedAccount = useAuthStore((state) => state.account);
 
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
   const [passwordValues, setPasswordValues] = useState<PasswordChangeValues>(
@@ -152,13 +152,8 @@ function MyPage() {
   useEffect(() => {
     if (profileQuery.data) {
       setAuthAccount(profileQuery.data);
-      return;
     }
-
-    if (profileQuery.isError) {
-      setAuthAccount(null);
-    }
-  }, [profileQuery.data, profileQuery.isError]);
+  }, [profileQuery.data]);
 
   useEffect(() => {
     if (!isPasswordPanelOpen || passwordPanelMessage?.tone !== 'success') {
@@ -189,6 +184,8 @@ function MyPage() {
   }
 
   const favoriteCount = favoriteGames.length;
+  const resolvedProfile = profileQuery.data ?? storedAccount;
+  const isProfileLoading = profileQuery.isLoading && !resolvedProfile;
 
   const resetPasswordPanel = () => {
     setPasswordValues(initialPasswordValues);
@@ -335,10 +332,8 @@ function MyPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
         <MyPageProfileSection
-          nickname={
-            profileQuery.data?.nickname ?? storedAccount?.nickname ?? '회원'
-          }
-          isProfileLoading={profileQuery.isLoading}
+          nickname={resolvedProfile?.nickname ?? '회원'}
+          isProfileLoading={isProfileLoading}
           isLoggingOut={isLogoutPending}
           isPasswordPanelOpen={isPasswordPanelOpen}
           onPasswordToggle={() => setIsPasswordPanelOpen((current) => !current)}
