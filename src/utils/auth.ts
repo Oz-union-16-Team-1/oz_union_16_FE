@@ -1,4 +1,5 @@
 import {
+  clearAuthPersistedStorage,
   clearLegacyAuthStorage,
   getLegacyAccessTokenFromStorage,
   getLegacyRefreshTokenFromStorage,
@@ -38,7 +39,7 @@ export const setAuthAccount = (account: CurrentUserProfileResponse | null) => {
 
 export const clearAccessToken = () => {
   useAuthStore.getState().clearAuthTokens();
-  clearLegacyAuthStorage();
+  clearAuthPersistedStorage();
 };
 
 export const clearAuthTokens = clearAccessToken;

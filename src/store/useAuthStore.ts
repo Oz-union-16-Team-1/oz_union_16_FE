@@ -5,6 +5,7 @@ import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
 const AUTH_STORAGE_KEY = 'auth-storage';
 const LEGACY_ACCESS_TOKEN_KEYS = ['accessToken', 'access_token'] as const;
 const LEGACY_REFRESH_TOKEN_KEYS = ['refreshToken', 'refresh_token'] as const;
+const LEGACY_PERSIST_KEYS = ['tokenStorage', 'infoStorage'] as const;
 
 const getLegacyAccessToken = () => {
   if (typeof window === 'undefined') {
@@ -85,7 +86,15 @@ export const clearLegacyAuthStorage = () => {
   for (const key of LEGACY_REFRESH_TOKEN_KEYS) {
     window.localStorage.removeItem(key);
   }
+
+  for (const key of LEGACY_PERSIST_KEYS) {
+    window.localStorage.removeItem(key);
+  }
 };
 
 export const getLegacyAccessTokenFromStorage = getLegacyAccessToken;
 export const getLegacyRefreshTokenFromStorage = getLegacyRefreshToken;
+export const clearAuthPersistedStorage = () => {
+  useAuthStore.persist.clearStorage();
+  clearLegacyAuthStorage();
+};
