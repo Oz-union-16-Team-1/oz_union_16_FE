@@ -8,6 +8,7 @@ import App from './App';
 import { ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
 import MatchingListPage from './pages/matching/MatchingListPage';
+import MatchingGenreDetailPage from './pages/matching/MatchingGenreDetailPage';
 import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
       {
         path: ROUTES.MATCHING_LIST,
         element: <MatchingListPage />,
+      },
+      {
+        path: ROUTES.MATCHING_GENRE_DETAIL,
+        element: <MatchingGenreDetailPage />,
       },
       {
         path: ROUTES.RECOMMENDATION_LIST,

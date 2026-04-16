@@ -8,9 +8,11 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper';
 import Header from '../../components/common/Header';
+import { ROUTES } from '../../constants/routes';
 import GameCard from '../../features/games/components/GameCard';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import { getTopGames, searchGames } from '../../features/games/gameApi';
@@ -124,7 +126,8 @@ const MainPage = () => {
               iconLabel="게임 찾기"
               title="매칭 시작"
               description="어떤 게임을 할지 고민? 당신의 취향에 맞는 게임을 추천해드립니다!"
-              buttonLabel="추천게임"
+              buttonLabel="장르별 매칭"
+              to={`/${ROUTES.MATCHING_LIST}`}
             />
           </section>
         </section>
@@ -360,6 +363,7 @@ type RecommendationCtaProps = {
   title: string;
   description: string;
   buttonLabel: string;
+  to?: string;
 };
 
 const RecommendationCta = ({
@@ -368,11 +372,14 @@ const RecommendationCta = ({
   title,
   description,
   buttonLabel,
+  to,
 }: RecommendationCtaProps) => {
   const Icon = icon;
   const showPendingMessage = () => {
     window.alert(CTA_PENDING_MESSAGE);
   };
+  const actionClassName =
+    'hover:bg-header-accent-hover mt-7 inline-flex h-11 cursor-pointer items-center justify-center rounded-md bg-[#d20b12] px-7 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]';
 
   return (
     <article className="flex min-h-65 flex-col items-center justify-center rounded-lg border border-[#3a0b0d] bg-[#050505] px-6 py-9 text-center sm:min-h-70">
@@ -389,14 +396,20 @@ const RecommendationCta = ({
       <p className="mt-5 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
         {description}
       </p>
-      <button
-        type="button"
-        onClick={showPendingMessage}
-        title="준비 중입니다."
-        className="hover:bg-header-accent-hover mt-7 h-11 cursor-pointer rounded-md bg-[#d20b12] px-7 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
-      >
-        {buttonLabel}
-      </button>
+      {to ? (
+        <Link to={to} className={actionClassName}>
+          {buttonLabel}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={showPendingMessage}
+          title="준비 중입니다."
+          className={actionClassName}
+        >
+          {buttonLabel}
+        </button>
+      )}
     </article>
   );
 };
