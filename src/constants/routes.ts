@@ -6,4 +6,5 @@ export const ROUTES = {
   RECOMMENDATION_LIST: 'recommendation-list',
   LOGIN: 'login',
   SIGNUP: 'signup',
+  MY_PAGE: 'my-page',
 } as const;
