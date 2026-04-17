@@ -17,7 +17,7 @@ import {
 } from '../features/auth/api/auth';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
-import { setAuthAccount, setAuthTokens } from '../utils/auth';
+import { setAccessToken, setAuthAccount } from '../utils/auth';
 
 type LoginFieldName = keyof LoginRequest;
 type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
@@ -116,7 +116,7 @@ function LoginPage() {
     try {
       const response = await loginMutation.mutateAsync(payload);
 
-      setAuthTokens(response.access_token, response.refresh_token);
+      setAccessToken(response.access_token);
       const profile = await getCurrentUserProfile();
       setAuthAccount(profile);
       navigate(ROUTES.HOME);
