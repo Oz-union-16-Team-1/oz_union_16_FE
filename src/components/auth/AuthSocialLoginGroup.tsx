@@ -1,4 +1,11 @@
+import { useState } from 'react';
+
+import AuthFormMessage from './AuthFormMessage';
 import SocialLoginButton from '../login/SocialLoginButton';
+import {
+  getSocialLoginStartUrl,
+  type SocialAuthProvider,
+} from '../../features/auth/utils/socialAuth';
 
 type AuthSocialLoginGroupProps = {
   className?: string;
@@ -44,6 +51,24 @@ const NaverIcon = () => (
 );
 
 function AuthSocialLoginGroup({ className = '' }: AuthSocialLoginGroupProps) {
+  const [redirectingProvider, setRedirectingProvider] =
+    useState<SocialAuthProvider | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSocialLogin = (provider: SocialAuthProvider) => {
+    try {
+      const redirectUrl = getSocialLoginStartUrl(provider);
+      setRedirectingProvider(provider);
+      setErrorMessage('');
+      window.location.assign(redirectUrl);
+    } catch {
+      setRedirectingProvider(null);
+      setErrorMessage(
+        '소셜 로그인 시작 주소를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    }
+  };
+
   return (
     <div className={`space-y-3 ${className} sm:space-y-3.5`}>
       <SocialLoginButton
@@ -51,19 +76,26 @@ function AuthSocialLoginGroup({ className = '' }: AuthSocialLoginGroupProps) {
         icon={<GoogleIcon />}
         className="bg-login-google border-login-google h-14 border sm:h-[61px]"
         labelClassName="text-white"
+        onClick={() => handleSocialLogin('google')}
+        disabled={Boolean(redirectingProvider)}
       />
       <SocialLoginButton
         label="카카오로 로그인하기"
         icon={<KakaoIcon />}
         className="bg-login-kakao h-14 sm:h-[59px]"
         labelClassName="text-login-kakao-label"
+        onClick={() => handleSocialLogin('kakao')}
+        disabled={Boolean(redirectingProvider)}
       />
       <SocialLoginButton
         label="네이버로 로그인하기"
         icon={<NaverIcon />}
         className="bg-login-naver h-14 sm:h-[59px]"
         labelClassName="text-white"
+        onClick={() => handleSocialLogin('naver')}
+        disabled={Boolean(redirectingProvider)}
       />
+      {errorMessage ? <AuthFormMessage>{errorMessage}</AuthFormMessage> : null}
     </div>
   );
 }

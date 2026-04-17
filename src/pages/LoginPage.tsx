@@ -24,6 +24,7 @@ type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
 type LoginTouchedState = Record<LoginFieldName, boolean>;
 type LoginLocationState = {
   noticeMessage?: string;
+  errorMessage?: string;
 };
 
 const getLoginFieldErrors = (
@@ -56,8 +57,10 @@ function LoginPage() {
     password: false,
   });
   const [apiFieldErrors, setApiFieldErrors] = useState<LoginFieldErrors>({});
-  const [formMessage, setFormMessage] = useState('');
   const locationState = location.state as LoginLocationState | null;
+  const [formMessage, setFormMessage] = useState(
+    locationState?.errorMessage ?? '',
+  );
   const [noticeMessage, setNoticeMessage] = useState(
     locationState?.noticeMessage ?? '',
   );

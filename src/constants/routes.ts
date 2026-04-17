@@ -4,6 +4,7 @@ export const ROUTES = {
   MATCHING_LIST: 'matching-list',
   MATCHING_GENRE_DETAIL: 'matching-list/:genreSlug',
   RECOMMENDATION_LIST: 'recommendation-list',
+  AUTH_CALLBACK: 'auth/callback',
   LOGIN: 'login',
   SIGNUP: 'signup',
   MY_PAGE: 'my-page',
