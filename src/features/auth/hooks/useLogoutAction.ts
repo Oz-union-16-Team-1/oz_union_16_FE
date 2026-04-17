@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
@@ -6,24 +7,20 @@ import { useLogoutMutation } from '../api/useAuthApi';
 
 function useLogoutAction() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const logoutMutation = useLogoutMutation();
 
-  const logout = async (
-    noticeMessage = '로그아웃 되었습니다. 다시 로그인해 주세요.',
-  ) => {
+  const logout = async () => {
     try {
       await logoutMutation.mutateAsync();
     } catch {
-      // Even if the API call fails, clear the local session so the user can recover.
+      // Invalid or expired tokens should not keep the UI in a logged-in state.
     }
 
     clearAuthTokens();
-    navigate(`/${ROUTES.LOGIN}`, {
-      replace: true,
-      state: {
-        noticeMessage,
-      },
-    });
+    await queryClient.cancelQueries({ queryKey: ['auth'] });
+    queryClient.removeQueries({ queryKey: ['auth'] });
+    navigate(ROUTES.HOME, { replace: true });
   };
 
   return {
