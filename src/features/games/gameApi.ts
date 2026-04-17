@@ -1,12 +1,16 @@
+import { AxiosError } from 'axios';
+
 import { api } from '../../api/axios';
 import { getGameGenreId, matchesGenreFilter } from './genres';
 import { mockTopGames } from './mockGames';
 import type {
   GameDetail,
+  GameLikeResponse,
   GameListItem,
   GameListResponse,
   GetTopGamesParams,
   RawGameDetailResponse,
+  RawGameLikeResponse,
   RawGameListItem,
   SearchGamesParams,
 } from './types';
@@ -28,6 +32,18 @@ const getMockDetail = async (gameId: number) => {
   return getMockGameDetail(gameId);
 };
 
+const updateMockLikeStatus = async (gameId: number, isLiked: boolean) => {
+  const { updateMockGameLikeStatus } = await import('./mockGameDetails');
+
+  return updateMockGameLikeStatus(gameId, isLiked);
+};
+
+const normalizeNullableString = (value: string | null | undefined) => {
+  const trimmedValue = value?.trim();
+
+  return trimmedValue && trimmedValue !== 'N/A' ? trimmedValue : null;
+};
+
 const normalizeGameListItem = (game: RawGameListItem): GameListItem => ({
   gameId: game.game_id,
   name: game.name || 'N/A',
@@ -44,8 +60,9 @@ const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
   releaseDate: game.release_date || null,
   developer: game.developer || null,
   publisher: game.publisher || null,
-  promoVideoUrl: game.media?.promo_video_url || null,
-  coverImageUrl: game.media?.cover_image_url || null,
+  promoVideoUrl: normalizeNullableString(game.media?.promo_video_url),
+  promoEmbedUrl: normalizeNullableString(game.media?.promo_embed_url),
+  coverImageUrl: normalizeNullableString(game.media?.cover_image_url),
   description: game.description || null,
   platforms:
     game.platforms
@@ -53,13 +70,24 @@ const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
       .filter((name): name is string => Boolean(name))
       .map((name) => ({ name })) ?? [],
   externalLinks: {
-    officialSite: game.external_links?.official_site || null,
-    steam: game.external_links?.steam || null,
-    epicStore: game.external_links?.epic_store || null,
+    officialSite: normalizeNullableString(game.external_links?.official_site),
+    steam: normalizeNullableString(game.external_links?.steam),
+    epicStore: normalizeNullableString(game.external_links?.epic_store),
   },
   likeCount: game.like_count ?? 0,
   isLiked: typeof game.is_liked === 'boolean' ? game.is_liked : null,
 });
+
+const normalizeGameLikeResponse = (
+  response: RawGameLikeResponse,
+): GameLikeResponse => ({
+  gameId: response.game_id,
+  isLiked: response.is_liked,
+  likeCount: response.like_count ?? 0,
+});
+
+const isNotFoundError = (error: unknown) =>
+  error instanceof AxiosError && error.response?.status === 404;
 
 const filterGames = (
   games: GameListItem[],
@@ -146,7 +174,35 @@ export const getGameDetail = async (gameId: number): Promise<GameDetail> => {
     );
 
     return normalizeGameDetail(response.data);
-  } catch {
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      throw error;
+    }
+
     return getMockDetail(gameId);
   }
+};
+
+export const likeGame = async (gameId: number): Promise<GameLikeResponse> => {
+  if (!hasApiBaseUrl) {
+    return updateMockLikeStatus(gameId, true);
+  }
+
+  const response = await api.post<RawGameLikeResponse>(
+    `/api/v1/games/${gameId}/like`,
+  );
+
+  return normalizeGameLikeResponse(response.data);
+};
+
+export const unlikeGame = async (gameId: number): Promise<GameLikeResponse> => {
+  if (!hasApiBaseUrl) {
+    return updateMockLikeStatus(gameId, false);
+  }
+
+  const response = await api.delete<RawGameLikeResponse>(
+    `/api/v1/games/${gameId}/like`,
+  );
+
+  return normalizeGameLikeResponse(response.data);
 };

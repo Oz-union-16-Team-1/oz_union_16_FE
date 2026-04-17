@@ -32,6 +32,7 @@ export type GameDetail = {
   developer: string | null;
   publisher: string | null;
   promoVideoUrl: string | null;
+  promoEmbedUrl: string | null;
   coverImageUrl: string | null;
   description: string | null;
   platforms: Array<{ name: string }>;
@@ -53,6 +54,7 @@ export type RawGameDetailResponse = {
   publisher: string | null;
   media: {
     promo_video_url?: string | null;
+    promo_embed_url?: string | null;
     cover_image_url?: string | null;
   } | null;
   description: string | null;
@@ -64,6 +66,18 @@ export type RawGameDetailResponse = {
   } | null;
   like_count: number | null;
   is_liked: boolean | null;
+};
+
+export type GameLikeResponse = {
+  gameId: number;
+  isLiked: boolean;
+  likeCount: number;
+};
+
+export type RawGameLikeResponse = {
+  game_id: number;
+  is_liked: boolean;
+  like_count: number | null;
 };
 
 export type GetTopGamesParams = {

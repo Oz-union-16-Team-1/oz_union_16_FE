@@ -23,6 +23,7 @@ const createMockGameDetail = ({
   promoVideoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `${title} 공식 트레일러`,
   )}`,
+  promoEmbedUrl = null,
 }: {
   gameId: number;
   title: string;
@@ -37,6 +38,7 @@ const createMockGameDetail = ({
   officialSite?: string | null;
   epicStore?: string | null;
   promoVideoUrl?: string | null;
+  promoEmbedUrl?: string | null;
 }): GameDetail => ({
   gameId,
   title,
@@ -45,6 +47,7 @@ const createMockGameDetail = ({
   developer,
   publisher,
   promoVideoUrl,
+  promoEmbedUrl,
   coverImageUrl: steamCoverUrl(gameId),
   description,
   platforms: platforms.map((name) => ({ name })),
@@ -378,6 +381,7 @@ export const getMockGameDetail = (gameId: number): GameDetail => {
     developer: null,
     publisher: null,
     promoVideoUrl: null,
+    promoEmbedUrl: null,
     coverImageUrl: game?.thumbnailUrl ?? null,
     description: null,
     platforms: [],
@@ -388,5 +392,22 @@ export const getMockGameDetail = (gameId: number): GameDetail => {
     },
     likeCount: 0,
     isLiked: game?.isLiked ?? null,
+  };
+};
+
+export const updateMockGameLikeStatus = (gameId: number, isLiked: boolean) => {
+  const detail = mockGameDetails[gameId] ?? getMockGameDetail(gameId);
+  const currentLiked = detail.isLiked === true;
+  const likeCountAdjustment = currentLiked === isLiked ? 0 : isLiked ? 1 : -1;
+  const likeCount = Math.max(0, detail.likeCount + likeCountAdjustment);
+
+  detail.isLiked = isLiked;
+  detail.likeCount = likeCount;
+  mockGameDetails[gameId] = detail;
+
+  return {
+    gameId,
+    isLiked,
+    likeCount,
   };
 };
