@@ -251,7 +251,7 @@ function RecommendationListPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <RecommendationBackdrop items={recommendationItems} />
-      <Header fixed isLoggedIn={hasAccessToken} />
+      <Header fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mx-auto w-full max-w-[980px]">

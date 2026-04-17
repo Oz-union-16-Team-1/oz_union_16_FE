@@ -1,13 +1,15 @@
 import { Link } from 'react-router';
 import { ROUTES } from '../../constants/routes';
+import { useAuthStore } from '../../store/useAuthStore';
 import HeaderProfileMenu from './HeaderProfileMenu';
 
 type HeaderProps = {
-  isLoggedIn?: boolean;
   fixed?: boolean;
 };
 
-const Header = ({ isLoggedIn = false, fixed = true }: HeaderProps) => {
+const Header = ({ fixed = true }: HeaderProps) => {
+  const isLoggedIn = useAuthStore((state) => Boolean(state.accessToken));
+
   return (
     <header
       className={`header-shell h-16 w-full lg:h-18 ${

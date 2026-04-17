@@ -5,6 +5,8 @@ import profileImg from '../../assets/프로필 이미지.png';
 import { ROUTES } from '../../constants/routes';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 
+const PROFILE_MENU_ID = 'header-profile-menu';
+
 function HeaderProfileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,24 +44,34 @@ function HeaderProfileMenu() {
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div
+      ref={containerRef}
+      className="relative"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsOpen(false);
+        }
+      }}
+    >
       <button
         type="button"
-        aria-label="프로필 메뉴 열기"
+        aria-label={isOpen ? '프로필 메뉴 닫기' : '프로필 메뉴 열기'}
         aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-controls={PROFILE_MENU_ID}
         onClick={() => setIsOpen((current) => !current)}
         className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
       >
         <img
           src={profileImg}
-          alt="Profile"
+          alt="프로필 이미지"
           className="h-full w-full object-cover"
         />
       </button>
 
       {isOpen ? (
         <div
+          id={PROFILE_MENU_ID}
           role="menu"
           aria-label="프로필 메뉴"
           className="bg-mypage-panel border-mypage-panel shadow-mypage-float absolute top-[calc(100%+0.85rem)] right-0 z-50 w-40 overflow-hidden rounded-2xl border p-2 backdrop-blur-xl"

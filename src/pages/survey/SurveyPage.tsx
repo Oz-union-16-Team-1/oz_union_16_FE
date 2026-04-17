@@ -11,7 +11,7 @@ function SurveyPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
-      <Header fixed isLoggedIn={hasAccessToken} />
+      <Header fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mb-8 flex flex-col gap-5">

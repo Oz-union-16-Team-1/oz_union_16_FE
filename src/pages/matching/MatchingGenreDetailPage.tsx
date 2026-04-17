@@ -129,7 +129,7 @@ function MatchingGenreDetailPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.12),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
-      <Header fixed isLoggedIn={hasAccessToken} />
+      <Header fixed />
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1180px] px-4 pt-24 pb-14 sm:px-6 sm:pt-28 md:px-8 md:pt-32 md:pb-18">
         {!genre || !isValidGenreSlug ? (
