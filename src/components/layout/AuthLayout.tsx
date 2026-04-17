@@ -39,10 +39,10 @@ function AuthLayout({
   );
 
   return (
-    <div className="bg-login-page flex min-h-screen flex-col text-white">
+    <div className="bg-login-page flex min-h-dvh flex-col text-white">
       <Header fixed={false} />
 
-      <main className="flex flex-1 items-start justify-center px-[clamp(1rem,5vw,20rem)] pt-6 pb-14 sm:pt-10 sm:pb-16">
+      <main className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {withPanel ? (
           <section
             className={`bg-auth-panel border-auth-panel shadow-auth-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}

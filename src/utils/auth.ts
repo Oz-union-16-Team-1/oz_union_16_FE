@@ -1,9 +1,11 @@
 import {
+  clearAuthPersistedStorage,
   clearLegacyAuthStorage,
   getLegacyAccessTokenFromStorage,
   getLegacyRefreshTokenFromStorage,
   useAuthStore,
 } from '../store/useAuthStore';
+import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
 
 export const getAccessToken = () => {
   return (
@@ -17,6 +19,10 @@ export const getRefreshToken = () => {
   );
 };
 
+export const getAuthAccount = () => {
+  return useAuthStore.getState().account;
+};
+
 export const setAuthTokens = (accessToken: string, refreshToken: string) => {
   useAuthStore.getState().setAuthTokens(accessToken, refreshToken);
   clearLegacyAuthStorage();
@@ -27,9 +33,13 @@ export const setAccessToken = (token: string) => {
   clearLegacyAuthStorage();
 };
 
+export const setAuthAccount = (account: CurrentUserProfileResponse | null) => {
+  useAuthStore.getState().setAccount(account);
+};
+
 export const clearAccessToken = () => {
   useAuthStore.getState().clearAuthTokens();
-  clearLegacyAuthStorage();
+  clearAuthPersistedStorage();
 };
 
 export const clearAuthTokens = clearAccessToken;

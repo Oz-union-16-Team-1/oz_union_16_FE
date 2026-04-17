@@ -9,6 +9,7 @@ type AuthInputFieldProps = {
   helperMessage?: string;
   helperMessageTone?: AuthInputFieldMessageTone;
   action?: ReactNode;
+  toast?: ReactNode;
   containerClassName?: string;
 } & InputHTMLAttributes<HTMLInputElement>;
 
@@ -19,6 +20,7 @@ function AuthInputField({
   helperMessage,
   helperMessageTone = 'muted',
   action,
+  toast,
   containerClassName = '',
   className = '',
   ...inputProps
@@ -38,18 +40,19 @@ function AuthInputField({
       >
         {label}
       </label>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <input
           id={id}
           {...inputProps}
           aria-invalid={Boolean(errorMessage)}
-          className={`placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${className} ${
+          className={`auth-input-autofill placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${className} ${
             errorMessage
               ? 'border-red-500 hover:border-red-400 focus-visible:ring-red-500/20'
               : 'border-login-field hover:border-white/15 focus-visible:ring-white/20'
           }`}
         />
         {action}
+        {toast}
       </div>
       {resolvedMessage ? (
         <p className={`pl-1 text-sm/5 font-medium ${resolvedMessageClassName}`}>

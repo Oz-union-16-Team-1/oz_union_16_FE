@@ -223,6 +223,20 @@
   .mypage-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgb(255 255 255 / 0.26);
   }
+
+  .auth-input-autofill:-webkit-autofill,
+  .auth-input-autofill:-webkit-autofill:hover,
+  .auth-input-autofill:-webkit-autofill:focus,
+  .auth-input-autofill:-webkit-autofill:active {
+    -webkit-text-fill-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--color-login-field) inset !important;
+    background-color: transparent !important;
+    background-clip: padding-box;
+    caret-color: #ffffff;
+    transition: background-color 9999s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px var(--color-login-field) inset !important;
+    border-radius: inherit;
+  }
 }
 
 @media (max-width: 1024px) {

@@ -26,7 +26,13 @@ import {
 } from '../../features/auth/api/useAuthApi';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import { mockFavoriteGames } from '../../features/mypage/mockData';
-import { clearAuthTokens, getAccessToken } from '../../utils/auth';
+import type { FavoriteGamePreview } from '../../features/mypage/types';
+import {
+  clearAuthTokens,
+  getAccessToken,
+  setAuthAccount,
+} from '../../utils/auth';
+import { useAuthStore } from '../../store/useAuthStore';
 
 type PasswordTouchedState = Record<PasswordChangeFieldName, boolean>;
 type PasswordFieldErrors = Partial<Record<PasswordChangeFieldName, string>>;
@@ -99,6 +105,7 @@ function MyPage() {
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
   const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
+  const storedAccount = useAuthStore((state) => state.account);
 
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
   const [passwordValues, setPasswordValues] = useState<PasswordChangeValues>(
@@ -111,6 +118,9 @@ function MyPage() {
   const [passwordPanelMessage, setPasswordPanelMessage] =
     useState<PasswordPanelMessage>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [favoriteGames, setFavoriteGames] = useState(mockFavoriteGames);
+  const [selectedFavoriteGame, setSelectedFavoriteGame] =
+    useState<FavoriteGamePreview | null>(null);
 
   const localFieldErrors = useMemo(
     () => getPasswordFieldErrors(passwordValues, touchedState),
@@ -140,6 +150,12 @@ function MyPage() {
   }, [toast]);
 
   useEffect(() => {
+    if (profileQuery.data) {
+      setAuthAccount(profileQuery.data);
+    }
+  }, [profileQuery.data]);
+
+  useEffect(() => {
     if (!isPasswordPanelOpen || passwordPanelMessage?.tone !== 'success') {
       return undefined;
     }
@@ -167,7 +183,9 @@ function MyPage() {
     );
   }
 
-  const favoriteCount = mockFavoriteGames.length;
+  const favoriteCount = favoriteGames.length;
+  const resolvedProfile = profileQuery.data ?? storedAccount;
+  const isProfileLoading = profileQuery.isLoading && !resolvedProfile;
 
   const resetPasswordPanel = () => {
     setPasswordValues(initialPasswordValues);
@@ -285,6 +303,28 @@ function MyPage() {
     }
   };
 
+  const handleFavoriteGameCardClick = () => {
+    setToast({
+      tone: 'success',
+      message: '게임 상세 페이지는 현재 준비 중입니다.',
+    });
+  };
+
+  const handleFavoriteGameDeleteConfirm = () => {
+    if (!selectedFavoriteGame) {
+      return;
+    }
+
+    setFavoriteGames((current) =>
+      current.filter((game) => game.gameId !== selectedFavoriteGame.gameId),
+    );
+    setSelectedFavoriteGame(null);
+    setToast({
+      tone: 'success',
+      message: '찜한 게임이 목록에서 삭제되었습니다.',
+    });
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
@@ -292,8 +332,8 @@ function MyPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
         <MyPageProfileSection
-          nickname={profileQuery.data?.nickname ?? '회원'}
-          isProfileLoading={profileQuery.isLoading}
+          nickname={resolvedProfile?.nickname ?? '회원'}
+          isProfileLoading={isProfileLoading}
           isLoggingOut={isLogoutPending}
           isPasswordPanelOpen={isPasswordPanelOpen}
           onPasswordToggle={() => setIsPasswordPanelOpen((current) => !current)}
@@ -339,8 +379,13 @@ function MyPage() {
           <div className="mypage-scrollbar mt-5 max-h-[720px] overflow-y-auto pr-1">
             {favoriteCount > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
-                {mockFavoriteGames.map((game) => (
-                  <FavoriteGameCard key={game.gameId} game={game} />
+                {favoriteGames.map((game) => (
+                  <FavoriteGameCard
+                    key={game.gameId}
+                    game={game}
+                    onClick={handleFavoriteGameCardClick}
+                    onFavoriteClick={setSelectedFavoriteGame}
+                  />
                 ))}
               </div>
             ) : (
@@ -372,6 +417,7 @@ function MyPage() {
           message={toast.message}
           tone={toast.tone}
           onClose={() => setToast(null)}
+          variant="fixedCenter"
         />
       ) : null}
 
@@ -385,6 +431,15 @@ function MyPage() {
         onConfirm={() => {
           void handleDeleteAccount();
         }}
+      />
+      <ConfirmModal
+        open={Boolean(selectedFavoriteGame)}
+        title="찜한 게임을 삭제할까요?"
+        description={`'${selectedFavoriteGame?.title ?? ''}'을(를) 찜한 목록에서 삭제하시겠습니까?`}
+        confirmLabel="예"
+        cancelLabel="아니오"
+        onClose={() => setSelectedFavoriteGame(null)}
+        onConfirm={handleFavoriteGameDeleteConfirm}
       />
     </div>
   );

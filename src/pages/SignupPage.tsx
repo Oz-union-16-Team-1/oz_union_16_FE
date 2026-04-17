@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import AuthButton from '../components/auth/AuthButton';
@@ -10,8 +10,10 @@ import AuthInputField from '../components/auth/AuthInputField';
 import AuthRadioGroup from '../components/auth/AuthRadioGroup';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import AuthLayout from '../components/layout/AuthLayout';
+import ToastMessage from '../components/mypage/ToastMessage';
 import { ROUTES } from '../constants/routes';
 import {
+  getCurrentUserProfile,
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
 } from '../features/auth/api/auth';
@@ -22,7 +24,7 @@ import {
   useSignupMutation,
 } from '../features/auth/api/useAuthApi';
 import type { AuthGender, SignupRequest } from '../features/auth/types/auth';
-import { setAuthTokens } from '../utils/auth';
+import { setAuthAccount, setAuthTokens } from '../utils/auth';
 
 type SignupFormValues = Omit<SignupRequest, 'gender'> & {
   gender: AuthGender | '';
@@ -38,10 +40,21 @@ type DuplicateCheckState = {
   tone: 'success' | 'error' | null;
 };
 
+type DuplicateCheckToastState = {
+  message: string;
+  tone: 'success' | 'error';
+  anchor: 'login_id' | 'nickname';
+} | null;
+
 const signupGenderOptions = [
   { label: '남성', value: 'M' },
   { label: '여성', value: 'W' },
 ] as const;
+
+const NAME_MAX_LENGTH = 30;
+const LOGIN_ID_MAX_LENGTH = 15;
+const NICKNAME_MAX_LENGTH = 10;
+const NICKNAME_WHITESPACE_MESSAGE = '닉네임에는 띄어쓰기를 사용할 수 없습니다.';
 
 const initialDuplicateCheckState: DuplicateCheckState = {
   verifiedValue: null,
@@ -120,10 +133,14 @@ function SignupPage() {
   });
   const [apiFieldErrors, setApiFieldErrors] = useState<SignupFieldErrors>({});
   const [formMessage, setFormMessage] = useState('');
+  const [nicknameWhitespaceMessage, setNicknameWhitespaceMessage] =
+    useState('');
   const [loginIdCheckState, setLoginIdCheckState] =
     useState<DuplicateCheckState>(initialDuplicateCheckState);
   const [nicknameCheckState, setNicknameCheckState] =
     useState<DuplicateCheckState>(initialDuplicateCheckState);
+  const [duplicateCheckToast, setDuplicateCheckToast] =
+    useState<DuplicateCheckToastState>(null);
 
   const trimmedLoginId = formValues.login_id.trim();
   const trimmedNickname = formValues.nickname.trim();
@@ -151,6 +168,7 @@ function SignupPage() {
       localFieldErrors.login_id,
     nickname:
       apiFieldErrors.nickname ||
+      nicknameWhitespaceMessage ||
       (nicknameCheckState.tone === 'error' ? nicknameCheckState.message : '') ||
       localFieldErrors.nickname,
     password: apiFieldErrors.password ?? localFieldErrors.password,
@@ -160,6 +178,18 @@ function SignupPage() {
   };
 
   const isSubmitting = signupMutation.isPending || loginMutation.isPending;
+
+  useEffect(() => {
+    if (!duplicateCheckToast) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setDuplicateCheckToast(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeout);
+  }, [duplicateCheckToast]);
 
   const clearApiFieldError = (fieldName: SignupFieldName) => {
     setApiFieldErrors((previous) => {
@@ -175,9 +205,29 @@ function SignupPage() {
   };
 
   const handleFieldChange = (fieldName: SignupFieldName, value: string) => {
+    let nextValue = value;
+    let nextNicknameHasWhitespace = false;
+
+    if (fieldName === 'name') {
+      nextValue = value.slice(0, NAME_MAX_LENGTH);
+    }
+
+    if (fieldName === 'login_id') {
+      nextValue = value.slice(0, LOGIN_ID_MAX_LENGTH);
+    }
+
+    if (fieldName === 'nickname') {
+      nextNicknameHasWhitespace = /\s/.test(value);
+
+      nextValue = value.replace(/\s+/g, '').slice(0, NICKNAME_MAX_LENGTH);
+      setNicknameWhitespaceMessage(
+        nextNicknameHasWhitespace ? NICKNAME_WHITESPACE_MESSAGE : '',
+      );
+    }
+
     setFormValues((previous) => ({
       ...previous,
-      [fieldName]: value,
+      [fieldName]: nextValue,
     }));
 
     clearApiFieldError(fieldName);
@@ -185,7 +235,8 @@ function SignupPage() {
 
     if (fieldName === 'login_id') {
       setLoginIdCheckState((previous) =>
-        previous.verifiedValue === value.trim() && previous.tone === 'success'
+        previous.verifiedValue === nextValue.trim() &&
+        previous.tone === 'success'
           ? previous
           : initialDuplicateCheckState,
       );
@@ -193,7 +244,9 @@ function SignupPage() {
 
     if (fieldName === 'nickname') {
       setNicknameCheckState((previous) =>
-        previous.verifiedValue === value.trim() && previous.tone === 'success'
+        previous.verifiedValue === nextValue.trim() &&
+        previous.tone === 'success' &&
+        !nextNicknameHasWhitespace
           ? previous
           : initialDuplicateCheckState,
       );
@@ -221,6 +274,11 @@ function SignupPage() {
         message: response.detail,
         tone: 'success',
       });
+      setDuplicateCheckToast({
+        message: response.detail,
+        tone: 'success',
+        anchor: 'login_id',
+      });
       clearApiFieldError('login_id');
     } catch (error) {
       const fieldErrors = extractAuthApiFieldErrors(error);
@@ -230,6 +288,11 @@ function SignupPage() {
         verifiedValue: null,
         message,
         tone: 'error',
+      });
+      setDuplicateCheckToast({
+        message,
+        tone: 'error',
+        anchor: 'login_id',
       });
     }
   };
@@ -255,6 +318,11 @@ function SignupPage() {
         message: response.detail,
         tone: 'success',
       });
+      setDuplicateCheckToast({
+        message: response.detail,
+        tone: 'success',
+        anchor: 'nickname',
+      });
       clearApiFieldError('nickname');
     } catch (error) {
       const fieldErrors = extractAuthApiFieldErrors(error);
@@ -264,6 +332,11 @@ function SignupPage() {
         verifiedValue: null,
         message,
         tone: 'error',
+      });
+      setDuplicateCheckToast({
+        message,
+        tone: 'error',
+        anchor: 'nickname',
       });
     }
   };
@@ -340,6 +413,8 @@ function SignupPage() {
       });
 
       setAuthTokens(loginResponse.access_token, loginResponse.refresh_token);
+      const profile = await getCurrentUserProfile();
+      setAuthAccount(profile);
       navigate(ROUTES.HOME);
     } catch {
       navigate(`/${ROUTES.LOGIN}`, {
@@ -363,14 +438,27 @@ function SignupPage() {
 
       <AuthDivider className="my-5 sm:my-6" />
 
-      <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
+      <form
+        className="space-y-3.5 sm:space-y-4"
+        autoComplete="off"
+        onSubmit={handleSubmit}
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -z-10 h-0 w-0 overflow-hidden opacity-0"
+        >
+          <input type="text" tabIndex={-1} autoComplete="username" />
+          <input type="password" tabIndex={-1} autoComplete="new-password" />
+        </div>
+
         <AuthInputField
           id="signup-name"
           name="name"
           label="이름"
           type="text"
-          autoComplete="name"
+          autoComplete="off"
           placeholder="이름을 입력하세요"
+          maxLength={NAME_MAX_LENGTH}
           value={formValues.name}
           onChange={(event) => handleFieldChange('name', event.target.value)}
           onBlur={() =>
@@ -380,6 +468,11 @@ function SignupPage() {
             }))
           }
           errorMessage={resolvedFieldErrors.name}
+          helperMessage={
+            !resolvedFieldErrors.name
+              ? `이름은 ${NAME_MAX_LENGTH}자 이하로 입력해주세요.`
+              : ''
+          }
           disabled={isSubmitting}
           containerClassName="pt-1"
         />
@@ -389,8 +482,9 @@ function SignupPage() {
           name="login_id"
           label="아이디"
           type="text"
-          autoComplete="username"
+          autoComplete="new-password"
           placeholder="아이디를 입력하세요"
+          maxLength={LOGIN_ID_MAX_LENGTH}
           value={formValues.login_id}
           onChange={(event) =>
             handleFieldChange('login_id', event.target.value)
@@ -403,12 +497,15 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.login_id}
           helperMessage={
-            !resolvedFieldErrors.login_id &&
-            loginIdCheckState.tone === 'success'
-              ? loginIdCheckState.message
+            !resolvedFieldErrors.login_id
+              ? loginIdCheckState.tone === 'success'
+                ? loginIdCheckState.message
+                : `아이디는 ${LOGIN_ID_MAX_LENGTH}자 이하로 입력해주세요.`
               : ''
           }
-          helperMessageTone="success"
+          helperMessageTone={
+            loginIdCheckState.tone === 'success' ? 'success' : 'muted'
+          }
           disabled={isSubmitting}
           action={
             <AuthInputActionButton
@@ -426,6 +523,16 @@ function SignupPage() {
                   : '중복확인'}
             </AuthInputActionButton>
           }
+          toast={
+            duplicateCheckToast?.anchor === 'login_id' ? (
+              <ToastMessage
+                message={duplicateCheckToast.message}
+                tone={duplicateCheckToast.tone}
+                onClose={() => setDuplicateCheckToast(null)}
+                variant="absoluteCenter"
+              />
+            ) : null
+          }
         />
 
         <AuthInputField
@@ -433,8 +540,9 @@ function SignupPage() {
           name="nickname"
           label="닉네임"
           type="text"
-          autoComplete="nickname"
+          autoComplete="off"
           placeholder="닉네임을 입력하세요"
+          maxLength={NICKNAME_MAX_LENGTH}
           value={formValues.nickname}
           onChange={(event) =>
             handleFieldChange('nickname', event.target.value)
@@ -469,6 +577,16 @@ function SignupPage() {
                   ? '확인완료'
                   : '중복확인'}
             </AuthInputActionButton>
+          }
+          toast={
+            duplicateCheckToast?.anchor === 'nickname' ? (
+              <ToastMessage
+                message={duplicateCheckToast.message}
+                tone={duplicateCheckToast.tone}
+                onClose={() => setDuplicateCheckToast(null)}
+                variant="absoluteCenter"
+              />
+            ) : null
           }
         />
 
