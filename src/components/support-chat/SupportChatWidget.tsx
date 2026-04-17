@@ -7,29 +7,19 @@ import {
 } from 'react';
 import { useLocation } from 'react-router';
 
-// import {
-//   createDefaultRouteContext,
-//   SUPPORT_CHAT_QUICK_ACTIONS,
-// } from '@/features/support-chat/data/faqs';
+import {
+  createDefaultRouteContext,
+  SUPPORT_CHAT_QUICK_ACTIONS,
+} from '@/features/support-chat/data/faqs';
 import {
   extractSupportChatErrorMessage,
   streamChatbotResponse,
 } from '@/features/support-chat/api/chatbot';
 import { useSendChatbotMessageMutation } from '@/features/support-chat/api/useSupportChatApi';
 import { useSupportChatStore } from '@/features/support-chat/store/useSupportChatStore';
-import type {
-  SupportChatRouteContext,
-  SupportChatQuickAction,
-} from '@/features/support-chat/types/supportChat';
+import type { SupportChatRouteContext } from '@/features/support-chat/types/supportChat';
 import SupportChatLauncherButton from './SupportChatLauncherButton';
 import SupportChatPanel from './SupportChatPanel';
-
-// Temporary placeholders to fix build errors until PR #74 is merged
-const createDefaultRouteContext = (): SupportChatRouteContext => ({
-  pathname: '/',
-  pageLabel: '홈',
-});
-const SUPPORT_CHAT_QUICK_ACTIONS: SupportChatQuickAction[] = [];
 
 const getPageLabel = (pathname: string) => {
   if (pathname === '/login') {
