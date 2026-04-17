@@ -328,7 +328,7 @@ function MyPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
-      <Header fixed isLoggedIn />
+      <Header fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
         <MyPageProfileSection

@@ -18,7 +18,6 @@ import GameDetailModal from '../../features/games/components/GameDetailModal';
 import { getTopGames, searchGames } from '../../features/games/gameApi';
 import { GAME_GENRE_FILTERS } from '../../features/games/genres';
 import { useDebouncedValue } from '../../features/games/hooks/useDebouncedValue';
-import { getAccessToken } from '../../utils/auth';
 import type { GameListItem } from '../../features/games/types';
 import type { GameGenreFilter } from '../../features/games/genres';
 import 'swiper/swiper.css';
@@ -28,7 +27,6 @@ const GENRE_FILTER_MENU_ID = 'game-genre-filter-menu';
 const CTA_PENDING_MESSAGE = '준비 중입니다.';
 
 const MainPage = () => {
-  const hasAccessToken = Boolean(getAccessToken());
   const [searchText, setSearchText] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<GameGenreFilter>('전체');
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
@@ -59,7 +57,7 @@ const MainPage = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      <Header fixed isLoggedIn={hasAccessToken} />
+      <Header fixed />
       <main className="min-h-screen pt-24 pb-10 text-white sm:pt-28 sm:pb-14 lg:pt-32">
         <section className="w-full">
           <div className="flex flex-col gap-4 px-[clamp(1rem,5vw,20rem)] sm:flex-row sm:items-center sm:justify-between">
