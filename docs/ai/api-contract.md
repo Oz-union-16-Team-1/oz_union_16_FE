@@ -53,9 +53,10 @@ type GameDetail = {
   developer: string | null;
   publisher: string | null;
   promoVideoUrl: string | null;
+  promoEmbedUrl: string | null;
   coverImageUrl: string | null;
   description: string | null;
-  platforms: Array<{ name: string; iconUrl: string | null }>;
+  platforms: Array<{ name: string }>;
   externalLinks: {
     officialSite?: string | null;
     steam?: string | null;
@@ -66,15 +67,51 @@ type GameDetail = {
 };
 ```
 
-명세의 상세 응답에는 `create_date`와 예시의 `created_date`처럼 표기 차이가 있습니다.
-화면에서는 해당 값을 직접 사용하지 말고, 필요해지면 API 정규화 함수에서 처리합니다.
+백엔드 원본 응답에서 데이터가 없는 값은 `"N/A"` 문자열이 아니라 `null`로 받는 것을 기준으로 합니다.
+화면의 `N/A` 표기는 컴포넌트 또는 정규화 이후 표시 계층에서 처리합니다.
+
+`like_count`는 원본 응답에서 `null`일 수 있고, 프론트 정규화 이후에는 `0`으로 사용합니다.
+`is_liked`는 로그인 유저 기준 `true | false`, 비로그인 기준 `null`로 처리합니다.
+`promo_embed_url`은 iframe 연결을 위한 필드로 타입과 정규화까지만 반영하고, 실제 iframe 렌더링은 후속 작업에서 처리합니다.
+
+상세 조회가 `404 Not Found`를 반환하면 상세 모달 안에서 아래 빈 상태를 표시합니다.
+
+```text
+해당 게임 상세 정보를 찾을 수 없습니다.
+```
+
+## Like Response Shape
+
+좋아요 등록/취소 응답은 화면에서 아래 형태로 정규화해서 사용합니다.
+
+```ts
+type GameLikeResponse = {
+  gameId: number;
+  isLiked: boolean;
+  likeCount: number;
+};
+```
+
+백엔드 원본 응답은 아래 필드를 내려주는 것을 기준으로 합니다.
+
+```json
+{
+  "game_id": 501,
+  "is_liked": true,
+  "like_count": 1251
+}
+```
+
+상세 모달은 좋아요 등록/취소 이후 별도 재조회 없이 이 응답의 `is_liked`, `like_count`로 UI를 갱신합니다.
+비로그인 상태에서는 좋아요 API를 호출하지 않고 로그인 안내 문구를 표시합니다.
 
 ## Contract Notes and Uncertainties
 
 - `GET /api/v1/games/list/top100`과 `GET /api/v1/games/list`는 선택 장르가 있을 때 `genre_id`를 전달합니다.
 - `genre_id`는 1~14 범위를 사용하고, 전체 조회는 `genre_id`를 보내지 않습니다. 유효하지 않은 값은 `400 Bad Request`로 처리합니다.
 - 상세 응답 필드명은 `title`, 목록 응답 필드명은 `name`으로 다릅니다.
-- 좋아요 상태는 상세 응답의 `is_liked`와 별도 `like-status` API가 함께 존재합니다. 상세 조회 응답을 우선 사용하고, 백엔드 정책이 바뀌면 별도 조회로 전환합니다.
+- 좋아요 상태는 상세 응답의 `is_liked`를 우선 사용합니다. 별도 `like-status` API는 상태 재검증이 필요할 때만 사용합니다.
+- 상세 미디어 응답의 `promo_video_url`은 원본 영상 URL, `promo_embed_url`은 iframe용 URL로 구분합니다.
 
 정렬 기준은 새 요구사항 정의서 기준으로 평점순/최신순이며, API 명세의 `rating_desc`/`created_at`과 의미가 맞습니다.
 

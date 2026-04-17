@@ -81,7 +81,7 @@
 
 ## Data and State
 
-- API 요청: genre_id=0 기준 전체 조회 준비
+- API 요청: 전체 조회는 genre_id 미전달, 장르 선택 시 genre_id=1~14 전달
 - 화면에서 사용할 타입: GameListItem
 - 로딩/에러/빈 상태: skeleton, 에러 메시지, 빈 목록 안내
 
