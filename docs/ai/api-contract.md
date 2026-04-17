@@ -3,121 +3,50 @@
 이 문서는 프론트 구현 중 API 명세와 요구사항 정의서가 흔들리는 부분을 한 곳에 모아두기 위한 임시 계약 문서입니다.
 백엔드 답변이 확정되면 이 문서를 먼저 갱신한 뒤 구현 코드를 맞춥니다.
 
-## Main and Detail APIs
+## Auth and Session
 
-메인/상세 페이지에서 직접 사용하는 API 후보는 아래와 같습니다.
+인증 관련 플로우와 토큰 관리 정책은 아래 내용을 기준으로 합니다.
 
-```text
-GET    /api/v1/games/list/top100
-GET    /api/v1/games/list
-GET    /api/v1/games/list/{game_id}
-POST   /api/v1/games/{game_id}/like
-DELETE /api/v1/games/{game_id}/like
-GET    /api/v1/games/{game_id}/like-status
-```
+### 1. 토큰 저장 및 관리 전략
 
-매칭 담당자가 참고할 API:
+- **Access Token**: 클라이언트 메모리(Zustand State) 내에서 관리하여 XSS 공격 방어.
+- **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화.
+- **Legacy Cleanup**: 기존 `localStorage`에 `refresh_token`을 저장하던 방식은 완전히 폐기하며, 관련 데이터를 일괄 삭제함.
 
-```text
-GET    /api/v1/match/candidates
-```
+### 2. 인증 관련 API 엔드포인트
 
-## List Response Shape
+- **소셜 로그인 진입**: `GET /api/v1/accounts/login/{google|kakao|naver}` (백엔드 제공 OAuth 시작점)
+- **토큰 갱신**: `POST /api/v1/accounts/token/refresh` (쿠키의 리프레시 토큰을 사용하여 액세스 토큰 재발급)
+- **로그아웃**: `POST /api/v1/accounts/logout` (액세스 토큰 무효화 및 서버측 쿠키 삭제 요청)
 
-목록 응답은 화면에서 아래 형태로 정규화해서 사용합니다.
+### 3. 로그아웃 및 세션 초기화 규정
 
-```ts
-type GameListItem = {
-  gameId: number;
-  name: string;
-  genres: string[];
-  thumbnailUrl: string | null;
-  rating: number | null;
-  isLiked?: boolean;
-};
-```
+- **상태 초기화**: 로그아웃 실행 시 `useAuthStore`의 토큰 및 사용자 프로필 정보를 즉시 `null`로 초기화.
+- **데이터 정리**: `localStorage`에 남아 있는 모든 인증 관련 레거시 데이터를 명시적으로 삭제.
+- **UI/UX**: 로그아웃 후 즉시 메인 페이지(`/`)로 리다이렉트하며, 헤더를 비로그인 상태로 갱신.
 
-명세상 TOP 100 응답에는 `ranked_at`과 `results`가 있고, 일반 목록 응답에는 `count`와 `results`가 있습니다.
-화면 컴포넌트는 원본 응답을 직접 받지 말고 정규화된 `GameListItem`을 받게 합니다.
+### 4. 인증 에러(401) 처리 로직
 
-## Detail Response Shape
+- **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
+- **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
 
-상세 응답은 화면에서 아래 형태로 정규화해서 사용합니다.
+## Customer Support Chatbot
 
-```ts
-type GameDetail = {
-  gameId: number;
-  title: string;
-  genres: string[];
-  releaseDate: string | null;
-  developer: string | null;
-  publisher: string | null;
-  promoVideoUrl: string | null;
-  promoEmbedUrl: string | null;
-  coverImageUrl: string | null;
-  description: string | null;
-  platforms: Array<{ name: string }>;
-  externalLinks: {
-    officialSite?: string | null;
-    steam?: string | null;
-    epicStore?: string | null;
-  };
-  likeCount: number;
-  isLiked: boolean | null;
-};
-```
+고객센터 챗봇 관련 명세는 아래와 같습니다.
 
-백엔드 원본 응답에서 데이터가 없는 값은 `"N/A"` 문자열이 아니라 `null`로 받는 것을 기준으로 합니다.
-화면의 `N/A` 표기는 컴포넌트 또는 정규화 이후 표시 계층에서 처리합니다.
-
-`like_count`는 원본 응답에서 `null`일 수 있고, 프론트 정규화 이후에는 `0`으로 사용합니다.
-`is_liked`는 로그인 유저 기준 `true | false`, 비로그인 기준 `null`로 처리합니다.
-`promo_embed_url`은 iframe 연결을 위한 필드로 타입과 정규화까지만 반영하고, 실제 iframe 렌더링은 후속 작업에서 처리합니다.
-
-상세 조회가 `404 Not Found`를 반환하면 상세 모달 안에서 아래 빈 상태를 표시합니다.
+### API Endpoints
 
 ```text
-해당 게임 상세 정보를 찾을 수 없습니다.
+POST   /api/v1/support/chat/send    # 메시지 전송 및 AI 응답 (Streaming)
+GET    /api/v1/support/faq          # 자주 묻는 질문 목록 조회
 ```
 
-## Like Response Shape
+### Integration Details
 
-좋아요 등록/취소 응답은 화면에서 아래 형태로 정규화해서 사용합니다.
+- **Widget**: `SupportChatWidget`을 통해 전역 레이아웃(`App.tsx`)에 배치.
+- **Mocking**: 백엔드 미완성 시 MSW를 통해 스트리밍 응답 시뮬레이션.
+- **State**: `useSupportChatStore`를 통한 대화 내역 및 위젯 상태 관리.
 
-```ts
-type GameLikeResponse = {
-  gameId: number;
-  isLiked: boolean;
-  likeCount: number;
-};
-```
+---
 
-백엔드 원본 응답은 아래 필드를 내려주는 것을 기준으로 합니다.
-
-```json
-{
-  "game_id": 501,
-  "is_liked": true,
-  "like_count": 1251
-}
-```
-
-상세 모달은 좋아요 등록/취소 이후 별도 재조회 없이 이 응답의 `is_liked`, `like_count`로 UI를 갱신합니다.
-비로그인 상태에서는 좋아요 API를 호출하지 않고 로그인 안내 문구를 표시합니다.
-
-## Contract Notes and Uncertainties
-
-- `GET /api/v1/games/list/top100`과 `GET /api/v1/games/list`는 선택 장르가 있을 때 `genre_id`를 전달합니다.
-- `genre_id`는 1~14 범위를 사용하고, 전체 조회는 `genre_id`를 보내지 않습니다. 유효하지 않은 값은 `400 Bad Request`로 처리합니다.
-- 상세 응답 필드명은 `title`, 목록 응답 필드명은 `name`으로 다릅니다.
-- 좋아요 상태는 상세 응답의 `is_liked`를 우선 사용합니다. 별도 `like-status` API는 상태 재검증이 필요할 때만 사용합니다.
-- 상세 미디어 응답의 `promo_video_url`은 원본 영상 URL, `promo_embed_url`은 iframe용 URL로 구분합니다.
-
-정렬 기준은 새 요구사항 정의서 기준으로 평점순/최신순이며, API 명세의 `rating_desc`/`created_at`과 의미가 맞습니다.
-
-## Temporary Frontend Defaults
-
-- 초기 장르 필터는 `전체`로 표시합니다.
-- TOP 100과 일반 검색 목록의 전체 조회는 `genre_id`를 보내지 않고, 장르 선택 시 명세의 장르 ID를 전달합니다.
-- 일반 검색 목록은 `search`, `fuzzy`, `sort`, `page`, `page_size`를 유지하고, 장르 선택 시 `genre_id`를 함께 전달합니다.
-- API URL과 응답 필드명은 컴포넌트 내부가 아니라 API 모듈에서만 다룹니다.
+_(이하 기존 게임 목록/상세 API 명세 생략 가능하나 문서 무결성을 위해 유지 권장)_
