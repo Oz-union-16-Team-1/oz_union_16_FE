@@ -2,14 +2,21 @@ import { AxiosError } from 'axios';
 
 import { api } from '../../../api/axios';
 import type {
+  SurveyApiChatRequest,
+  SurveyApiResetResponse,
+  SurveyApiSessionResponse,
   SurveyChatRequest,
   SurveyChatResponse,
   SurveyResetRequest,
   SurveyResetResponse,
   SurveyResultQuery,
   SurveyResultResponse,
+  SurveyApiSessionStartRequest,
   SurveySessionStartRequest,
   SurveySessionStartResponse,
+  SurveyProgress,
+  SurveySessionStatus,
+  SurveyApiProgress,
 } from '../types/survey';
 
 interface ErrorResponseBody {
@@ -18,34 +25,113 @@ interface ErrorResponseBody {
 }
 
 const SURVEY_BASE_PATH = '/api/v1/survey';
+const SURVEY_CHATBOT_BASE_PATH = `${SURVEY_BASE_PATH}/chatbot`;
+
+const clampProgressRate = (value: number | null | undefined) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 0;
+  }
+
+  if (value > 1) {
+    return Math.max(0, Math.min(value / 100, 1));
+  }
+
+  return Math.max(0, Math.min(value, 1));
+};
+
+const normalizeSurveyProgress = (
+  progress: SurveyApiProgress | null | undefined,
+  progressRate: number | null | undefined,
+): SurveyProgress => {
+  if (progress) {
+    return {
+      current_step:
+        typeof progress.current_step === 'number' ? progress.current_step : 0,
+      total_steps:
+        typeof progress.total_steps === 'number' ? progress.total_steps : 0,
+      completion_rate:
+        typeof progress.completion_rate === 'number'
+          ? clampProgressRate(progress.completion_rate)
+          : clampProgressRate(progressRate),
+    };
+  }
+
+  const completionRate = clampProgressRate(progressRate);
+
+  return {
+    current_step: Math.round(completionRate * 100),
+    total_steps: 100,
+    completion_rate: completionRate,
+  };
+};
+
+const normalizeSurveyStatus = (
+  status: SurveySessionStatus | null | undefined,
+  isCompleted: boolean,
+) => {
+  if (status) {
+    return status;
+  }
+
+  return isCompleted ? 'COMPLETED' : 'IN_PROGRESS';
+};
+
+export const normalizeSurveySessionResponse = (
+  payload: SurveyApiSessionResponse,
+): SurveySessionStartResponse => {
+  const isCompleted = Boolean(payload.is_completed);
+  const recommendationReady =
+    typeof payload.recommendation_ready === 'boolean'
+      ? payload.recommendation_ready
+      : isCompleted;
+
+  return {
+    session_id: payload.session_id,
+    assistant_message: payload.ai_question ?? payload.chatbot_reply ?? null,
+    progress: normalizeSurveyProgress(payload.progress, payload.progress_rate),
+    status: normalizeSurveyStatus(payload.status, isCompleted),
+    recommendation_ready: recommendationReady,
+  };
+};
+
+export const normalizeSurveyResetResponse = (
+  payload: SurveyApiResetResponse,
+): SurveyResetResponse => ({
+  message: payload.message,
+  ...normalizeSurveySessionResponse(payload),
+});
 
 export const startSurveySession = async (
   payload: SurveySessionStartRequest,
-) => {
-  const response = await api.post<SurveySessionStartResponse>(
-    `${SURVEY_BASE_PATH}/chat/sessions`,
-    payload,
+): Promise<SurveySessionStartResponse> => {
+  const response = await api.post<SurveyApiSessionResponse>(
+    `${SURVEY_CHATBOT_BASE_PATH}/sessions`,
+    payload satisfies SurveyApiSessionStartRequest,
   );
 
-  return response.data;
+  return normalizeSurveySessionResponse(response.data);
 };
 
-export const continueSurveyChat = async (payload: SurveyChatRequest) => {
-  const response = await api.post<SurveyChatResponse>(
-    `${SURVEY_BASE_PATH}/chat`,
-    payload,
+export const continueSurveyChat = async (
+  payload: SurveyChatRequest,
+): Promise<SurveyChatResponse> => {
+  const response = await api.post<SurveyApiSessionResponse>(
+    `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages`,
+    {
+      user_answer: payload.user_answer,
+    } satisfies SurveyApiChatRequest,
   );
 
-  return response.data;
+  return normalizeSurveySessionResponse(response.data);
 };
 
 export const resetSurveySession = async (payload: SurveyResetRequest) => {
-  const response = await api.post<SurveyResetResponse>(
+  const response = await api.post<SurveyApiResetResponse>(
     `${SURVEY_BASE_PATH}/sessions/reset`,
     payload,
   );
 
-  return response.data;
+  return normalizeSurveyResetResponse(response.data);
 };
 
 export const getSurveyResults = async (query: SurveyResultQuery) => {

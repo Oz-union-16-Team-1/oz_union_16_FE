@@ -50,7 +50,6 @@ function SurveyChatPanel() {
     setLastSubmittedMessage,
     addUserMessage,
     hydrateInitialSession,
-    beginSession,
     applyChatResponse,
     resetSurveyState,
   } = useSurveyStore();
@@ -85,7 +84,9 @@ function SurveyChatPanel() {
       setSubmitting(true);
 
       try {
-        const response = await startSessionMutation.mutateAsync({});
+        const response = await startSessionMutation.mutateAsync({
+          is_reset: false,
+        });
         hydrateInitialSession(response);
       } catch (requestError) {
         setHasBootstrapped(false);
@@ -129,20 +130,30 @@ function SurveyChatPanel() {
     clearError();
     setLastSubmittedMessage(trimmed);
 
-    if (appendUserMessage) {
-      addUserMessage(trimmed);
-    }
-
     setSubmitting(true);
 
     try {
       if (!sessionId) {
-        const response = await startSessionMutation.mutateAsync({
-          message: trimmed,
+        const sessionResponse = await startSessionMutation.mutateAsync({
+          is_reset: false,
+        });
+        hydrateInitialSession(sessionResponse);
+
+        if (appendUserMessage) {
+          addUserMessage(trimmed);
+        }
+
+        const response = await continueSurveyMutation.mutateAsync({
+          session_id: sessionResponse.session_id,
+          user_answer: trimmed,
         });
 
-        beginSession(response);
+        applyChatResponse(response);
       } else {
+        if (appendUserMessage) {
+          addUserMessage(trimmed);
+        }
+
         const response = await continueSurveyMutation.mutateAsync({
           session_id: sessionId,
           user_answer: trimmed,
@@ -181,15 +192,21 @@ function SurveyChatPanel() {
       resetSurveyState();
       setHasBootstrapped(true);
       setLastSubmittedMessage(lastSubmittedMessage);
-      addUserMessage(lastSubmittedMessage);
       setSubmitting(true);
 
       try {
-        const response = await startSessionMutation.mutateAsync({
-          message: lastSubmittedMessage,
+        const sessionResponse = await startSessionMutation.mutateAsync({
+          is_reset: true,
+        });
+        hydrateInitialSession(sessionResponse);
+        addUserMessage(lastSubmittedMessage);
+
+        const response = await continueSurveyMutation.mutateAsync({
+          session_id: sessionResponse.session_id,
+          user_answer: lastSubmittedMessage,
         });
 
-        beginSession(response);
+        applyChatResponse(response);
       } catch (requestError) {
         setError(extractApiErrorMessage(requestError));
       } finally {
@@ -222,14 +239,12 @@ function SurveyChatPanel() {
     setSubmitting(true);
 
     try {
-      await resetSurveyMutation.mutateAsync({
+      const response = await resetSurveyMutation.mutateAsync({
         session_id: sessionId,
       });
 
       setInputValue('');
-      resetSurveyState();
-      setHasBootstrapped(false);
-      await bootstrapSurvey(true);
+      hydrateInitialSession(response);
     } catch (requestError) {
       const errorMessage = extractApiErrorMessage(requestError);
 

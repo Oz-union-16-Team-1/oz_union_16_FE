@@ -76,11 +76,13 @@ export const useSurveyStore = create<SurveyStoreState>((set) => ({
       isSubmitting: false,
       hasBootstrapped: true,
       error: null,
-      recommendationReady: false,
+      recommendationReady: payload.recommendation_ready,
       lastSubmittedMessage: null,
-      messages: payload.ai_question
-        ? [createMessage('assistant', payload.ai_question)]
-        : [],
+      messages: payload.assistant_message
+        ? [createMessage('assistant', payload.assistant_message)]
+        : payload.recommendation_ready
+          ? [createMessage('assistant', COMPLETION_GUIDE_MESSAGE)]
+          : [],
     })),
   beginSession: (payload) =>
     set((state) => ({
@@ -90,13 +92,24 @@ export const useSurveyStore = create<SurveyStoreState>((set) => ({
       hasBootstrapped: true,
       isSubmitting: false,
       error: null,
-      recommendationReady: false,
-      messages: payload.ai_question
+      recommendationReady: payload.recommendation_ready,
+      messages: payload.assistant_message
         ? state.messages.at(-1)?.role === 'assistant' &&
-          state.messages.at(-1)?.content === payload.ai_question
+          state.messages.at(-1)?.content === payload.assistant_message
           ? state.messages
-          : [...state.messages, createMessage('assistant', payload.ai_question)]
-        : state.messages,
+          : [
+              ...state.messages,
+              createMessage('assistant', payload.assistant_message),
+            ]
+        : payload.recommendation_ready
+          ? state.messages.at(-1)?.role === 'assistant' &&
+            state.messages.at(-1)?.content === COMPLETION_GUIDE_MESSAGE
+            ? state.messages
+            : [
+                ...state.messages,
+                createMessage('assistant', COMPLETION_GUIDE_MESSAGE),
+              ]
+          : state.messages,
     })),
   applyChatResponse: (payload) =>
     set((state) => ({
@@ -106,13 +119,13 @@ export const useSurveyStore = create<SurveyStoreState>((set) => ({
       isSubmitting: false,
       error: null,
       messages: (() => {
-        if (payload.ai_question) {
+        if (payload.assistant_message) {
           return state.messages.at(-1)?.role === 'assistant' &&
-            state.messages.at(-1)?.content === payload.ai_question
+            state.messages.at(-1)?.content === payload.assistant_message
             ? state.messages
             : [
                 ...state.messages,
-                createMessage('assistant', payload.ai_question),
+                createMessage('assistant', payload.assistant_message),
               ];
         }
 
