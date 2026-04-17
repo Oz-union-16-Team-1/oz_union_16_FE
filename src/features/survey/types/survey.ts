@@ -20,14 +20,36 @@ export interface SurveyProgress {
 }
 
 export interface SurveySessionStartRequest {
-  message?: string;
+  is_reset?: boolean;
 }
 
-export interface SurveySessionStartResponse {
+export interface SurveyApiSessionStartRequest {
+  is_reset?: boolean;
+}
+
+export interface SurveyApiChatRequest {
+  user_answer: string;
+}
+
+export interface SurveyApiProgress {
+  current_step?: number | null;
+  total_steps?: number | null;
+  completion_rate?: number | null;
+}
+
+export interface SurveyApiSessionResponse {
   session_id: string;
-  ai_question: string;
-  status: SurveySessionStatus;
-  progress?: SurveyProgress;
+  ai_question?: string | null;
+  progress?: SurveyApiProgress | null;
+  recommendation_ready?: boolean | null;
+  status?: SurveySessionStatus | null;
+  chatbot_reply?: string | null;
+  progress_rate?: number | null;
+  is_completed?: boolean | null;
+}
+
+export interface SurveyApiResetResponse extends SurveyApiSessionResponse {
+  message: string;
 }
 
 export interface SurveyChatRequest {
@@ -35,13 +57,17 @@ export interface SurveyChatRequest {
   user_answer: string;
 }
 
-export interface SurveyChatResponse {
+export interface SurveySessionResponse {
   session_id: string;
-  ai_question: string | null;
+  assistant_message: string | null;
   progress: SurveyProgress;
   status: SurveySessionStatus;
   recommendation_ready: boolean;
 }
+
+export type SurveySessionStartResponse = SurveySessionResponse;
+
+export type SurveyChatResponse = SurveySessionResponse;
 
 export interface SurveyResetRequest {
   session_id: string;
@@ -49,7 +75,11 @@ export interface SurveyResetRequest {
 
 export interface SurveyResetResponse {
   message: string;
-  reset: boolean;
+  session_id: string;
+  assistant_message: string | null;
+  progress: SurveyProgress;
+  status: SurveySessionStatus;
+  recommendation_ready: boolean;
 }
 
 export interface SurveyResultQuery {
