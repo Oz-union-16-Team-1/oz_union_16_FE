@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getGameDetail } from '../gameApi';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
 import type { GameDetail, GameListItem } from '../types';
 
 type GameDetailModalProps = {
@@ -24,42 +26,102 @@ const formatDetailRating = (rating: number | null) =>
 const formatNullableText = (value: string | null | undefined) =>
   value?.trim() ? value : 'N/A';
 
-const getLikeCountAdjustment = ({
-  isLiked,
-  sourceLiked,
-}: {
-  isLiked: boolean;
-  sourceLiked: boolean;
-}) => {
-  if (isLiked === sourceLiked) {
-    return 0;
+const LOGIN_REQUIRED_MESSAGE = '로그인 후 찜하기를 사용할 수 있어요.';
+const LIKE_ERROR_MESSAGE =
+  '찜하기 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
+const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
+
+const getLikeErrorMessage = (error: unknown) => {
+  if (error instanceof AxiosError) {
+    if (error.response?.status === 401) {
+      return LOGIN_REQUIRED_MESSAGE;
+    }
+
+    if (error.response?.status === 404) {
+      return DETAIL_NOT_FOUND_MESSAGE;
+    }
   }
 
-  return isLiked ? 1 : -1;
+  return LIKE_ERROR_MESSAGE;
 };
 
 const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
-  const [likedOverride, setLikedOverride] = useState<boolean | null>(null);
-  const [failedImageUrls, setFailedImageUrls] = useState<string[]>([]);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const queryClient = useQueryClient();
+  const [likeState, setLikeState] = useState<{
+    gameId: number;
+    isLiked: boolean | null;
+    likeCount: number;
+  } | null>(null);
+  const [likeFeedback, setLikeFeedback] = useState<{
+    gameId: number;
+    message: string;
+  } | null>(null);
+  const [failedImageUrlsByGameId, setFailedImageUrlsByGameId] = useState<
+    Record<number, string[]>
+  >({});
 
   const detailQuery = useQuery({
     queryKey: ['games', 'detail', game.gameId],
     queryFn: () => getGameDetail(game.gameId),
     staleTime: 60_000,
+    retry: false,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (nextLiked: boolean) =>
+      nextLiked ? likeGame(game.gameId) : unlikeGame(game.gameId),
+    onMutate: () => {
+      setLikeFeedback(null);
+    },
+    onSuccess: (response) => {
+      const nextLikeState = {
+        gameId: response.gameId,
+        isLiked: response.isLiked,
+        likeCount: response.likeCount,
+      };
+
+      setLikeState(nextLikeState);
+      queryClient.setQueryData<GameDetail>(
+        ['games', 'detail', game.gameId],
+        (currentDetail) =>
+          currentDetail
+            ? {
+                ...currentDetail,
+                isLiked: response.isLiked,
+                likeCount: response.likeCount,
+              }
+            : currentDetail,
+      );
+    },
+    onError: (error) => {
+      setLikeFeedback({
+        gameId: game.gameId,
+        message: getLikeErrorMessage(error),
+      });
+    },
   });
 
   const detail = detailQuery.data;
   const title = detail?.title ?? game.name;
   const genres = detail?.genres.length ? detail.genres : game.genres;
   const genreLabel = genres.length > 0 ? genres.join(', ') : 'N/A';
-  const sourceLiked = Boolean(detail?.isLiked ?? game.isLiked);
-  const isLiked = likedOverride ?? sourceLiked;
-  const likeLabel = isLiked ? '찜 해제' : '찜하기';
-  const likeCountAdjustment = getLikeCountAdjustment({
-    isLiked,
-    sourceLiked,
-  });
-  const likeCount = Math.max(0, (detail?.likeCount ?? 0) + likeCountAdjustment);
+  const activeLikeState = likeState?.gameId === game.gameId ? likeState : null;
+  const activeLikeFeedback =
+    likeFeedback?.gameId === game.gameId ? likeFeedback.message : null;
+  const currentLiked =
+    activeLikeState?.isLiked ??
+    detail?.isLiked ??
+    (typeof game.isLiked === 'boolean' ? game.isLiked : null);
+  const isLiked = currentLiked === true;
+  const likeLabel = isLiked ? '찜하기 취소' : '찜하기';
+  const likeCount = Math.max(
+    0,
+    activeLikeState?.likeCount ?? detail?.likeCount ?? 0,
+  );
+  const hasAccessToken = Boolean(accessToken);
+  const failedImageUrls = failedImageUrlsByGameId[game.gameId] ?? [];
   const imageCandidates = [detail?.coverImageUrl, game.thumbnailUrl].filter(
     (url): url is string => Boolean(url),
   );
@@ -78,8 +140,21 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     label,
     url: detail?.externalLinks[key],
   })).filter((link): link is { label: string; url: string } =>
-    Boolean(link.url && link.url !== 'N/A'),
+    Boolean(link.url?.trim() && link.url.trim() !== 'N/A'),
   );
+
+  const handleToggleLike = () => {
+    if (!hasAccessToken) {
+      setLikeFeedback({
+        gameId: game.gameId,
+        message: LOGIN_REQUIRED_MESSAGE,
+      });
+      return;
+    }
+
+    likeMutation.mutate(!isLiked);
+  };
+
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
     const previousBodyPaddingRight = document.body.style.paddingRight;
@@ -132,136 +207,164 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
           <X aria-hidden="true" className="h-5 w-5" />
         </button>
 
-        <div className="grid gap-5 px-5 pt-5 pb-6 sm:grid-cols-[216px_minmax(0,1fr)] sm:px-7 sm:pt-7">
-          <div className="relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] sm:w-54">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={`${title} 커버 이미지`}
-                className="relative z-0 h-full w-full object-cover"
-                onError={() => {
-                  setFailedImageUrls((current) =>
-                    current.includes(imageUrl)
-                      ? current
-                      : [...current, imageUrl],
-                  );
-                }}
-              />
-            ) : (
-              <div className="relative z-0 flex h-full w-full items-center justify-center text-xs text-white/45">
-                이미지 N/A
-              </div>
-            )}
-          </div>
-
-          <div className="min-w-0 sm:pr-12">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 pr-10 sm:items-center sm:pr-0">
-              <h2
-                id="game-detail-modal-title"
-                className="min-w-0 truncate text-2xl leading-tight font-bold sm:text-3xl"
-                title={title}
-              >
-                {title}
-              </h2>
-              <button
-                type="button"
-                aria-label={likeLabel}
-                aria-pressed={isLiked}
-                title={likeLabel}
-                onClick={() =>
-                  setLikedOverride((current) => !(current ?? sourceLiked))
-                }
-                className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12] ${
-                  isLiked
-                    ? 'border-[#ff4b55]/60 bg-[#251010] text-white hover:border-[#ff4b55]/90 hover:bg-[#2d1113]'
-                    : 'border-white/15 bg-white/4 text-white/78 hover:border-[#ff4b55]/60 hover:bg-white/8 hover:text-white'
-                }`}
-              >
-                <Heart
-                  aria-hidden="true"
-                  className={`h-4.5 w-4.5 transition ${
-                    isLiked
-                      ? 'fill-current text-[#ff4b55]'
-                      : 'fill-transparent text-[#ff4b55]'
-                  }`}
-                />
-                <span>찜하기</span>
-              </button>
-            </div>
-            <p className="mt-3 text-sm text-white/65">{genreLabel}</p>
-            <p className="mt-2 text-sm text-white/70">
-              평점{' '}
-              <span className="font-semibold text-[#ff4b55]">
-                {formatDetailRating(game.rating)}
-              </span>
-              <span className="mx-2 text-white/24">|</span>
-              좋아요{' '}
-              <span className="font-semibold text-white/86">
-                {likeCount.toLocaleString('ko-KR')}
-              </span>
-            </p>
-            <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
-              {detailQuery.isLoading
-                ? '상세 정보를 불러오는 중입니다.'
-                : formatNullableText(detail?.description)}
+        {detailQuery.isError ? (
+          <div className="flex min-h-[24rem] flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
+            <h2
+              id="game-detail-modal-title"
+              className="text-2xl font-bold text-white sm:text-3xl"
+            >
+              {DETAIL_NOT_FOUND_TITLE}
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-6 text-white/60 sm:text-base">
+              {DETAIL_NOT_FOUND_MESSAGE}
             </p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="grid gap-5 px-5 pt-5 pb-6 sm:grid-cols-[216px_minmax(0,1fr)] sm:px-7 sm:pt-7">
+              <div className="relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] sm:w-54">
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={`${title} 커버 이미지`}
+                    className="relative z-0 h-full w-full object-cover"
+                    onError={() => {
+                      setFailedImageUrlsByGameId((current) => {
+                        const currentUrls = current[game.gameId] ?? [];
 
-        <div className="px-5 pb-6 sm:px-7 sm:pb-7">
-          <div className="flex aspect-video min-h-44 items-center justify-center overflow-hidden rounded-lg border border-[#5a1115]/70 bg-[#2a1711] shadow-[inset_0_0_42px_rgba(255,75,85,0.08)] sm:min-h-72">
-            <div className="px-4 text-center">
-              <PlayCircle
-                aria-hidden="true"
-                className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
-              />
-              <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
-                프로모션 동영상 영역
-              </p>
-              <p className="mt-2 text-xs text-white/45 sm:text-sm">
-                영상 URL 정책이 확정되면 이 영역에 iframe을 연결합니다.
-              </p>
-            </div>
-          </div>
+                        if (currentUrls.includes(imageUrl)) {
+                          return current;
+                        }
 
-          <dl className="mt-6 divide-y divide-white/10 border-y border-white/10">
-            {detailRows.map((row) => (
-              <div
-                key={row.label}
-                className="grid gap-1 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4"
-              >
-                <dt className="text-white/65">{row.label}</dt>
-                <dd className="text-white/80">{row.value}</dd>
-              </div>
-            ))}
-            <div className="grid items-center gap-3 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
-              <dt className="text-white/65">외부 링크</dt>
-              <dd className="text-white/80">
-                {externalLinks.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {externalLinks.map((link) => (
-                      <a
-                        key={link.label}
-                        href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-10 items-center gap-2 rounded-md border border-white/12 bg-white/4 px-3 text-sm font-semibold text-white/78 transition hover:border-[#ff4b55]/50 hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
-                      >
-                        <span>{link.label}</span>
-                        <ExternalLink
-                          aria-hidden="true"
-                          className="h-3.5 w-3.5"
-                        />
-                      </a>
-                    ))}
-                  </div>
+                        return {
+                          ...current,
+                          [game.gameId]: [...currentUrls, imageUrl],
+                        };
+                      });
+                    }}
+                  />
                 ) : (
-                  'N/A'
+                  <div className="relative z-0 flex h-full w-full items-center justify-center text-xs text-white/45">
+                    이미지 N/A
+                  </div>
                 )}
-              </dd>
+              </div>
+
+              <div className="min-w-0 sm:pr-12">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 pr-10 sm:items-center sm:pr-0">
+                  <h2
+                    id="game-detail-modal-title"
+                    className="min-w-0 truncate text-2xl leading-tight font-bold sm:text-3xl"
+                    title={title}
+                  >
+                    {title}
+                  </h2>
+                  <button
+                    type="button"
+                    aria-label={likeLabel}
+                    aria-pressed={isLiked}
+                    aria-disabled={!hasAccessToken}
+                    title={likeLabel}
+                    disabled={likeMutation.isPending}
+                    onClick={handleToggleLike}
+                    className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12] disabled:cursor-wait disabled:opacity-70 ${
+                      isLiked
+                        ? 'border-[#ff4b55]/60 bg-[#251010] text-white hover:border-[#ff4b55]/90 hover:bg-[#2d1113]'
+                        : 'border-white/15 bg-white/4 text-white/78 hover:border-[#ff4b55]/60 hover:bg-white/8 hover:text-white'
+                    }`}
+                  >
+                    <Heart
+                      aria-hidden="true"
+                      className={`h-4.5 w-4.5 transition ${
+                        isLiked
+                          ? 'fill-current text-[#ff4b55]'
+                          : 'fill-transparent text-[#ff4b55]'
+                      }`}
+                    />
+                    <span>찜하기</span>
+                  </button>
+                </div>
+                <p className="mt-3 text-sm text-white/65">{genreLabel}</p>
+                <p className="mt-2 text-sm text-white/70">
+                  평점{' '}
+                  <span className="font-semibold text-[#ff4b55]">
+                    {formatDetailRating(game.rating)}
+                  </span>
+                  <span className="mx-2 text-white/24">|</span>
+                  좋아요{' '}
+                  <span className="font-semibold text-white/86">
+                    {likeCount.toLocaleString('ko-KR')}
+                  </span>
+                </p>
+                {activeLikeFeedback ? (
+                  <p role="status" className="mt-3 text-xs text-[#ffb4b8]">
+                    {activeLikeFeedback}
+                  </p>
+                ) : null}
+                <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
+                  {detailQuery.isLoading
+                    ? '상세 정보를 불러오는 중입니다.'
+                    : formatNullableText(detail?.description)}
+                </p>
+              </div>
             </div>
-          </dl>
-        </div>
+
+            <div className="px-5 pb-6 sm:px-7 sm:pb-7">
+              <div className="flex aspect-video min-h-44 items-center justify-center overflow-hidden rounded-lg border border-[#5a1115]/70 bg-[#2a1711] shadow-[inset_0_0_42px_rgba(255,75,85,0.08)] sm:min-h-72">
+                <div className="px-4 text-center">
+                  <PlayCircle
+                    aria-hidden="true"
+                    className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                  />
+                  <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
+                    프로모션 동영상 영역
+                  </p>
+                  <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                    영상 URL 정책이 확정되면 이 영역에 iframe을 연결합니다.
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-6 divide-y divide-white/10 border-y border-white/10">
+                {detailRows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid gap-1 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4"
+                  >
+                    <dt className="text-white/65">{row.label}</dt>
+                    <dd className="text-white/80">{row.value}</dd>
+                  </div>
+                ))}
+                <div className="grid items-center gap-3 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
+                  <dt className="text-white/65">외부 링크</dt>
+                  <dd className="text-white/80">
+                    {externalLinks.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {externalLinks.map((link) => (
+                          <a
+                            key={link.label}
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-white/12 bg-white/4 px-3 text-sm font-semibold text-white/78 transition hover:border-[#ff4b55]/50 hover:bg-white/8 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
+                          >
+                            <span>{link.label}</span>
+                            <ExternalLink
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      'N/A'
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
