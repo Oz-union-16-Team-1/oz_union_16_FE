@@ -1,24 +1,16 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-// import {
-//   createDefaultRouteContext,
-//   SUPPORT_CHAT_QUICK_ACTIONS,
-//   SUPPORT_CHAT_WELCOME_MESSAGE,
-// } from '../data/faqs';
+import {
+  createDefaultRouteContext,
+  SUPPORT_CHAT_QUICK_ACTIONS,
+  SUPPORT_CHAT_WELCOME_MESSAGE,
+} from '../data/faqs';
 import type {
   SupportChatMessage,
   SupportChatQuickAction,
   SupportChatRouteContext,
 } from '../types/supportChat';
-
-// Temporary placeholders to fix build errors until PR #74 is merged
-const createDefaultRouteContext = (): SupportChatRouteContext => ({
-  pathname: '/',
-  pageLabel: '홈',
-});
-const SUPPORT_CHAT_QUICK_ACTIONS: SupportChatQuickAction[] = [];
-const SUPPORT_CHAT_WELCOME_MESSAGE = '안녕하세요! 무엇을 도와드릴까요?';
 
 type SupportChatStoreState = {
   sessionId: number | null;
