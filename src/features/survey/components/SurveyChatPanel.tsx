@@ -286,7 +286,7 @@ function SurveyChatPanel() {
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#6c2323] bg-[#1a0a0a] px-3 py-1 text-xs font-semibold tracking-[0.2em] text-[#ff8f8f] uppercase">
               <Sparkles size={14} />
-              {isMockServiceWorkerEnabled() ? 'MSW Mock Mode' : 'Live API'}
+              {isMockServiceWorkerEnabled() ? '체험 모드' : '개인화 설문'}
             </div>
             <h2 className="text-2xl font-bold text-white md:text-3xl">
               AI 취향 설문
@@ -297,7 +297,7 @@ function SurveyChatPanel() {
             </p>
             {isMockServiceWorkerEnabled() ? (
               <p className="mt-3 text-sm leading-6 text-[#ffb0b0]">
-                현재 질문/응답은 실제 AI가 아니라 MSW mock 데이터로 동작합니다.
+                체험 모드에서 설문 흐름을 먼저 확인할 수 있어요.
               </p>
             ) : null}
           </div>
