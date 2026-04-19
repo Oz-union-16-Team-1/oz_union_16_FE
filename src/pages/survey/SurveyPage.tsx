@@ -16,7 +16,7 @@ function SurveyPage() {
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mb-8 flex flex-col gap-5">
           <div className="inline-flex w-fit items-center rounded-full border border-[#5e1717] bg-[#150707] px-4 py-1.5 text-xs font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
-            Survey Experience
+            개인화 설문
           </div>
           <div className="max-w-3xl">
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
@@ -37,9 +37,8 @@ function SurveyPage() {
               로그인 후 설문을 시작할 수 있어요.
             </h2>
             <p className="mt-4 text-base leading-7 text-white/60">
-              실제 API 모드에서는 인증된 사용자만 설문 세션을 생성할 수
-              있습니다. 개발 중에는 `VITE_USE_MSW`를 활성화하면 로그인 없이도
-              설문 체험이 가능합니다.
+              로그인하면 취향을 바탕으로 질문을 이어가고, 설문이 끝난 뒤 바로
+              추천 결과까지 확인할 수 있어요.
             </p>
           </section>
         )}
