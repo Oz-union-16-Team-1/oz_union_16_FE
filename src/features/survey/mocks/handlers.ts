@@ -2,8 +2,8 @@ import { delay, http, HttpResponse } from 'msw';
 
 import type {
   SurveyApiChatRequest,
+  SurveyApiResultItem,
   SurveyResetRequest,
-  SurveyResultItem,
 } from '../types/survey';
 
 const MIN_STEPS = 3;
@@ -18,10 +18,10 @@ const surveyQuestions = [
   '플레이 타임은 짧고 강렬한 편이 좋으신가요, 아니면 오래 파고들며 성장하는 흐름이 좋으신가요?',
 ];
 
-const recommendations: SurveyResultItem[] = [
+const recommendations: SurveyApiResultItem[] = [
   {
     game_id: 501,
-    name: '호랑나비 어드벤처',
+    title: '호랑나비 어드벤처',
     genres: ['RPG', '어드벤처'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
@@ -30,7 +30,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 502,
-    name: '이터널 오딧세이',
+    title: '이터널 오딧세이',
     genres: ['액션', 'RPG'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
@@ -39,7 +39,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 503,
-    name: '스타폴 택틱스',
+    title: '스타폴 택틱스',
     genres: ['전략', '시뮬레이션'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=800&q=80',
@@ -48,7 +48,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 504,
-    name: '크림슨 서킷',
+    title: '크림슨 서킷',
     genres: ['슈팅', '로그라이트'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=800&q=80',
@@ -57,7 +57,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 505,
-    name: '문라이트 캔버스',
+    title: '문라이트 캔버스',
     genres: ['비주얼 노벨', '퍼즐'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80',
@@ -66,7 +66,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 506,
-    name: '드리프트 네온',
+    title: '드리프트 네온',
     genres: ['레이싱', '스포츠'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80',
@@ -75,7 +75,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 507,
-    name: '노던 랩소디',
+    title: '노던 랩소디',
     genres: ['어드벤처', '스토리'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=800&q=80',
@@ -84,7 +84,7 @@ const recommendations: SurveyResultItem[] = [
   },
   {
     game_id: 508,
-    name: '제로아워 레이드',
+    title: '제로아워 레이드',
     genres: ['FPS', '협동'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',

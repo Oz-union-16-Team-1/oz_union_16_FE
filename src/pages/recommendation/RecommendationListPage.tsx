@@ -54,17 +54,14 @@ type RecommendationDisplayItem = {
 
 const normalizeResultItem = (
   item: SurveyResultItem | MatchResultItem,
-): RecommendationDisplayItem =>
-  'title' in item
-    ? item
-    : {
-        game_id: item.game_id,
-        title: item.name,
-        genres: item.genres,
-        thumbnail_url: item.thumbnail_url,
-        rating: item.rating,
-        is_liked: item.is_liked,
-      };
+): RecommendationDisplayItem => ({
+  game_id: item.game_id,
+  title: item.title,
+  genres: item.genres,
+  thumbnail_url: item.thumbnail_url,
+  rating: item.rating,
+  is_liked: item.is_liked,
+});
 
 const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
   const genreCounts = new Map<string, number>();
