@@ -9,7 +9,29 @@ import {
 
 type AuthSocialLoginGroupProps = {
   className?: string;
+  size?: 'default' | 'compact';
 };
+
+const GROUP_SIZE_CLASS_NAMES = {
+  default: 'space-y-3 sm:space-y-3.5',
+  compact: 'space-y-[clamp(0.625rem,1.8dvh,0.875rem)]',
+} as const;
+
+const BUTTON_SIZE_CLASS_NAMES = {
+  default: {
+    google: 'h-14 sm:h-[61px]',
+    kakao: 'h-14 sm:h-[59px]',
+    naver: 'h-14 sm:h-[59px]',
+    label: '',
+  },
+  compact: {
+    google: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
+    kakao: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
+    naver: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
+    label:
+      'text-[clamp(0.95rem,2dvh,1.05rem)] leading-none sm:text-[clamp(0.95rem,2dvh,1.05rem)]',
+  },
+} as const;
 
 const GoogleIcon = () => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
@@ -50,10 +72,14 @@ const NaverIcon = () => (
   </svg>
 );
 
-function AuthSocialLoginGroup({ className = '' }: AuthSocialLoginGroupProps) {
+function AuthSocialLoginGroup({
+  className = '',
+  size = 'default',
+}: AuthSocialLoginGroupProps) {
   const [redirectingProvider, setRedirectingProvider] =
     useState<SocialAuthProvider | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[size];
 
   const handleSocialLogin = (provider: SocialAuthProvider) => {
     try {
@@ -70,28 +96,28 @@ function AuthSocialLoginGroup({ className = '' }: AuthSocialLoginGroupProps) {
   };
 
   return (
-    <div className={`space-y-3 ${className} sm:space-y-3.5`}>
+    <div className={`${GROUP_SIZE_CLASS_NAMES[size]} ${className}`}>
       <SocialLoginButton
         label="Google로 로그인하기"
         icon={<GoogleIcon />}
-        className="bg-login-google border-login-google h-14 border sm:h-[61px]"
-        labelClassName="text-white"
+        className={`bg-login-google border-login-google border ${buttonSizeClassName.google}`}
+        labelClassName={`text-white ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('google')}
         disabled={Boolean(redirectingProvider)}
       />
       <SocialLoginButton
         label="카카오로 로그인하기"
         icon={<KakaoIcon />}
-        className="bg-login-kakao h-14 sm:h-[59px]"
-        labelClassName="text-login-kakao-label"
+        className={`bg-login-kakao ${buttonSizeClassName.kakao}`}
+        labelClassName={`text-login-kakao-label ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('kakao')}
         disabled={Boolean(redirectingProvider)}
       />
       <SocialLoginButton
         label="네이버로 로그인하기"
         icon={<NaverIcon />}
-        className="bg-login-naver h-14 sm:h-[59px]"
-        labelClassName="text-white"
+        className={`bg-login-naver ${buttonSizeClassName.naver}`}
+        labelClassName={`text-white ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('naver')}
         disabled={Boolean(redirectingProvider)}
       />

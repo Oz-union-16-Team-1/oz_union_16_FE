@@ -27,6 +27,23 @@ type LoginLocationState = {
   errorMessage?: string;
 };
 
+const LOGIN_MAIN_CLASS_NAME = 'min-h-0 py-3 sm:py-4';
+const LOGIN_PANEL_CLASS_NAME =
+  'max-w-[500px] max-h-[calc(100dvh-4rem-1.5rem)] overflow-y-auto overscroll-contain recommendation-scroll px-[clamp(1rem,3vw,1.75rem)] py-[clamp(1.25rem,3.6dvh,2rem)] sm:max-h-[calc(100dvh-4rem-2rem)] sm:px-[clamp(1.25rem,3vw,2rem)] sm:py-[clamp(1.5rem,4dvh,2.25rem)]';
+const LOGIN_CONTENT_CLASS_NAME = 'max-w-[420px]';
+const LOGIN_TITLE_CLASS_NAME = 'text-[clamp(2.25rem,5dvh,3rem)]';
+const LOGIN_SOCIAL_GROUP_CLASS_NAME = 'mt-[clamp(1rem,2.5dvh,1.75rem)]';
+const LOGIN_DIVIDER_CLASS_NAME = 'my-[clamp(0.875rem,2.4dvh,1.5rem)]';
+const LOGIN_FORM_CLASS_NAME = 'space-y-[clamp(0.75rem,2.2dvh,1rem)]';
+const LOGIN_FIELD_CLASS_NAME =
+  'h-[clamp(3rem,6.5dvh,3.5rem)] px-[clamp(0.875rem,2vw,1rem)] text-[clamp(0.95rem,2dvh,1rem)]';
+const LOGIN_PRIMARY_BUTTON_CLASS_NAME =
+  'mt-[clamp(0.75rem,2dvh,1rem)] h-[clamp(3rem,6.5dvh,3.5rem)] text-[clamp(1rem,2.2dvh,1.125rem)] leading-none';
+const LOGIN_SECONDARY_BUTTON_CLASS_NAME =
+  'mt-[clamp(0.75rem,2dvh,1.25rem)] h-[clamp(3rem,6.5dvh,3.5rem)] text-[clamp(1rem,2.2dvh,1.125rem)] leading-none';
+const LOGIN_SIGNUP_SECTION_CLASS_NAME =
+  'border-login-divider mt-[clamp(1rem,2.5dvh,1.75rem)] border-t pt-[clamp(0.875rem,2.2dvh,1.5rem)]';
+
 const getLoginFieldErrors = (
   values: LoginRequest,
   touchedState: LoginTouchedState,
@@ -139,12 +156,22 @@ function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Log In" withPanel panelClassName="max-w-[500px]">
-      <AuthSocialLoginGroup className="mt-6 sm:mt-7" />
+    <AuthLayout
+      title="Log In"
+      withPanel
+      titleClassName={LOGIN_TITLE_CLASS_NAME}
+      mainClassName={LOGIN_MAIN_CLASS_NAME}
+      panelClassName={LOGIN_PANEL_CLASS_NAME}
+      contentClassName={LOGIN_CONTENT_CLASS_NAME}
+    >
+      <AuthSocialLoginGroup
+        className={LOGIN_SOCIAL_GROUP_CLASS_NAME}
+        size="compact"
+      />
 
-      <AuthDivider className="my-5 sm:my-6" />
+      <AuthDivider className={LOGIN_DIVIDER_CLASS_NAME} />
 
-      <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
+      <form className={LOGIN_FORM_CLASS_NAME} onSubmit={handleSubmit}>
         <AuthInputField
           id="login-id"
           name="login_id"
@@ -162,7 +189,8 @@ function LoginPage() {
           }
           errorMessage={resolvedFieldErrors.login_id}
           disabled={loginMutation.isPending}
-          containerClassName="pt-1"
+          containerClassName="pt-[clamp(0.125rem,0.7dvh,0.25rem)]"
+          className={LOGIN_FIELD_CLASS_NAME}
         />
 
         <AuthInputField
@@ -182,6 +210,7 @@ function LoginPage() {
           }
           errorMessage={resolvedFieldErrors.password}
           disabled={loginMutation.isPending}
+          className={LOGIN_FIELD_CLASS_NAME}
         />
 
         {noticeMessage ? (
@@ -193,7 +222,7 @@ function LoginPage() {
         <div className="flex justify-end">
           <button
             type="button"
-            className="text-login-muted text-sm font-medium transition-colors hover:text-white/80"
+            className="text-login-muted text-[clamp(0.75rem,1.7dvh,0.875rem)] font-medium transition-colors hover:text-white/80"
           >
             아이디/비밀번호를 잊어버리셨나요?
           </button>
@@ -201,20 +230,20 @@ function LoginPage() {
 
         <AuthButton
           type="submit"
-          className="mt-3.5 w-full sm:mt-4"
+          className={`w-full ${LOGIN_PRIMARY_BUTTON_CLASS_NAME}`}
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? '로그인 중...' : '로그인'}
         </AuthButton>
       </form>
 
-      <div className="border-login-divider mt-6 border-t pt-5 sm:mt-7 sm:pt-6">
-        <p className="text-login-helper text-center text-sm/5 font-normal">
+      <div className={LOGIN_SIGNUP_SECTION_CLASS_NAME}>
+        <p className="text-login-helper text-center text-[clamp(0.75rem,1.8dvh,0.875rem)] leading-5 font-normal">
           아직 PGTI 회원이 아니신가요?
         </p>
         <AuthLinkButton
           to={`/${ROUTES.SIGNUP}`}
-          className="mt-4 w-full sm:mt-5"
+          className={`w-full ${LOGIN_SECONDARY_BUTTON_CLASS_NAME}`}
         >
           회원가입
         </AuthLinkButton>
