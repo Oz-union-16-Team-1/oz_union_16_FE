@@ -1,11 +1,33 @@
 import { ChevronRight } from 'lucide-react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
 import { MATCHING_GENRES } from '../../features/matching/genres';
+import { isMockServiceWorkerEnabled } from '../../lib/env';
+import { getAccessToken } from '../../utils/auth';
 
 function MatchingListPage() {
+  const hasAccessToken = Boolean(getAccessToken());
+  const isMockMode = isMockServiceWorkerEnabled();
+  const canFetchGenreImages = isMockMode || hasAccessToken;
+  const genreImageQueries = useMatchingGenreImageQueries(
+    MATCHING_GENRES.map((genre) => genre.genreId),
+    canFetchGenreImages,
+  );
+  const genreImageMap = useMemo(
+    () =>
+      new Map(
+        genreImageQueries
+          .map((query) => query.data)
+          .filter((item): item is NonNullable<typeof item> => Boolean(item))
+          .map((item) => [item.genre_id, item.image_url]),
+      ),
+    [genreImageQueries],
+  );
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
@@ -34,7 +56,7 @@ function MatchingListPage() {
               >
                 <div className="relative overflow-hidden rounded-[20px]">
                   <img
-                    src={genre.thumbnailUrl}
+                    src={genreImageMap.get(genre.genreId) ?? genre.thumbnailUrl}
                     alt={genre.title}
                     className="aspect-[16/9] w-full object-cover transition duration-300 group-hover:scale-[1.025] group-hover:brightness-110"
                   />

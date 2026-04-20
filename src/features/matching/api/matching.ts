@@ -2,6 +2,7 @@ import { api } from '../../../api/axios';
 import type {
   MatchingApiCandidateItem,
   MatchingApiCandidatesResponse,
+  MatchingGenreImageResponse,
   MatchResultQuery,
   MatchResultResponse,
   MatchingCandidatesResponse,
@@ -40,6 +41,19 @@ export const getMatchCandidates = async (genreId: number) => {
       ? response.data.results.map(normalizeMatchCandidate)
       : [],
   } satisfies MatchingCandidatesResponse;
+};
+
+export const getMatchingGenreImage = async (genreId: number) => {
+  const response = await api.get<MatchingGenreImageResponse>(
+    `${MATCHING_BASE_PATH}/genres/image-url`,
+    {
+      params: {
+        genre_id: genreId,
+      },
+    },
+  );
+
+  return response.data;
 };
 
 export const submitMatchResponses = async (
