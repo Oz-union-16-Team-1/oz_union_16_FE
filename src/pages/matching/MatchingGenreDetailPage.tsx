@@ -72,6 +72,7 @@ function MatchingGenreDetailPage() {
       ? flowCandidates
       : candidates;
   const totalSteps = displayCandidates.length;
+  const totalGamesLabel = `${totalSteps}개의 게임`;
   const safeIndex =
     totalSteps > 0 ? Math.min(currentIndex, totalSteps - 1) : currentIndex;
   const currentCandidate = displayCandidates[safeIndex];
@@ -307,7 +308,7 @@ function MatchingGenreDetailPage() {
                 매칭 과정을 따라가세요
               </h1>
               <p className="mt-4 text-sm leading-7 break-keep text-white/58 sm:text-base">
-                5개의 게임을 차례대로 평가하고, 마음에 드는 게임은 하트로
+                {totalGamesLabel}을 차례대로 평가하고, 마음에 드는 게임은 하트로
                 표시해둘 수 있어요.
               </p>
             </div>
@@ -390,8 +391,8 @@ function MatchingGenreDetailPage() {
                     <p className="text-sm leading-7 break-keep text-white/64">
                       {isLastCard
                         ? currentEvaluation.rating === null
-                          ? '마지막 카드입니다. 별점을 선택하면 모든 평가를 한 번에 제출할 수 있어요.'
-                          : '마지막 카드까지 평가를 남겼어요. 제출하면 추천 결과를 바로 확인할 수 있어요.'
+                          ? '마지막 후보예요. 별점을 선택하면 지금까지 남긴 평가를 한 번에 제출할 수 있어요.'
+                          : '모든 평가가 준비됐어요. 제출하면 추천 결과를 바로 확인할 수 있어요.'
                         : currentEvaluation.rating === null
                           ? '현재 카드의 별점을 먼저 선택해 주세요.'
                           : '별점과 좋아요는 바로 저장되고, 이전 카드로 돌아가 수정할 수도 있어요.'}
@@ -407,7 +408,8 @@ function MatchingGenreDetailPage() {
                   {isLastCard ? (
                     <div className="mt-auto pt-8">
                       <p className="mx-auto mb-3 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
-                        5개 게임의 평가가 모두 준비되면 제출할 수 있어요.
+                        {totalSteps}개 게임의 평가가 모두 준비되면 제출할 수
+                        있어요.
                       </p>
 
                       <div className="flex flex-wrap items-end justify-between gap-3">
