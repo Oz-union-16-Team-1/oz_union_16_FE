@@ -41,9 +41,6 @@ const FALLBACK_BACKDROP_ITEMS = [
   },
 ];
 
-const getDisplayPrice = (gameId: number) =>
-  gameId % 4 === 0 ? '가격: 무료' : '가격: 정보 준비 중';
-
 const FALLBACK_HIGHLIGHTS = ['몰입감', '스토리', '액션', '전략'];
 
 type RecommendationDisplayItem = {
@@ -106,7 +103,12 @@ type RecommendationRowProps = {
 function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
   return (
     <article className="group grid gap-4 px-4 py-5 transition-colors duration-200 hover:bg-white/[0.025] sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
-      <div className="overflow-hidden rounded-[20px] border border-white/6 bg-[#111111] shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
+      <button
+        type="button"
+        onClick={() => onOpenDetail(item)}
+        aria-label={`${item.title} 상세 보기`}
+        className="overflow-hidden rounded-[20px] border border-white/6 bg-[#111111] text-left shadow-[0_14px_32px_rgba(0,0,0,0.18)] transition hover:border-white/12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
+      >
         {item.thumbnail_url ? (
           <img
             src={item.thumbnail_url}
@@ -118,7 +120,7 @@ function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
             이미지 준비 중
           </div>
         )}
-      </div>
+      </button>
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -137,16 +139,7 @@ function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end lg:min-w-[240px] lg:flex-nowrap">
-        <div className="min-w-[110px] lg:text-right">
-          <p className="text-[11px] font-medium tracking-[0.18em] text-white/28 uppercase">
-            Price
-          </p>
-          <p className="mt-1 text-sm text-white/62">
-            {getDisplayPrice(item.game_id)}
-          </p>
-        </div>
-
+      <div className="flex items-center justify-end gap-3 lg:min-w-[96px]">
         <button
           type="button"
           className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
@@ -249,6 +242,11 @@ function RecommendationListPage() {
     normalizeResultItem,
   );
   const totalCount = data?.pages[0]?.count ?? 0;
+  const visibleResultLimit = 15;
+  const cappedTotalCount =
+    totalCount > 0
+      ? Math.min(totalCount, visibleResultLimit)
+      : Math.min(recommendationItems.length, visibleResultLimit);
   const recommendationHighlights =
     getRecommendationHighlights(recommendationItems);
   const errorMessage = error ? extractApiErrorMessage(error) : null;
@@ -301,7 +299,7 @@ function RecommendationListPage() {
                 Summary
               </p>
               <p className="mt-5 text-[34px] font-semibold tracking-[-0.04em] text-white">
-                {totalCount > 0 ? totalCount : '...'}
+                {cappedTotalCount > 0 ? cappedTotalCount : '...'}
               </p>
               <p className="mt-2 text-sm leading-6 break-keep text-white/52">
                 {isMatchSource
@@ -368,8 +366,8 @@ function RecommendationListPage() {
                   </div>
 
                   <div className="inline-flex w-fit items-center rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-white/48">
-                    {totalCount > 0
-                      ? `${totalCount}개의 추천 결과`
+                    {cappedTotalCount > 0
+                      ? `${cappedTotalCount}개의 추천 결과`
                       : '추천 결과를 정리하고 있어요'}
                   </div>
                 </div>

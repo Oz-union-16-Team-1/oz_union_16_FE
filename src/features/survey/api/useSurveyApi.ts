@@ -34,7 +34,18 @@ export const useSurveyResultsInfinite = (
       getSurveyResults({
         session_id: sessionId!,
         cursor: pageParam ?? undefined,
-        page_size: 4,
+        page_size: 5,
       }),
-    getNextPageParam: (lastPage) => lastPage.next,
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (count, page) => count + page.results.length,
+        0,
+      );
+
+      if (loadedCount >= 15) {
+        return undefined;
+      }
+
+      return lastPage.next;
+    },
   });
