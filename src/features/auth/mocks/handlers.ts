@@ -13,53 +13,9 @@ import type {
   LogoutResponse,
   SignupRequest,
 } from '../types/auth';
+import { createMockUserMap, type MockUserRecord } from './mockUsers';
 
-type MockUserRecord = {
-  id: number;
-  loginId: string;
-  password: string;
-  name: string;
-  nickname: string;
-  gender: AuthGender;
-  suspended?: boolean;
-};
-
-const mockUsers = new Map<string, MockUserRecord>([
-  [
-    'pgti-demo',
-    {
-      id: 1,
-      loginId: 'pgti-demo',
-      password: 'demo1234',
-      name: 'PGTI 데모',
-      nickname: '데모유저',
-      gender: 'M',
-    },
-  ],
-  [
-    'already-used',
-    {
-      id: 2,
-      loginId: 'already-used',
-      password: 'demo1234',
-      name: '기존 사용자',
-      nickname: '중복닉네임',
-      gender: 'W',
-    },
-  ],
-  [
-    'suspended-user',
-    {
-      id: 3,
-      loginId: 'suspended-user',
-      password: 'demo1234',
-      name: '정지 사용자',
-      nickname: '정지계정',
-      gender: 'M',
-      suspended: true,
-    },
-  ],
-]);
+const mockUsers = createMockUserMap();
 
 const validGenders: AuthGender[] = ['M', 'W'];
 
@@ -234,6 +190,7 @@ const signupHandlers = [
       name,
       nickname,
       gender,
+      note: '회원가입 mock으로 생성된 계정',
     };
 
     mockUsers.set(loginId, createdUser);
