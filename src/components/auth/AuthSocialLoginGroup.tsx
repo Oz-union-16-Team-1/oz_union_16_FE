@@ -14,7 +14,7 @@ type AuthSocialLoginGroupProps = {
 
 const GROUP_SIZE_CLASS_NAMES = {
   default: 'space-y-3 sm:space-y-3.5',
-  compact: 'space-y-[clamp(0.625rem,1.8dvh,0.875rem)]',
+  compact: 'space-y-[clamp(0.375rem,1dvh,0.625rem)]',
 } as const;
 
 const BUTTON_SIZE_CLASS_NAMES = {
@@ -25,16 +25,20 @@ const BUTTON_SIZE_CLASS_NAMES = {
     label: '',
   },
   compact: {
-    google: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
-    kakao: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
-    naver: 'h-[clamp(3rem,6.5dvh,3.5rem)]',
+    google: 'h-[clamp(2.5rem,4.8dvh,2.75rem)]',
+    kakao: 'h-[clamp(2.5rem,4.8dvh,2.75rem)]',
+    naver: 'h-[clamp(2.5rem,4.8dvh,2.75rem)]',
     label:
-      'text-[clamp(0.95rem,2dvh,1.05rem)] leading-none sm:text-[clamp(0.95rem,2dvh,1.05rem)]',
+      'text-[clamp(0.8125rem,1.45dvh,0.9rem)] leading-none sm:text-[clamp(0.8125rem,1.45dvh,0.9rem)]',
   },
 } as const;
 
-const GoogleIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+type SocialIconProps = {
+  className?: string;
+};
+
+const GoogleIcon = ({ className = 'h-5 w-5 shrink-0' }: SocialIconProps) => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
     <path
       fill="#4285F4"
       d="M21.805 10.041H12.61v3.949h5.268c-.229 1.276-.955 2.356-2.036 3.083v2.526h3.304c1.937-1.783 3.056-4.41 3.056-7.548 0-.676-.061-1.315-.397-2.01Z"
@@ -54,8 +58,8 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const KakaoIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+const KakaoIcon = ({ className = 'h-5 w-5 shrink-0' }: SocialIconProps) => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
     <path
       fill="#181600"
       d="M12 4.2c-5.19 0-9.4 3.14-9.4 7.02 0 2.48 1.72 4.65 4.33 5.88l-1.08 3.96a.36.36 0 0 0 .55.4l4.57-3.1c.34.03.68.05 1.03.05 5.19 0 9.4-3.14 9.4-7.02S17.19 4.2 12 4.2Z"
@@ -63,8 +67,8 @@ const KakaoIcon = () => (
   </svg>
 );
 
-const NaverIcon = () => (
-  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+const NaverIcon = ({ className = 'h-5 w-5 shrink-0' }: SocialIconProps) => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
     <path
       fill="currentColor"
       d="M6 5.5h4.57l2.94 4.19V5.5H18v13h-4.57l-2.94-4.19v4.19H6v-13Z"
@@ -80,6 +84,8 @@ function AuthSocialLoginGroup({
     useState<SocialAuthProvider | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[size];
+  const iconClassName =
+    size === 'compact' ? 'h-3.5 w-3.5 shrink-0' : 'h-5 w-5 shrink-0';
 
   const handleSocialLogin = (provider: SocialAuthProvider) => {
     try {
@@ -99,7 +105,7 @@ function AuthSocialLoginGroup({
     <div className={`${GROUP_SIZE_CLASS_NAMES[size]} ${className}`}>
       <SocialLoginButton
         label="Google로 로그인하기"
-        icon={<GoogleIcon />}
+        icon={<GoogleIcon className={iconClassName} />}
         className={`bg-login-google border-login-google border ${buttonSizeClassName.google}`}
         labelClassName={`text-white ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('google')}
@@ -107,7 +113,7 @@ function AuthSocialLoginGroup({
       />
       <SocialLoginButton
         label="카카오로 로그인하기"
-        icon={<KakaoIcon />}
+        icon={<KakaoIcon className={iconClassName} />}
         className={`bg-login-kakao ${buttonSizeClassName.kakao}`}
         labelClassName={`text-login-kakao-label ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('kakao')}
@@ -115,7 +121,7 @@ function AuthSocialLoginGroup({
       />
       <SocialLoginButton
         label="네이버로 로그인하기"
-        icon={<NaverIcon />}
+        icon={<NaverIcon className={iconClassName} />}
         className={`bg-login-naver ${buttonSizeClassName.naver}`}
         labelClassName={`text-white ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('naver')}
