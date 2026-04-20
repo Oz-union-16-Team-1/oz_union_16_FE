@@ -22,17 +22,13 @@ export const useSubmitMatchResponsesMutation = () =>
     mutationFn: submitMatchResponses,
   });
 
-export const useMatchResultsInfinite = (
-  sort: 'rating_desc' | 'created_at' = 'rating_desc',
-  enabled = true,
-) =>
+export const useMatchResultsInfinite = (enabled = true) =>
   useInfiniteQuery({
-    queryKey: ['match-results', sort],
+    queryKey: ['match-results'],
     initialPageParam: null as string | null,
     enabled,
     queryFn: ({ pageParam }) =>
       getMatchResponseResults({
-        sort,
         cursor: pageParam ?? undefined,
         page_size: 5,
       }),

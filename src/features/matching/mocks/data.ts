@@ -151,7 +151,7 @@ export const matchingMockCandidatesByGenreId: Record<
       4.7,
     ),
   ],
-  4: [
+  7: [
     createCandidate(
       730,
       'Counter-Strike 2',
@@ -194,7 +194,7 @@ export const matchingMockCandidatesByGenreId: Record<
       4.6,
     ),
   ],
-  5: [
+  4: [
     createCandidate(
       289070,
       'Sid Meier’s Civilization VI',
@@ -237,7 +237,7 @@ export const matchingMockCandidatesByGenreId: Record<
       4.9,
     ),
   ],
-  6: [
+  5: [
     createCandidate(
       1551360,
       'Forza Horizon 5',
@@ -280,7 +280,7 @@ export const matchingMockCandidatesByGenreId: Record<
       true,
     ),
   ],
-  13: [
+  6: [
     createCandidate(
       646570,
       'Slay the Spire',
@@ -323,7 +323,7 @@ export const matchingMockCandidatesByGenreId: Record<
       4.4,
     ),
   ],
-  14: [
+  8: [
     createCandidate(
       1817230,
       'Hi-Fi RUSH',

@@ -222,7 +222,6 @@ function RecommendationListPage() {
     !isMatchSource && isSurveySource && canAccessPage,
   );
   const matchResultsQuery = useMatchResultsInfinite(
-    'rating_desc',
     isMatchSource && canAccessPage,
   );
   const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;

@@ -32,7 +32,7 @@ export const MATCHING_GENRES: MatchingGenreCard[] = [
   },
   {
     slug: 'strategy-simulation',
-    genreId: 5,
+    genreId: 4,
     title: '전략 / 시뮬',
     subtitle: '판단과 운영의 재미',
     description:
@@ -42,7 +42,7 @@ export const MATCHING_GENRES: MatchingGenreCard[] = [
   },
   {
     slug: 'sports-racing',
-    genreId: 6,
+    genreId: 5,
     title: '스포츠 / 레이싱',
     subtitle: '속도감과 경쟁의 짜릿함',
     description:
@@ -52,7 +52,7 @@ export const MATCHING_GENRES: MatchingGenreCard[] = [
   },
   {
     slug: 'brain-strategy',
-    genreId: 13,
+    genreId: 6,
     title: '두뇌 / 전략',
     subtitle: '생각할수록 즐거운 플레이',
     description:
@@ -62,7 +62,7 @@ export const MATCHING_GENRES: MatchingGenreCard[] = [
   },
   {
     slug: 'shooting',
-    genreId: 4,
+    genreId: 7,
     title: '슈팅',
     subtitle: '반응속도와 타격감',
     description:
@@ -72,7 +72,7 @@ export const MATCHING_GENRES: MatchingGenreCard[] = [
   },
   {
     slug: 'rhythm',
-    genreId: 14,
+    genreId: 8,
     title: '음악 / 리듬',
     subtitle: '비트에 맞춘 템포 플레이',
     description:

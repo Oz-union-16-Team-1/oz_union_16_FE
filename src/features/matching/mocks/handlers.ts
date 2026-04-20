@@ -22,15 +22,14 @@ type StoredMatchResult = {
 
 let storedMatchResults: StoredMatchResult[] = [];
 
-const getSortedMatchResults = (sort: string) => {
-  const entries = [...storedMatchResults];
+const getRankedMatchResults = () =>
+  [...storedMatchResults].sort((a, b) => {
+    if (b.rating !== a.rating) {
+      return b.rating - a.rating;
+    }
 
-  if (sort === 'created_at') {
-    return entries.sort((a, b) => a.created_at_order - b.created_at_order);
-  }
-
-  return entries.sort((a, b) => b.rating - a.rating);
-};
+    return a.created_at_order - b.created_at_order;
+  });
 
 export const matchingHandlers = [
   http.get('/api/v1/match/candidates', async ({ request }) => {
@@ -106,22 +105,12 @@ export const matchingHandlers = [
       })),
     });
   }),
-  http.get('/api/v1/match/responses/result', async ({ request }) => {
-    const url = new URL(request.url);
-    const sort = url.searchParams.get('sort') ?? 'rating_desc';
-
-    if (!['rating_desc', 'created_at'].includes(sort)) {
-      return getErrorResponse(
-        400,
-        '유효하지 않은 sort 값입니다. (rating_desc, created_at)',
-      );
-    }
-
+  http.get('/api/v1/match/responses/result', async () => {
     if (storedMatchResults.length === 0) {
       return getErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
     }
 
-    const results = getSortedMatchResults(sort).map((result) => {
+    const results = getRankedMatchResults().map((result) => {
       const candidate = matchingMockCandidateMapById.get(result.game_id)!;
 
       return {
