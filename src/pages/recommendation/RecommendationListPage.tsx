@@ -1,8 +1,11 @@
 import { ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import GameDetailModal from '../../features/games/components/GameDetailModal';
+import type { GameListItem } from '../../features/games/types';
 import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
 import type { MatchResultItem } from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
@@ -63,6 +66,15 @@ const normalizeResultItem = (
   is_liked: item.is_liked,
 });
 
+const toGameListItem = (item: RecommendationDisplayItem): GameListItem => ({
+  gameId: item.game_id,
+  name: item.title,
+  genres: item.genres,
+  thumbnailUrl: item.thumbnail_url,
+  rating: item.rating,
+  isLiked: item.is_liked,
+});
+
 const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
   const genreCounts = new Map<string, number>();
 
@@ -88,9 +100,10 @@ const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
 
 type RecommendationRowProps = {
   item: RecommendationDisplayItem;
+  onOpenDetail: (item: RecommendationDisplayItem) => void;
 };
 
-function RecommendationRow({ item }: RecommendationRowProps) {
+function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
   return (
     <article className="group grid gap-4 px-4 py-5 transition-colors duration-200 hover:bg-white/[0.025] sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
       <div className="overflow-hidden rounded-[20px] border border-white/6 bg-[#111111] shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
@@ -148,7 +161,8 @@ function RecommendationRow({ item }: RecommendationRowProps) {
 
         <button
           type="button"
-          aria-label={`${item.title} 상세 보기 준비 중`}
+          onClick={() => onOpenDetail(item)}
+          aria-label={`${item.title} 상세 보기`}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-white/42 transition group-hover:border-white/8 group-hover:bg-white/[0.03] group-hover:text-white/82"
         >
           <ChevronRight size={18} />
@@ -201,6 +215,7 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 
 function RecommendationListPage() {
   const [searchParams] = useSearchParams();
+  const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const sessionId = searchParams.get('session_id');
   const source = searchParams.get('source');
   const isMatchSource = source === 'match';
@@ -244,6 +259,9 @@ function RecommendationListPage() {
       errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
       recommendationItems.length === 0,
     );
+  const handleOpenDetail = (item: RecommendationDisplayItem) => {
+    setSelectedGame(toGameListItem(item));
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -376,7 +394,11 @@ function RecommendationListPage() {
                   <div className="recommendation-scroll max-h-[62vh] overflow-y-auto">
                     <div className="divide-y divide-white/8">
                       {recommendationItems.map((item) => (
-                        <RecommendationRow key={item.game_id} item={item} />
+                        <RecommendationRow
+                          key={item.game_id}
+                          item={item}
+                          onOpenDetail={handleOpenDetail}
+                        />
                       ))}
                     </div>
                   </div>
@@ -402,6 +424,14 @@ function RecommendationListPage() {
           )}
         </section>
       </main>
+
+      {selectedGame ? (
+        <GameDetailModal
+          key={selectedGame.gameId}
+          game={selectedGame}
+          onClose={() => setSelectedGame(null)}
+        />
+      ) : null}
     </div>
   );
 }
