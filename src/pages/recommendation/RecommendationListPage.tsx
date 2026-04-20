@@ -340,8 +340,8 @@ function RecommendationListPage() {
                 먼저 매칭 평가를 완료해 주세요.
               </h2>
               <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                장르별 매칭에서 5개 게임 평가를 제출하면 추천 결과를 이
-                페이지에서 바로 확인할 수 있어요.
+                장르별 매칭 평가를 제출하면 추천 결과를 이 페이지에서 바로
+                확인할 수 있어요.
               </p>
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
