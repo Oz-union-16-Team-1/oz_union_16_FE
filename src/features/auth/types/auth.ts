@@ -1,4 +1,5 @@
 export type AuthGender = 'M' | 'W';
+export type SocialAuthProvider = 'google' | 'kakao' | 'naver';
 
 export interface LoginRequest {
   login_id: string;
@@ -58,6 +59,11 @@ export interface CheckIdDuplicateRequest {
 
 export interface DuplicateCheckResponse {
   detail: string;
+}
+
+export interface SocialLoginCallbackRequest {
+  code: string;
+  state?: string;
 }
 
 export type { ErrorResponseBody } from './api';

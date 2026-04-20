@@ -259,7 +259,7 @@ function LoginPage() {
   return (
     <>
       <AuthLayout
-        title="Log In"
+        title="로그인"
         withPanel
         titleClassName={LOGIN_TITLE_CLASS_NAME}
         mainClassName={LOGIN_MAIN_CLASS_NAME}

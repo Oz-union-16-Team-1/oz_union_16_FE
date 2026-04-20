@@ -11,6 +11,7 @@ import type {
   DeleteAccountResponse,
   LoginRequest,
   LogoutResponse,
+  SocialAuthProvider,
   SignupRequest,
 } from '../types/auth';
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
@@ -66,7 +67,46 @@ const getUnauthorizedError = (message: string) =>
 const findUserByNickname = (nickname: string) =>
   [...mockUsers.values()].find((user) => user.nickname === nickname);
 
+const isSocialAuthProvider = (value: string): value is SocialAuthProvider =>
+  value === 'google' || value === 'kakao' || value === 'naver';
+
+const getMockSocialCallbackQueryString = (provider: SocialAuthProvider) => {
+  const searchParams = new URLSearchParams({
+    code: provider === 'naver' ? 'tester-social-code' : 'demo-social-code',
+    provider,
+  });
+
+  if (provider === 'naver') {
+    searchParams.set('state', 'naver-mock-state');
+  }
+
+  return searchParams.toString();
+};
+
 const loginHandlers = [
+  http.get(`${AUTH_BASE_PATH}/social-login/:provider`, async ({ params }) => {
+    const provider =
+      typeof params.provider === 'string' ? params.provider.trim() : '';
+
+    if (!isSocialAuthProvider(provider)) {
+      return HttpResponse.json(
+        {
+          error_detail: '지원하지 않는 소셜 로그인 제공자입니다.',
+        },
+        { status: 404 },
+      );
+    }
+
+    await delay(120);
+
+    return new HttpResponse(null, {
+      status: 302,
+      headers: {
+        Location: `/callback?${getMockSocialCallbackQueryString(provider)}`,
+      },
+    });
+  }),
+
   http.post(`${AUTH_BASE_PATH}/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
     const loginId = body.login_id.trim();
@@ -101,6 +141,64 @@ const loginHandlers = [
       refresh_token: createRefreshToken(user.loginId),
     });
   }),
+
+  http.get(
+    `${AUTH_BASE_PATH}/social-login/:provider/callback`,
+    async ({ params, request }) => {
+      const provider =
+        typeof params.provider === 'string' ? params.provider.trim() : '';
+
+      if (!isSocialAuthProvider(provider)) {
+        return HttpResponse.json(
+          {
+            error_detail: '지원하지 않는 소셜 로그인 제공자입니다.',
+          },
+          { status: 404 },
+        );
+      }
+
+      const url = new URL(request.url);
+      const code = url.searchParams.get('code')?.trim() ?? '';
+      const state = url.searchParams.get('state')?.trim() ?? '';
+
+      if (!code) {
+        return getFieldValidationError('code', '인가 코드가 필요합니다.');
+      }
+
+      if (provider === 'naver' && !state) {
+        return getFieldValidationError(
+          'state',
+          '네이버 로그인 state 값이 필요합니다.',
+        );
+      }
+
+      if (code === 'suspended-account') {
+        return HttpResponse.json(
+          {
+            error_detail: '정지된 계정입니다.',
+            suspended_at: '2026-04-01T09:00:00+09:00',
+          },
+          { status: 403 },
+        );
+      }
+
+      const user =
+        code === 'tester-social-code'
+          ? mockUsers.get('pgti-tester')
+          : mockUsers.get('pgti-demo');
+
+      if (!user) {
+        return getUnauthorizedError('연결된 회원 정보를 찾을 수 없습니다.');
+      }
+
+      await delay(450);
+
+      return HttpResponse.json({
+        access_token: createAccessToken(user.loginId),
+        refresh_token: createRefreshToken(user.loginId),
+      });
+    },
+  ),
 ];
 
 const signupHandlers = [

@@ -14,6 +14,8 @@ import type {
   LoginRequest,
   LoginResponse,
   LogoutResponse,
+  SocialAuthProvider,
+  SocialLoginCallbackRequest,
   SignupRequest,
   SignupResponse,
 } from '../types/auth';
@@ -29,6 +31,20 @@ export const login = async (payload: LoginRequest) => {
 
 export const logout = async () => {
   const response = await api.post<LogoutResponse>(`${AUTH_BASE_PATH}/logout`);
+
+  return response.data;
+};
+
+export const completeSocialLogin = async (
+  provider: SocialAuthProvider,
+  payload: SocialLoginCallbackRequest,
+) => {
+  const response = await api.get<LoginResponse>(
+    `${AUTH_BASE_PATH}/social-login/${provider}/callback`,
+    {
+      params: payload,
+    },
+  );
 
   return response.data;
 };
@@ -166,4 +182,25 @@ export const extractAuthApiErrorMessage = (error: unknown) => {
   }
 
   return '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+};
+
+export const extractSuspendedAccountInfo = (error: unknown) => {
+  if (!(error instanceof AxiosError) || error.response?.status !== 403) {
+    return null;
+  }
+
+  const data = error.response.data as ErrorResponseBody | undefined;
+  const errorMessage =
+    extractFieldErrorMessage(data?.error_detail) ||
+    extractFieldErrorMessage(data?.detail);
+
+  if (errorMessage !== '정지된 계정입니다.') {
+    return null;
+  }
+
+  return {
+    message: errorMessage,
+    suspendedAt:
+      typeof data?.suspended_at === 'string' ? data.suspended_at : null,
+  };
 };

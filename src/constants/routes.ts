@@ -4,8 +4,10 @@ export const ROUTES = {
   MATCHING_LIST: 'matching-list',
   MATCHING_GENRE_DETAIL: 'matching-list/:genreSlug',
   RECOMMENDATION_LIST: 'recommendation-list',
-  AUTH_CALLBACK: 'auth/callback',
+  AUTH_CALLBACK: 'callback',
+  LEGACY_AUTH_CALLBACK: 'auth/callback',
   LOGIN: 'login',
-  SIGNUP: 'signup',
+  SIGNUP: 'join',
+  LEGACY_SIGNUP: 'signup',
   MY_PAGE: 'my-page',
 } as const;

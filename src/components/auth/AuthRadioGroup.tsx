@@ -29,15 +29,15 @@ function AuthRadioGroup({
   disabled = false,
 }: AuthRadioGroupProps) {
   return (
-    <fieldset className="space-y-3.5">
+    <fieldset className="space-y-3">
       <legend className="text-login-label block text-sm font-medium">
         {label}
       </legend>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1 sm:flex-nowrap sm:justify-between">
+      <div className="grid grid-cols-2 gap-3 pt-1">
         {options.map((option) => (
           <label
             key={option.value}
-            className="group flex min-w-0 flex-1 cursor-pointer items-center justify-start gap-2 sm:justify-center"
+            className="group block min-w-0 cursor-pointer"
           >
             <input
               type="radio"
@@ -53,13 +53,12 @@ function AuthRadioGroup({
               className="peer sr-only"
             />
             <span
-              className={`peer-checked:border-login-primary flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors group-hover:border-white/25 peer-disabled:opacity-60 ${
-                errorMessage ? 'border-red-500' : 'border-login-field'
+              className={`flex h-14 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition-all group-hover:border-white/20 group-hover:text-white/85 peer-checked:border-[#ff8a3d] peer-checked:bg-[linear-gradient(135deg,rgba(255,138,61,0.24),rgba(255,110,48,0.1))] peer-checked:text-white peer-checked:shadow-[0_14px_32px_rgba(255,138,61,0.18)] peer-disabled:opacity-60 ${
+                errorMessage
+                  ? 'border-red-500/80 bg-white/[0.03] text-red-200'
+                  : 'border-login-field text-login-helper bg-white/[0.03]'
               }`}
             >
-              <span className="bg-login-primary h-2 w-2 rounded-full opacity-0 transition-opacity peer-checked:opacity-100" />
-            </span>
-            <span className="text-login-helper text-sm/5 font-medium transition-colors group-hover:text-white/85 peer-checked:text-white peer-disabled:opacity-60">
               {option.label}
             </span>
           </label>

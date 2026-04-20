@@ -4,6 +4,8 @@ import AuthFormMessage from './AuthFormMessage';
 import SocialLoginButton from '../login/SocialLoginButton';
 import {
   getSocialLoginStartUrl,
+  setPendingSocialAuthProvider,
+  clearPendingSocialAuthProvider,
   type SocialAuthProvider,
 } from '../../features/auth/utils/socialAuth';
 
@@ -19,9 +21,9 @@ const GROUP_SIZE_CLASS_NAMES = {
 
 const BUTTON_SIZE_CLASS_NAMES = {
   default: {
-    google: 'h-14 sm:h-[61px]',
-    kakao: 'h-14 sm:h-[59px]',
-    naver: 'h-14 sm:h-[59px]',
+    google: 'h-14',
+    kakao: 'h-14',
+    naver: 'h-14',
     label: '',
   },
   compact: {
@@ -90,10 +92,12 @@ function AuthSocialLoginGroup({
   const handleSocialLogin = (provider: SocialAuthProvider) => {
     try {
       const redirectUrl = getSocialLoginStartUrl(provider);
+      setPendingSocialAuthProvider(provider);
       setRedirectingProvider(provider);
       setErrorMessage('');
       window.location.assign(redirectUrl);
     } catch {
+      clearPendingSocialAuthProvider();
       setRedirectingProvider(null);
       setErrorMessage(
         '소셜 로그인 시작 주소를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',

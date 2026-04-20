@@ -429,7 +429,7 @@ function SignupPage() {
 
   return (
     <AuthLayout
-      title="Join"
+      title="회원가입"
       subtitle="회원가입 후 취향 기반 게임 추천을 시작해보세요"
       withPanel
       subtitleClassName="mx-auto max-w-[290px] sm:max-w-[320px]"
@@ -439,7 +439,7 @@ function SignupPage() {
       <AuthDivider className="my-5 sm:my-6" />
 
       <form
-        className="space-y-3.5 sm:space-y-4"
+        className="space-y-3 sm:space-y-3.5"
         autoComplete="off"
         onSubmit={handleSubmit}
       >

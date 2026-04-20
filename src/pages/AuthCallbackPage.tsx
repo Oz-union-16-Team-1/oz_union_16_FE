@@ -1,45 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
 import {
+  completeSocialLogin,
   extractAuthApiErrorMessage,
+  extractSuspendedAccountInfo,
   getCurrentUserProfile,
 } from '../features/auth/api/auth';
 import {
-  getSocialCallbackAccessToken,
+  clearPendingSocialAuthProvider,
+  getSocialCallbackCode,
   getSocialCallbackErrorMessage,
+  getSocialCallbackProvider,
+  getSocialCallbackState,
 } from '../features/auth/utils/socialAuth';
 import { useAuthStore } from '../store/useAuthStore';
 
-/**
- * [Refactor] 인증 아키텍처 업데이트 (#94)
- * - 소셜 로그인 성공 후 백엔드에서 리다이렉트된 콜백을 처리합니다.
- * - URL 파라미터에서 access_token을 추출하고, 유저 정보를 페칭합니다.
- * - Refresh Token은 이미 백엔드에 의해 HttpOnly 쿠키로 설정된 상태여야 합니다.
- */
-
 const DEFAULT_CALLBACK_ERROR_MESSAGE =
   '소셜 로그인 처리에 실패했습니다. 다시 시도해 주세요.';
+const INVALID_CALLBACK_ERROR_MESSAGE =
+  '인증 정보가 유효하지 않습니다. 다시 로그인해 주세요.';
+
+const formatSuspendedAt = (suspendedAt: string | null) => {
+  if (!suspendedAt) {
+    return '정지 일시 정보가 없습니다.';
+  }
+
+  const suspendedDate = new Date(suspendedAt);
+
+  if (Number.isNaN(suspendedDate.getTime())) {
+    return suspendedAt;
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }).format(suspendedDate);
+};
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setAuth, clearAuth } = useAuthStore();
+  const handledSearchRef = useRef<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
-    '소셜 로그인 정보를 확인하는 중입니다.',
+    '소셜 로그인 정보를 확인하고 있습니다.',
   );
 
   useEffect(() => {
+    if (handledSearchRef.current === location.search) {
+      return;
+    }
+
+    handledSearchRef.current = location.search;
+
     let isMounted = true;
 
     const handleAuthCallback = async () => {
       const searchParams = new URLSearchParams(location.search);
 
-      // 1. 에러 파라미터 확인
       const callbackErrorMessage = getSocialCallbackErrorMessage(searchParams);
       if (callbackErrorMessage) {
+        clearPendingSocialAuthProvider();
         navigate(`/${ROUTES.LOGIN}`, {
           replace: true,
           state: { errorMessage: callbackErrorMessage },
@@ -47,37 +71,67 @@ function AuthCallbackPage() {
         return;
       }
 
-      // 2. Access Token 추출
-      const accessToken = getSocialCallbackAccessToken(searchParams);
-      if (!accessToken) {
+      const provider = getSocialCallbackProvider(searchParams);
+      const code = getSocialCallbackCode(searchParams);
+      const socialState =
+        provider === 'naver'
+          ? (getSocialCallbackState(searchParams) ?? undefined)
+          : undefined;
+
+      if (!provider || !code || (provider === 'naver' && !socialState)) {
+        clearPendingSocialAuthProvider();
         navigate(`/${ROUTES.LOGIN}`, {
           replace: true,
           state: {
-            errorMessage:
-              '인증 정보가 유효하지 않습니다. 다시 로그인해 주세요.',
+            errorMessage: INVALID_CALLBACK_ERROR_MESSAGE,
           },
         });
         return;
       }
 
       try {
-        // 3. 임시로 토큰 설정 후 유저 프로필 조회
-        // (getCurrentUserProfile 내부의 axiosInstance가 이 토큰을 사용함)
-        useAuthStore.getState().setAccessToken(accessToken);
+        const loginResponse = await completeSocialLogin(provider, {
+          code,
+          ...(provider === 'naver' ? { state: socialState } : {}),
+        });
+        useAuthStore.getState().setAccessToken(loginResponse.access_token);
 
         const profile = await getCurrentUserProfile();
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
-        // 4. 최종 인증 상태 저장
-        setAuth(accessToken, profile);
+        setAuth(loginResponse.access_token, profile);
+        clearPendingSocialAuthProvider();
 
-        // 5. 홈으로 이동
         navigate(ROUTES.HOME, { replace: true });
       } catch (error) {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         clearAuth();
+        clearPendingSocialAuthProvider();
+
+        const suspendedAccountInfo = extractSuspendedAccountInfo(error);
+        if (suspendedAccountInfo) {
+          const suspendedAtLabel = formatSuspendedAt(
+            suspendedAccountInfo.suspendedAt,
+          );
+          const alertMessage = `정지된 계정입니다.\n정지 일시: ${suspendedAtLabel}`;
+
+          window.alert(alertMessage);
+
+          navigate(`/${ROUTES.LOGIN}`, {
+            replace: true,
+            state: {
+              errorMessage: `정지된 계정입니다. 정지 일시: ${suspendedAtLabel}`,
+            },
+          });
+          return;
+        }
+
         setStatusMessage(DEFAULT_CALLBACK_ERROR_MESSAGE);
 
         navigate(`/${ROUTES.LOGIN}`, {
@@ -100,8 +154,8 @@ function AuthCallbackPage() {
 
   return (
     <AuthLayout
-      title="소셜 로그인"
-      subtitle="로그인 정보를 확인하고 있습니다."
+      title="로그인 확인"
+      subtitle="소셜 로그인 정보를 확인하고 있습니다."
       withPanel
       panelClassName="max-w-[500px]"
     >
