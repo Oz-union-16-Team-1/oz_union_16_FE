@@ -89,17 +89,35 @@ export interface SurveyResultQuery {
   page_size?: number;
 }
 
-export interface SurveyResultItem {
+export interface SurveyApiResultItem {
   game_id: number;
-  name: string;
+  title?: string | null;
+  name?: string | null;
   genres: string[];
   thumbnail_url: string | null;
   rating: number | null;
   is_liked: boolean;
 }
 
+export interface SurveyResultItem {
+  game_id: number;
+  title: string;
+  genres: string[];
+  thumbnail_url: string | null;
+  rating: number | null;
+  is_liked: boolean;
+}
+
+export interface SurveyApiResultResponse {
+  session_id?: string;
+  user_id: number;
+  count?: number | null;
+  next?: string | null;
+  results: SurveyApiResultItem[];
+}
+
 export interface SurveyResultResponse {
-  session_id: string;
+  session_id?: string;
   user_id: number;
   count: number;
   next: string | null;

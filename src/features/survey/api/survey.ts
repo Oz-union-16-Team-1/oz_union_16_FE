@@ -4,6 +4,8 @@ import { api } from '../../../api/axios';
 import type {
   SurveyApiChatRequest,
   SurveyApiResetResponse,
+  SurveyApiResultItem,
+  SurveyApiResultResponse,
   SurveyApiSessionResponse,
   SurveyChatRequest,
   SurveyChatResponse,
@@ -15,6 +17,7 @@ import type {
   SurveySessionStartRequest,
   SurveySessionStartResponse,
   SurveyProgress,
+  SurveyResultItem,
   SurveySessionStatus,
   SurveyApiProgress,
 } from '../types/survey';
@@ -101,6 +104,35 @@ export const normalizeSurveyResetResponse = (
   ...normalizeSurveySessionResponse(payload),
 });
 
+const normalizeSurveyResultItem = (
+  item: SurveyApiResultItem,
+): SurveyResultItem => ({
+  game_id: item.game_id,
+  title:
+    (typeof item.title === 'string' && item.title.trim()) ||
+    (typeof item.name === 'string' && item.name.trim()) ||
+    '제목 정보 준비 중',
+  genres: Array.isArray(item.genres) ? item.genres : [],
+  thumbnail_url: item.thumbnail_url ?? null,
+  rating: typeof item.rating === 'number' ? item.rating : null,
+  is_liked: Boolean(item.is_liked),
+});
+
+export const normalizeSurveyResultResponse = (
+  payload: SurveyApiResultResponse,
+): SurveyResultResponse => ({
+  session_id: payload.session_id,
+  user_id: payload.user_id,
+  count:
+    typeof payload.count === 'number'
+      ? payload.count
+      : (payload.results?.length ?? 0),
+  next: typeof payload.next === 'string' ? payload.next : null,
+  results: Array.isArray(payload.results)
+    ? payload.results.map(normalizeSurveyResultItem)
+    : [],
+});
+
 export const startSurveySession = async (
   payload: SurveySessionStartRequest,
 ): Promise<SurveySessionStartResponse> => {
@@ -135,14 +167,14 @@ export const resetSurveySession = async (payload: SurveyResetRequest) => {
 };
 
 export const getSurveyResults = async (query: SurveyResultQuery) => {
-  const response = await api.get<SurveyResultResponse>(
+  const response = await api.get<SurveyApiResultResponse>(
     `${SURVEY_BASE_PATH}/result`,
     {
       params: query,
     },
   );
 
-  return response.data;
+  return normalizeSurveyResultResponse(response.data);
 };
 
 export const extractApiErrorMessage = (error: unknown) => {
