@@ -209,16 +209,17 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 function RecommendationListPage() {
   const [searchParams] = useSearchParams();
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
-  const sessionId = searchParams.get('session_id');
   const source = searchParams.get('source');
+  const legacySessionId = searchParams.get('session_id');
   const isMatchSource = source === 'match';
+  const isSurveySource =
+    source === 'survey' || (!source && Boolean(legacySessionId));
   const isMockMode = isMockServiceWorkerEnabled();
   const hasAccessToken = Boolean(getAccessToken());
   const canAccessPage = isMockMode || hasAccessToken;
 
   const surveyResultsQuery = useSurveyResultsInfinite(
-    sessionId,
-    !isMatchSource && canAccessPage,
+    !isMatchSource && isSurveySource && canAccessPage,
   );
   const matchResultsQuery = useMatchResultsInfinite(
     'rating_desc',
@@ -319,7 +320,7 @@ function RecommendationListPage() {
                 켜두면 추천 결과 흐름을 확인할 수 있습니다.
               </p>
             </section>
-          ) : !sessionId && !isMatchSource ? (
+          ) : !isMatchSource && !isSurveySource ? (
             <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
               <h2 className="text-2xl font-bold text-white">
                 먼저 설문을 완료해 주세요.

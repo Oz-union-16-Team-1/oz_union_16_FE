@@ -22,17 +22,13 @@ export const useResetSurveyMutation = () =>
     mutationFn: resetSurveySession,
   });
 
-export const useSurveyResultsInfinite = (
-  sessionId: string | null,
-  enabled = true,
-) =>
+export const useSurveyResultsInfinite = (enabled = true) =>
   useInfiniteQuery({
-    queryKey: ['survey-results', sessionId],
+    queryKey: ['survey-results'],
     initialPageParam: null as string | null,
-    enabled: Boolean(sessionId) && enabled,
+    enabled,
     queryFn: ({ pageParam }) =>
       getSurveyResults({
-        session_id: sessionId!,
         cursor: pageParam ?? undefined,
         page_size: 5,
       }),
