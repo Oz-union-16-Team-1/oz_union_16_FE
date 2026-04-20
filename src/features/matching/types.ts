@@ -17,6 +17,12 @@ export type MatchingGenreCard = {
   thumbnailUrl: string;
 };
 
+export interface MatchingGenreImageResponse {
+  genre_id: number;
+  genre_name: string;
+  image_url: string;
+}
+
 export interface MatchingApiCandidateItem {
   game_id: number;
   name: string;

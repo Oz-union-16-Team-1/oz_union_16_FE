@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { getMatchingGenreById } from '../genres';
 import {
   matchingMockCandidateMapById,
   matchingMockCandidatesByGenreId,
@@ -32,6 +33,29 @@ const getRankedMatchResults = () =>
   });
 
 export const matchingHandlers = [
+  http.get('/api/v1/match/genres/image-url', async ({ request }) => {
+    const url = new URL(request.url);
+    const genreIdValue = url.searchParams.get('genre_id');
+    const genreId = Number(genreIdValue);
+
+    if (!genreIdValue || Number.isNaN(genreId) || genreId <= 0) {
+      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+    }
+
+    const genre = getMatchingGenreById(genreId);
+
+    if (!genre) {
+      return getErrorResponse(404, '해당 장르의 이미지를 찾을 수 없습니다.');
+    }
+
+    await delay(300);
+
+    return HttpResponse.json({
+      genre_id: genre.genreId,
+      genre_name: genre.title,
+      image_url: genre.thumbnailUrl,
+    });
+  }),
   http.get('/api/v1/match/candidates', async ({ request }) => {
     const url = new URL(request.url);
     const genreIdValue = url.searchParams.get('genre_id');

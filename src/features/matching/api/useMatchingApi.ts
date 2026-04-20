@@ -1,7 +1,13 @@
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+} from '@tanstack/react-query';
 
 import {
   getMatchCandidates,
+  getMatchingGenreImage,
   getMatchResponseResults,
   submitMatchResponses,
 } from './matching';
@@ -15,6 +21,30 @@ export const useMatchCandidatesQuery = (
     enabled: genreId !== null && enabled,
     queryFn: () => getMatchCandidates(genreId!),
     staleTime: 60_000,
+  });
+
+export const useMatchingGenreImageQuery = (
+  genreId: number | null,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: ['match-genre-image', genreId],
+    enabled: genreId !== null && enabled,
+    queryFn: () => getMatchingGenreImage(genreId!),
+    staleTime: 5 * 60_000,
+  });
+
+export const useMatchingGenreImageQueries = (
+  genreIds: number[],
+  enabled = true,
+) =>
+  useQueries({
+    queries: genreIds.map((genreId) => ({
+      queryKey: ['match-genre-image', genreId],
+      queryFn: () => getMatchingGenreImage(genreId),
+      enabled,
+      staleTime: 5 * 60_000,
+    })),
   });
 
 export const useSubmitMatchResponsesMutation = () =>
