@@ -61,10 +61,7 @@ export interface SubmitMatchResponsesResponse {
   match_result: MatchResponseItem[];
 }
 
-export type MatchResultSort = 'rating_desc' | 'created_at';
-
 export interface MatchResultQuery {
-  sort?: MatchResultSort;
   cursor?: string;
   page_size?: number;
 }
