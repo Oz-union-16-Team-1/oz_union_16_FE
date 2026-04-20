@@ -115,13 +115,18 @@ GET    /api/v1/survey/result
 
 추천 결과 리스트 화면은 아래 필드를 기준으로 동작합니다.
 
+- 설문 추천 결과와 매칭 추천 결과는 같은 리스트 화면에서 동일한 UX로 노출합니다.
+- 로딩 방식은 **무한 스크롤이 아니라 `더보기` 버튼 방식**으로 고정합니다.
+- 프론트 기본 조회 단위는 `5개`이며, `next`가 있으면 `더보기` 클릭 시 다음 결과를 추가 조회합니다.
+- `next === null`이면 더보기 버튼을 노출하지 않고 추가 조회를 종료합니다.
+
 - `game_id`: 상세 모달 연결 키
 - `title`: 게임명 표기 기준
 - `genres`: 태그/하이라이트 계산
 - `thumbnail_url`: 리스트 썸네일
 - `rating`: 평점 표시
 - `is_liked`: 현재 찜 상태 표시
-- `count`, `next`: 더보기/무한 조회 기준
+- `count`, `next`: 더보기 버튼 기반 추가 조회 기준
 
 ### 5. Adapter Rules
 
@@ -142,6 +147,7 @@ MSW mock은 실제 API 경로와 응답 구조를 최대한 동일하게 맞춥�
 
 - 설문 시작/답변/초기화 경로는 실제 `chatbot` 경로와 동일하게 유지
 - 추천 결과 item은 mock에서도 `title` 기준으로 반환
+- 추천 결과 mock도 `더보기` 버튼 정책과 동일하게 `5개 단위 + next 기반` 구조를 유지
 - 프론트 adapter는 방어적으로 legacy fallback을 유지하지만, mock 응답은 최신 계약을 우선 기준으로 사용
 
 ### 7. Recommendation Detail Modal Integration
