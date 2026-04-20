@@ -49,6 +49,7 @@ function MatchingGenreDetailPage() {
     (state) => state.evaluationsByGameId,
   );
   const initializeFlow = useMatchingStore((state) => state.initializeFlow);
+  const restartFlow = useMatchingStore((state) => state.restartFlow);
   const setRating = useMatchingStore((state) => state.setRating);
   const toggleLiked = useMatchingStore((state) => state.toggleLiked);
   const goNext = useMatchingStore((state) => state.goNext);
@@ -100,12 +101,14 @@ function MatchingGenreDetailPage() {
   const isCompleted = submitMatchResponsesMutation.isSuccess;
 
   const handleRestart = () => {
-    resetFlow();
     submitMatchResponsesMutation.reset();
 
     if (genre && candidates.length > 0) {
-      initializeFlow(genre, candidates);
+      restartFlow(genre, candidates);
+      return;
     }
+
+    resetFlow();
   };
 
   const handleSubmit = async () => {
@@ -401,22 +404,23 @@ function MatchingGenreDetailPage() {
                     </p>
                   ) : null}
 
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-8">
-                    <button
-                      type="button"
-                      onClick={goPrevious}
-                      disabled={!canGoPrevious}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
-                    >
-                      <ChevronLeft size={16} />
-                      이전
-                    </button>
+                  {isLastCard ? (
+                    <div className="mt-auto pt-8">
+                      <p className="mx-auto mb-3 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
+                        5개 게임의 평가가 모두 준비되면 제출할 수 있어요.
+                      </p>
 
-                    {isLastCard ? (
-                      <div className="flex flex-col items-end gap-3">
-                        <p className="text-right text-sm leading-6 break-keep text-white/48 sm:max-w-[30ch]">
-                          5개 게임의 평가가 모두 준비되면 제출할 수 있어요.
-                        </p>
+                      <div className="flex flex-wrap items-end justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={goPrevious}
+                          disabled={!canGoPrevious}
+                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
+                        >
+                          <ChevronLeft size={16} />
+                          이전
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => void handleSubmit()}
@@ -434,7 +438,19 @@ function MatchingGenreDetailPage() {
                           ) : null}
                         </button>
                       </div>
-                    ) : (
+                    </div>
+                  ) : (
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-8">
+                      <button
+                        type="button"
+                        onClick={goPrevious}
+                        disabled={!canGoPrevious}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
+                      >
+                        <ChevronLeft size={16} />
+                        이전
+                      </button>
+
                       <button
                         type="button"
                         onClick={goNext}
@@ -444,8 +460,8 @@ function MatchingGenreDetailPage() {
                         다음
                         <ChevronRight size={16} />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </article>
               ) : null}
             </div>

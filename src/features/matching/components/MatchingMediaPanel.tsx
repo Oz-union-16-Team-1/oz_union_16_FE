@@ -1,5 +1,3 @@
-import { PlayCircle } from 'lucide-react';
-
 import type { MatchingCandidateItem } from '../types';
 
 type MatchingMediaPanelProps = {
@@ -21,7 +19,7 @@ const getYoutubeEmbedUrl = (trailerUrl: string | null) => {
       const videoId = url.pathname.replace('/', '');
 
       return videoId
-        ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`
+        ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`
         : null;
     }
 
@@ -29,7 +27,7 @@ const getYoutubeEmbedUrl = (trailerUrl: string | null) => {
       const videoId = url.searchParams.get('v');
 
       return videoId
-        ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`
+        ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`
         : null;
     }
   } catch {
@@ -72,26 +70,6 @@ function MatchingMediaPanel({
             미디어가 준비되지 않았습니다.
           </div>
         )}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,10,0.12),rgba(8,8,10,0.78))]" />
-        <div className="absolute right-0 bottom-0 left-0 p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium tracking-[0.2em] uppercase">
-            <span className="rounded-full border border-white/12 bg-black/24 px-3 py-1.5 text-white/70">
-              {genreTitle}
-            </span>
-            {candidate.trailer_url ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#972020]/30 bg-[#180a0a] px-3 py-1.5 text-[#f07272]">
-                <PlayCircle size={12} />
-                Trailer
-              </span>
-            ) : null}
-          </div>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-[40px]">
-            {candidate.title}
-          </h2>
-          <p className="mt-3 text-sm leading-7 break-keep text-white/68 sm:text-base">
-            {candidate.genres.join(' · ')}
-          </p>
-        </div>
       </div>
       <div className="flex flex-1 flex-col border-t border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.94),rgba(11,11,12,0.98))] px-6 py-6 sm:px-8 sm:py-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
