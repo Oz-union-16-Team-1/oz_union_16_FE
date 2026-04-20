@@ -156,7 +156,7 @@ function LoginPage() {
           onChange={(event) => handleChange('login_id', event.target.value)}
           onBlur={() =>
             setTouchedState((previous) => ({
-              previous,
+              ...previous,
               login_id: true,
             }))
           }
@@ -176,7 +176,7 @@ function LoginPage() {
           onChange={(event) => handleChange('password', event.target.value)}
           onBlur={() =>
             setTouchedState((previous) => ({
-              previous,
+              ...previous,
               password: true,
             }))
           }
