@@ -12,10 +12,10 @@ const SOCIAL_AUTH_START_URL_ENV_KEYS: Record<SocialAuthProvider, string[]> = {
   naver: ['VITE_NAVER_LOGIN_URL', 'VITE_SOCIAL_LOGIN_NAVER_URL'],
 };
 
-const SOCIAL_AUTH_LOGIN_PATHS: Record<SocialAuthProvider, string> = {
-  google: `${AUTH_BASE_PATH}/login/google`,
-  kakao: `${AUTH_BASE_PATH}/login/kakao`,
-  naver: `${AUTH_BASE_PATH}/login/naver`,
+const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
+  google: `${AUTH_BASE_PATH}/social-login/google`,
+  kakao: `${AUTH_BASE_PATH}/social-login/kakao`,
+  naver: `${AUTH_BASE_PATH}/social-login/naver`,
 };
 
 const isSocialAuthProvider = (
@@ -47,18 +47,18 @@ export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
 
   if (apiBaseUrl) {
     if (isAbsoluteUrl(apiBaseUrl)) {
-      return new URL(SOCIAL_AUTH_LOGIN_PATHS[provider], apiBaseUrl).toString();
+      return new URL(SOCIAL_AUTH_START_PATHS[provider], apiBaseUrl).toString();
     }
 
     if (typeof window !== 'undefined') {
       return new URL(
-        SOCIAL_AUTH_LOGIN_PATHS[provider],
+        SOCIAL_AUTH_START_PATHS[provider],
         window.location.origin,
       ).toString();
     }
   }
 
-  return SOCIAL_AUTH_LOGIN_PATHS[provider];
+  return SOCIAL_AUTH_START_PATHS[provider];
 };
 
 export const setPendingSocialAuthProvider = (provider: SocialAuthProvider) => {

@@ -39,9 +39,11 @@ export const completeSocialLogin = async (
   provider: SocialAuthProvider,
   payload: SocialLoginCallbackRequest,
 ) => {
-  const response = await api.post<LoginResponse>(
-    `${AUTH_BASE_PATH}/login/${provider}`,
-    payload,
+  const response = await api.get<LoginResponse>(
+    `${AUTH_BASE_PATH}/social-login/${provider}/callback`,
+    {
+      params: payload,
+    },
   );
 
   return response.data;

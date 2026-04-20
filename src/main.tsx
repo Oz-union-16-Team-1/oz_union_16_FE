@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import App from './App';
@@ -63,7 +63,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.LEGACY_SIGNUP,
-        element: <Navigate to={`/${ROUTES.SIGNUP}`} replace />,
+        element: <LegacyRouteRedirect to={`/${ROUTES.SIGNUP}`} />,
       },
       {
         path: ROUTES.MY_PAGE,
