@@ -8,12 +8,11 @@ export type MockUserRecord = {
   nickname: string;
   gender: AuthGender;
   note: string;
-  suspended?: boolean;
 };
 
 export type MockLoginAccount = Pick<
   MockUserRecord,
-  'loginId' | 'password' | 'name' | 'nickname' | 'gender' | 'note' | 'suspended'
+  'loginId' | 'password' | 'name' | 'nickname' | 'gender' | 'note'
 >;
 
 export const mockAuthSeedUsers: MockUserRecord[] = [
@@ -38,14 +37,13 @@ export const mockAuthSeedUsers: MockUserRecord[] = [
 ];
 
 export const mockLoginAccounts: MockLoginAccount[] = mockAuthSeedUsers.map(
-  ({ loginId, password, name, nickname, gender, note, suspended }) => ({
+  ({ loginId, password, name, nickname, gender, note }) => ({
     loginId,
     password,
     name,
     nickname,
     gender,
     note,
-    suspended,
   }),
 );
 

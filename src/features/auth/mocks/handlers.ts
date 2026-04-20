@@ -94,15 +94,6 @@ const loginHandlers = [
       );
     }
 
-    if (user.suspended) {
-      return HttpResponse.json(
-        {
-          error_detail: '정지된 계정입니다.',
-        },
-        { status: 403 },
-      );
-    }
-
     await delay(500);
 
     return HttpResponse.json({
