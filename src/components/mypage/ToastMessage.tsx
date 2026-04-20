@@ -38,7 +38,7 @@ function ToastMessage({
 
   return (
     <div
-      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-[70] flex w-[min(92vw,360px)] items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
+      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-[70] flex w-fit max-w-[min(92vw,360px)] items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
     >
       <span
         className={`mt-0.5 shrink-0 ${
@@ -47,11 +47,13 @@ function ToastMessage({
       >
         <Icon size={18} />
       </span>
-      <p className="flex-1 text-sm/6 font-medium text-white">{message}</p>
+      <p className="min-w-0 text-sm/6 font-medium break-words text-white">
+        {message}
+      </p>
       <button
         type="button"
         onClick={onClose}
-        className="text-mypage-muted transition hover:text-white"
+        className="text-mypage-muted shrink-0 self-center transition hover:text-white"
         aria-label="토스트 닫기"
       >
         <X size={16} />
