@@ -64,11 +64,6 @@ const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
   promoEmbedUrl: normalizeNullableString(game.media?.promo_embed_url),
   coverImageUrl: normalizeNullableString(game.media?.cover_image_url),
   description: game.description || null,
-  platforms:
-    game.platforms
-      ?.map((platform) => platform.name?.trim())
-      .filter((name): name is string => Boolean(name))
-      .map((name) => ({ name })) ?? [],
   externalLinks: {
     officialSite: normalizeNullableString(game.external_links?.official_site),
     steam: normalizeNullableString(game.external_links?.steam),

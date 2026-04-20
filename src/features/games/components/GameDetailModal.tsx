@@ -127,14 +127,10 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   );
   const imageUrl =
     imageCandidates.find((url) => !failedImageUrls.includes(url)) ?? null;
-  const platformLabel = detail?.platforms.length
-    ? detail.platforms.map((platform) => platform.name).join(', ')
-    : 'N/A';
   const detailRows = [
     { label: '게임 출시일', value: formatNullableText(detail?.releaseDate) },
     { label: '게임 개발사', value: formatNullableText(detail?.developer) },
     { label: '게임 배급사', value: formatNullableText(detail?.publisher) },
-    { label: '지원 플랫폼', value: platformLabel },
   ];
   const externalLinks = EXTERNAL_LINK_LABELS.map(({ key, label }) => ({
     label,
@@ -217,7 +213,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="game-detail-modal-title"
-        className="game-detail-modal-scrollbar relative max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-lg border border-[#5a1115]/80 bg-[#111111] text-white shadow-[0_0_48px_rgba(210,11,18,0.22)] sm:max-h-[calc(100dvh-3rem)]"
+        className="game-detail-modal-scrollbar bg-auth-panel relative max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-lg border border-[#5a1115]/80 text-white shadow-[0_0_48px_rgba(210,11,18,0.22)] sm:max-h-[calc(100dvh-3rem)]"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <button
@@ -230,7 +226,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         </button>
 
         {detailQuery.isError ? (
-          <div className="flex min-h-[24rem] flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
+          <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
             <h2
               id="game-detail-modal-title"
               className="text-2xl font-bold text-white sm:text-3xl"
