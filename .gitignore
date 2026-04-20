@@ -13,6 +13,9 @@ dist-ssr
 *.tsbuildinfo
 *.local
 
+# Environment variables
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
