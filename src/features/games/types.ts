@@ -35,7 +35,6 @@ export type GameDetail = {
   promoEmbedUrl: string | null;
   coverImageUrl: string | null;
   description: string | null;
-  platforms: Array<{ name: string }>;
   externalLinks: {
     officialSite?: string | null;
     steam?: string | null;
@@ -58,7 +57,6 @@ export type RawGameDetailResponse = {
     cover_image_url?: string | null;
   } | null;
   description: string | null;
-  platforms: Array<{ name: string | null }> | null;
   external_links: {
     official_site?: string | null;
     steam?: string | null;
