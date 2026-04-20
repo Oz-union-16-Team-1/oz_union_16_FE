@@ -30,6 +30,134 @@
 - **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
 - **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
 
+## Survey and Recommendation
+
+설문 및 추천 결과 화면은 최신 API 명세서 `(3)`를 기준으로 구현하며, 화면 컴포넌트는 원본 API 필드명에 직접 의존하지 않습니다.
+원본 응답과 화면용 상태 사이의 차이는 `adapter/normalizer` 계층에서 정리합니다.
+
+### 1. Survey Chatbot Endpoints
+
+```text
+POST   /api/v1/survey/chatbot/sessions
+POST   /api/v1/survey/chatbot/sessions/{session_id}/messages
+POST   /api/v1/survey/sessions/reset
+GET    /api/v1/survey/result
+```
+
+### 2. Survey Session/Message Response Contract
+
+설문 시작 응답과 답변 전송 응답은 아래 필드를 기준으로 정리합니다.
+
+```json
+{
+  "session_id": "string",
+  "status": "IN_PROGRESS",
+  "ai_question": "string",
+  "progress": {
+    "current_step": 1,
+    "total_steps": 4,
+    "completion_rate": 0.25
+  },
+  "recommendation_ready": false
+}
+```
+
+프론트 화면은 위 raw 응답을 직접 사용하지 않고 아래 규칙으로 정규화합니다.
+
+- `ai_question` -> `assistant_message`
+- `progress` -> `SurveyProgress`
+- `recommendation_ready` -> 추천 결과 이동 가능 여부
+- `status` -> `SurveySessionStatus`
+
+### 3. Survey Reset Contract
+
+설문 초기화는 새 설문 상태를 바로 내려주는 계약으로 사용합니다.
+
+```json
+{
+  "message": "설문이 초기화되었습니다.",
+  "session_id": "string",
+  "status": "IN_PROGRESS",
+  "ai_question": "string",
+  "progress": {
+    "current_step": 1,
+    "total_steps": 4,
+    "completion_rate": 0.0
+  },
+  "recommendation_ready": false
+}
+```
+
+프론트는 reset 후 별도 bootstrap 요청을 다시 보내지 않고, reset 응답 자체를 바로 hydrate합니다.
+
+### 4. Recommendation Result Contract
+
+설문 완료 후 추천 결과는 아래 응답을 기준으로 렌더링합니다.
+
+```json
+{
+  "session_id": "string",
+  "user_id": 1,
+  "count": 15,
+  "next": "5",
+  "results": [
+    {
+      "game_id": 101,
+      "title": "Elden Ring",
+      "genres": ["Action", "RPG"],
+      "thumbnail_url": "https://...",
+      "rating": 4.9,
+      "is_liked": false
+    }
+  ]
+}
+```
+
+추천 결과 리스트 화면은 아래 필드를 기준으로 동작합니다.
+
+- `game_id`: 상세 모달 연결 키
+- `title`: 게임명 표기 기준
+- `genres`: 태그/하이라이트 계산
+- `thumbnail_url`: 리스트 썸네일
+- `rating`: 평점 표시
+- `is_liked`: 현재 찜 상태 표시
+- `count`, `next`: 더보기/무한 조회 기준
+
+### 5. Adapter Rules
+
+최신 명세를 기준으로 구현하되, 백엔드 응답이 일부 legacy 필드를 반환하더라도 영향 범위가 API adapter에만 머무르도록 아래 fallback을 허용합니다.
+
+- 설문 응답 fallback
+  - `chatbot_reply`
+  - `progress_rate`
+  - `is_completed`
+- 추천 결과 fallback
+  - `name` -> `title`
+
+이 fallback은 **화면 컴포넌트에서 직접 사용하지 않고** `src/features/survey/api/survey.ts`의 normalize 함수 안에서만 처리합니다.
+
+### 6. Mock Policy
+
+MSW mock은 실제 API 경로와 응답 구조를 최대한 동일하게 맞춥니다.
+
+- 설문 시작/답변/초기화 경로는 실제 `chatbot` 경로와 동일하게 유지
+- 추천 결과 item은 mock에서도 `title` 기준으로 반환
+- 프론트 adapter는 방어적으로 legacy fallback을 유지하지만, mock 응답은 최신 계약을 우선 기준으로 사용
+
+### 7. Recommendation Detail Modal Integration
+
+추천 결과 리스트에서는 `game_id`가 있는 item만 상세 모달 진입이 가능합니다.
+
+- 상세 모달은 공용 `GameDetailModal`을 재사용
+- 상세 데이터 조회는 `getGameDetail(gameId)` 경계를 사용
+- 모달을 닫아도 추천 리스트 스크롤 위치와 현재 결과 상태는 유지
+
+### 8. Out of Scope / Follow-up Notes
+
+- 추천 리스트 row의 찜 버튼 API 연결은 별도 작업 범위로 유지
+- 매칭 후보 조회 응답은 최신 명세서와 현재 프론트 구조 차이가 있어, 추후 매칭 adapter 정리 PR에서 별도 동기화 필요
+- 문서가 갱신되면 구현 코드는 이 문서를 우선 기준으로 맞추고, 명세 변경 시 adapter 계층을 먼저 수정합니다
+
 ## Customer Support Chatbot
 
 고객센터 챗봇 관련 명세는 아래와 같습니다.
