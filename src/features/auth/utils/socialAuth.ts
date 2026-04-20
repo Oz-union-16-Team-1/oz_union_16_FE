@@ -18,18 +18,12 @@ const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
   naver: `${AUTH_BASE_PATH}/social-login/naver`,
 };
 
-const isSocialAuthProvider = (
-  value: string | null | undefined,
-): value is SocialAuthProvider =>
-  value === 'google' || value === 'kakao' || value === 'naver';
-
-const isAbsoluteUrl = (value: string) => /^https?:\/\//i.test(value);
-
 const getSocialLoginStartUrlFromEnv = (provider: SocialAuthProvider) => {
   const env = import.meta.env as Record<string, string | undefined>;
 
   for (const envKey of SOCIAL_AUTH_START_URL_ENV_KEYS[provider]) {
     const value = env[envKey]?.trim();
+
     if (value) {
       return value;
     }
@@ -45,17 +39,10 @@ export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
     return configuredUrl;
   }
 
-  if (apiBaseUrl) {
-    if (isAbsoluteUrl(apiBaseUrl)) {
-      return new URL(SOCIAL_AUTH_START_PATHS[provider], apiBaseUrl).toString();
-    }
+  const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/$/, '');
 
-    if (typeof window !== 'undefined') {
-      return new URL(
-        SOCIAL_AUTH_START_PATHS[provider],
-        window.location.origin,
-      ).toString();
-    }
+  if (normalizedApiBaseUrl) {
+    return `${normalizedApiBaseUrl}${SOCIAL_AUTH_START_PATHS[provider]}`;
   }
 
   return SOCIAL_AUTH_START_PATHS[provider];
@@ -77,34 +64,20 @@ export const clearPendingSocialAuthProvider = () => {
   window.sessionStorage.removeItem(PENDING_SOCIAL_PROVIDER_STORAGE_KEY);
 };
 
-export const getSocialCallbackProvider = (searchParams: URLSearchParams) => {
-  const providerFromQuery = searchParams.get('provider');
-
-  if (isSocialAuthProvider(providerFromQuery)) {
-    clearPendingSocialAuthProvider();
-    return providerFromQuery;
-  }
-
-  if (typeof window === 'undefined') {
+const getSocialCallbackErrorMessageFromCode = (errorCode: string | null) => {
+  if (!errorCode) {
     return null;
   }
 
-  const providerFromStorage = window.sessionStorage.getItem(
-    PENDING_SOCIAL_PROVIDER_STORAGE_KEY,
-  );
-  clearPendingSocialAuthProvider();
+  if (errorCode === 'social-login-failed') {
+    return '소셜 로그인에 실패했습니다. 다시 시도해 주세요.';
+  }
 
-  return isSocialAuthProvider(providerFromStorage) ? providerFromStorage : null;
+  return errorCode;
 };
 
 export const getSocialCallbackErrorMessage = (searchParams: URLSearchParams) =>
   searchParams.get('error_description') ||
   searchParams.get('error_detail') ||
   searchParams.get('detail') ||
-  searchParams.get('error');
-
-export const getSocialCallbackCode = (searchParams: URLSearchParams) =>
-  searchParams.get('code')?.trim() || null;
-
-export const getSocialCallbackState = (searchParams: URLSearchParams) =>
-  searchParams.get('state')?.trim() || null;
+  getSocialCallbackErrorMessageFromCode(searchParams.get('error'));
