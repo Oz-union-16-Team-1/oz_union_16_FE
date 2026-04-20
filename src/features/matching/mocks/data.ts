@@ -1,4 +1,13 @@
-import type { MatchingCandidateItem } from '../types';
+type MatchingMockCandidateRecord = {
+  game_id: number;
+  title: string;
+  description: string;
+  genres: string[];
+  thumbnail_url: string | null;
+  trailer_url: string | null;
+  rating: number | null;
+  is_liked: boolean;
+};
 
 const createCandidate = (
   gameId: number,
@@ -8,9 +17,11 @@ const createCandidate = (
   trailerUrl: string,
   rating: number,
   isLiked = false,
-): MatchingCandidateItem => ({
+  description = `${title}는 ${genres.join(' · ')} 흐름을 대표하는 후보 게임입니다.`,
+): MatchingMockCandidateRecord => ({
   game_id: gameId,
   title,
+  description,
   genres,
   thumbnail_url: thumbnailUrl,
   trailer_url: trailerUrl,
@@ -20,7 +31,7 @@ const createCandidate = (
 
 export const matchingMockCandidatesByGenreId: Record<
   number,
-  MatchingCandidateItem[]
+  MatchingMockCandidateRecord[]
 > = {
   1: [
     createCandidate(

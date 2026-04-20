@@ -17,9 +17,26 @@ export type MatchingGenreCard = {
   thumbnailUrl: string;
 };
 
+export interface MatchingApiCandidateItem {
+  game_id: number;
+  name: string;
+  description: string;
+  genres: string[];
+  trailer_url: string | null;
+  rating: number | null;
+  is_liked: boolean;
+}
+
+export interface MatchingApiCandidatesResponse {
+  genre_id: number;
+  count: number;
+  results: MatchingApiCandidateItem[];
+}
+
 export interface MatchingCandidateItem {
   game_id: number;
   title: string;
+  description: string;
   genres: string[];
   thumbnail_url: string | null;
   trailer_url: string | null;
@@ -30,7 +47,6 @@ export interface MatchingCandidateItem {
 export interface MatchingCandidatesResponse {
   genre_id: number;
   count: number;
-  next: string | null;
   results: MatchingCandidateItem[];
 }
 
