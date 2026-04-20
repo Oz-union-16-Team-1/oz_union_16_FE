@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ToastMessage from '../../../components/mypage/ToastMessage';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
 import type { GameDetail, GameListItem } from '../types';
@@ -31,6 +32,7 @@ const LIKE_ERROR_MESSAGE =
   '찜하기 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
+const TOAST_DURATION_MS = 3000;
 
 const getLikeErrorMessage = (error: unknown) => {
   if (error instanceof AxiosError) {
@@ -54,9 +56,9 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     isLiked: boolean | null;
     likeCount: number;
   } | null>(null);
-  const [likeFeedback, setLikeFeedback] = useState<{
-    gameId: number;
+  const [toast, setToast] = useState<{
     message: string;
+    tone: 'error';
   } | null>(null);
   const [failedImageUrlsByGameId, setFailedImageUrlsByGameId] = useState<
     Record<number, string[]>
@@ -73,7 +75,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     mutationFn: (nextLiked: boolean) =>
       nextLiked ? likeGame(game.gameId) : unlikeGame(game.gameId),
     onMutate: () => {
-      setLikeFeedback(null);
+      setToast(null);
     },
     onSuccess: (response) => {
       const nextLikeState = {
@@ -96,9 +98,9 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       );
     },
     onError: (error) => {
-      setLikeFeedback({
-        gameId: game.gameId,
+      setToast({
         message: getLikeErrorMessage(error),
+        tone: 'error',
       });
     },
   });
@@ -108,8 +110,6 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   const genres = detail?.genres.length ? detail.genres : game.genres;
   const genreLabel = genres.length > 0 ? genres.join(', ') : 'N/A';
   const activeLikeState = likeState?.gameId === game.gameId ? likeState : null;
-  const activeLikeFeedback =
-    likeFeedback?.gameId === game.gameId ? likeFeedback.message : null;
   const currentLiked =
     activeLikeState?.isLiked ??
     detail?.isLiked ??
@@ -145,15 +145,29 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
 
   const handleToggleLike = () => {
     if (!hasAccessToken) {
-      setLikeFeedback({
-        gameId: game.gameId,
+      setToast({
         message: LOGIN_REQUIRED_MESSAGE,
+        tone: 'error',
       });
       return;
     }
 
     likeMutation.mutate(!isLiked);
   };
+
+  useEffect(() => {
+    if (!toast) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setToast(null);
+    }, TOAST_DURATION_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [toast]);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -191,6 +205,14 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         }
       }}
     >
+      {toast ? (
+        <ToastMessage
+          message={toast.message}
+          tone={toast.tone}
+          onClose={() => setToast(null)}
+          variant="absoluteTopCenter"
+        />
+      ) : null}
       <section
         role="dialog"
         aria-modal="true"
@@ -263,7 +285,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     type="button"
                     aria-label={likeLabel}
                     aria-pressed={isLiked}
-                    aria-disabled={!hasAccessToken}
+                    aria-disabled={likeMutation.isPending}
                     title={likeLabel}
                     disabled={likeMutation.isPending}
                     onClick={handleToggleLike}
@@ -296,11 +318,6 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     {likeCount.toLocaleString('ko-KR')}
                   </span>
                 </p>
-                {activeLikeFeedback ? (
-                  <p role="status" className="mt-3 text-xs text-[#ffb4b8]">
-                    {activeLikeFeedback}
-                  </p>
-                ) : null}
                 <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
                   {detailQuery.isLoading
                     ? '상세 정보를 불러오는 중입니다.'

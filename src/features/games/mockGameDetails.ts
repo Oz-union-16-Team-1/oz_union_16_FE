@@ -72,7 +72,6 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '황금률이 무너진 틈새의 땅을 배경으로, 플레이어는 빛바랜 자가 되어 엘든 링의 힘을 되찾기 위한 여정을 떠납니다. 방대한 오픈 월드와 던전, 강력한 보스전, 자유도 높은 빌드 구성이 핵심입니다.',
     platforms: ['PC', 'PS4', 'PS5', 'Xbox One', 'Xbox Series X|S'],
     likeCount: 1250,
-    isLiked: true,
     officialSite: 'https://www.eldenring.com/',
   }),
   2358720: createMockGameDetail({
@@ -99,7 +98,6 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '왕의 죽음 이후 혼란에 빠진 판타지 세계에서 주인공 일행이 새로운 왕을 정하는 선거에 뛰어듭니다. 턴제 전투, 아키타입 성장, 동료와의 유대가 결합된 RPG입니다.',
     platforms: ['PC', 'PS4', 'PS5', 'Xbox Series X|S'],
     likeCount: 740,
-    isLiked: true,
     officialSite: 'https://metaphor.atlus.com/',
   }),
   1845910: createMockGameDetail({
@@ -127,7 +125,6 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '던전 앤 드래곤 5판 규칙을 기반으로 한 파티 RPG입니다. 플레이어의 선택과 주사위 판정이 전투, 대화, 탐험 결과를 크게 바꾸며 다양한 방식으로 이야기를 풀어갈 수 있습니다.',
     platforms: ['PC', 'macOS', 'PS5', 'Xbox Series X|S'],
     likeCount: 1430,
-    isLiked: true,
     officialSite: 'https://baldursgate3.game/',
   }),
   292030: createMockGameDetail({
@@ -187,7 +184,6 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '전국 시대풍 세계에서 외팔이 늑대가 주군을 구하기 위해 싸우는 액션 어드벤처입니다. 자세를 무너뜨리는 검극, 잠입, 의수 도구 활용이 전투의 중심입니다.',
     platforms: ['PC', 'PS4', 'Xbox One'],
     likeCount: 870,
-    isLiked: true,
     officialSite: 'https://www.sekirothegame.com/',
   }),
   2050650: createMockGameDetail({
@@ -253,7 +249,6 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '몰락한 왕국 할로우네스트를 탐험하는 메트로배니아 액션 게임입니다. 정교한 플랫폼, 보스전, 탐험을 통해 세계의 비밀을 천천히 밝혀갑니다.',
     platforms: ['PC', 'macOS', 'Linux', 'PS4', 'Xbox One', 'Nintendo Switch'],
     likeCount: 1040,
-    isLiked: true,
     officialSite: 'https://www.hollowknight.com/',
   }),
   1627720: createMockGameDetail({

@@ -2,7 +2,11 @@ import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 type ToastMessageTone = 'success' | 'error';
 
-type ToastMessageVariant = 'fixed' | 'fixedCenter' | 'absoluteCenter';
+type ToastMessageVariant =
+  | 'fixed'
+  | 'fixedCenter'
+  | 'absoluteCenter'
+  | 'absoluteTopCenter';
 
 type ToastMessageProps = {
   message: string;
@@ -20,16 +24,21 @@ function ToastMessage({
   className = '',
 }: ToastMessageProps) {
   const Icon = tone === 'success' ? CheckCircle2 : AlertCircle;
-  const positioningClass =
-    variant === 'absoluteCenter'
-      ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
-      : variant === 'fixedCenter'
-        ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
-        : 'fixed top-20 right-[clamp(1rem,5vw,20rem)]';
+  let positioningClass = 'fixed top-20 right-[clamp(1rem,5vw,20rem)]';
+
+  if (variant === 'absoluteCenter') {
+    positioningClass =
+      'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  } else if (variant === 'absoluteTopCenter') {
+    positioningClass = 'absolute left-1/2 top-4 -translate-x-1/2 sm:top-6';
+  } else if (variant === 'fixedCenter') {
+    positioningClass =
+      'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  }
 
   return (
     <div
-      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-[70] flex w-[min(92vw,360px)] items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
+      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-[70] flex w-fit max-w-[min(92vw,360px)] items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
     >
       <span
         className={`mt-0.5 shrink-0 ${
@@ -38,11 +47,13 @@ function ToastMessage({
       >
         <Icon size={18} />
       </span>
-      <p className="flex-1 text-sm/6 font-medium text-white">{message}</p>
+      <p className="min-w-0 text-sm/6 font-medium break-words text-white">
+        {message}
+      </p>
       <button
         type="button"
         onClick={onClose}
-        className="text-mypage-muted transition hover:text-white"
+        className="text-mypage-muted shrink-0 self-center transition hover:text-white"
         aria-label="토스트 닫기"
       >
         <X size={16} />
