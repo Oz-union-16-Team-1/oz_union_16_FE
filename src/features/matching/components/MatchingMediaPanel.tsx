@@ -44,9 +44,11 @@ function MatchingMediaPanel({
 }: MatchingMediaPanelProps) {
   const embedUrl = getYoutubeEmbedUrl(candidate.trailer_url);
   const imageUrl = candidate.thumbnail_url;
-  const candidateSummary = `${genreTitle} 흐름에서 ${candidate.title}은 ${candidate.genres.join(
-    ' · ',
-  )} 감각을 대표하는 후보예요. 영상과 이미지를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`;
+  const candidateSummary =
+    candidate.description?.trim() ||
+    `${genreTitle} 흐름에서 ${candidate.title}은 ${candidate.genres.join(
+      ' · ',
+    )} 감각을 대표하는 후보예요. 영상과 이미지를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`;
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[28px] border border-white/8 bg-[#0d0d0f] shadow-[0_26px_52px_rgba(0,0,0,0.28)]">

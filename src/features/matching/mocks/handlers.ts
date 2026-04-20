@@ -52,8 +52,15 @@ export const matchingHandlers = [
     return HttpResponse.json({
       genre_id: genreId,
       count: candidates.length,
-      next: null,
-      results: candidates,
+      results: candidates.map((candidate) => ({
+        game_id: candidate.game_id,
+        name: candidate.title,
+        description: candidate.description,
+        genres: candidate.genres,
+        trailer_url: candidate.trailer_url,
+        rating: candidate.rating,
+        is_liked: candidate.is_liked,
+      })),
     });
   }),
   http.post('/api/v1/match/responses', async ({ request }) => {
