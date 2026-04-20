@@ -27,22 +27,23 @@ type LoginLocationState = {
   errorMessage?: string;
 };
 
-const LOGIN_MAIN_CLASS_NAME = 'min-h-0 py-3 sm:py-4';
+const LOGIN_MAIN_CLASS_NAME = 'min-h-0 py-1 sm:py-1.5';
 const LOGIN_PANEL_CLASS_NAME =
-  'max-w-[500px] max-h-[calc(100dvh-4rem-1.5rem)] overflow-y-auto overscroll-contain recommendation-scroll px-[clamp(1rem,3vw,1.75rem)] py-[clamp(1.25rem,3.6dvh,2rem)] sm:max-h-[calc(100dvh-4rem-2rem)] sm:px-[clamp(1.25rem,3vw,2rem)] sm:py-[clamp(1.5rem,4dvh,2.25rem)]';
-const LOGIN_CONTENT_CLASS_NAME = 'max-w-[420px]';
-const LOGIN_TITLE_CLASS_NAME = 'text-[clamp(2.25rem,5dvh,3rem)]';
-const LOGIN_SOCIAL_GROUP_CLASS_NAME = 'mt-[clamp(1rem,2.5dvh,1.75rem)]';
-const LOGIN_DIVIDER_CLASS_NAME = 'my-[clamp(0.875rem,2.4dvh,1.5rem)]';
-const LOGIN_FORM_CLASS_NAME = 'space-y-[clamp(0.75rem,2.2dvh,1rem)]';
+  'max-w-[452px] px-[clamp(0.75rem,1.7vw,1.25rem)] py-[clamp(0.75rem,1.6dvh,1rem)] sm:px-[clamp(0.875rem,2vw,1.5rem)] sm:py-[clamp(0.875rem,1.9dvh,1.25rem)]';
+const LOGIN_CONTENT_CLASS_NAME = 'max-w-[360px]';
+const LOGIN_TITLE_CLASS_NAME = 'text-[clamp(1.75rem,3.6dvh,2.375rem)]';
+const LOGIN_SOCIAL_GROUP_CLASS_NAME = 'mt-[clamp(0.5rem,1.2dvh,0.875rem)]';
+const LOGIN_DIVIDER_CLASS_NAME =
+  'my-[clamp(0.5rem,1.2dvh,0.75rem)] gap-2.5 py-0';
+const LOGIN_FORM_CLASS_NAME = 'space-y-[clamp(0.5rem,1.25dvh,0.75rem)]';
 const LOGIN_FIELD_CLASS_NAME =
-  'h-[clamp(3rem,6.5dvh,3.5rem)] px-[clamp(0.875rem,2vw,1rem)] text-[clamp(0.95rem,2dvh,1rem)]';
+  'h-[clamp(2.5rem,4.8dvh,2.75rem)] rounded-[0.875rem] px-[clamp(0.75rem,1.5vw,0.9375rem)] text-[clamp(0.85rem,1.45dvh,0.9375rem)]';
 const LOGIN_PRIMARY_BUTTON_CLASS_NAME =
-  'mt-[clamp(0.75rem,2dvh,1rem)] h-[clamp(3rem,6.5dvh,3.5rem)] text-[clamp(1rem,2.2dvh,1.125rem)] leading-none';
+  'mt-[clamp(0.375rem,1dvh,0.625rem)] h-[clamp(2.5rem,4.8dvh,2.75rem)] text-[clamp(0.9rem,1.55dvh,1rem)] leading-none';
 const LOGIN_SECONDARY_BUTTON_CLASS_NAME =
-  'mt-[clamp(0.75rem,2dvh,1.25rem)] h-[clamp(3rem,6.5dvh,3.5rem)] text-[clamp(1rem,2.2dvh,1.125rem)] leading-none';
+  'mt-[clamp(0.5rem,1.2dvh,0.75rem)] h-[clamp(2.5rem,4.8dvh,2.75rem)] text-[clamp(0.9rem,1.55dvh,1rem)] leading-none';
 const LOGIN_SIGNUP_SECTION_CLASS_NAME =
-  'border-login-divider mt-[clamp(1rem,2.5dvh,1.75rem)] border-t pt-[clamp(0.875rem,2.2dvh,1.5rem)]';
+  'border-login-divider mt-[clamp(0.625rem,1.4dvh,0.875rem)] border-t pt-[clamp(0.5rem,1.2dvh,0.75rem)]';
 
 const getLoginFieldErrors = (
   values: LoginRequest,
@@ -189,7 +190,7 @@ function LoginPage() {
           }
           errorMessage={resolvedFieldErrors.login_id}
           disabled={loginMutation.isPending}
-          containerClassName="pt-[clamp(0.125rem,0.7dvh,0.25rem)]"
+          containerClassName="pt-[clamp(0.125rem,0.3dvh,0.1875rem)]"
           className={LOGIN_FIELD_CLASS_NAME}
         />
 
@@ -222,7 +223,7 @@ function LoginPage() {
         <div className="flex justify-end">
           <button
             type="button"
-            className="text-login-muted text-[clamp(0.75rem,1.7dvh,0.875rem)] font-medium transition-colors hover:text-white/80"
+            className="text-login-muted text-[clamp(0.675rem,1.1dvh,0.75rem)] font-medium transition-colors hover:text-white/80"
           >
             아이디/비밀번호를 잊어버리셨나요?
           </button>
@@ -238,7 +239,7 @@ function LoginPage() {
       </form>
 
       <div className={LOGIN_SIGNUP_SECTION_CLASS_NAME}>
-        <p className="text-login-helper text-center text-[clamp(0.75rem,1.8dvh,0.875rem)] leading-5 font-normal">
+        <p className="text-login-helper text-center text-[clamp(0.675rem,1.15dvh,0.75rem)] leading-[1.1rem] font-normal">
           아직 PGTI 회원이 아니신가요?
         </p>
         <AuthLinkButton
