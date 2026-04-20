@@ -17,7 +17,7 @@ import {
 } from '../features/auth/api/auth';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
-import { setAccessToken, setAuthAccount } from '../utils/auth';
+import { useAuthStore } from '../store/useAuthStore';
 
 type LoginFieldName = keyof LoginRequest;
 type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
@@ -47,7 +47,9 @@ const getLoginFieldErrors = (
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const setAuth = useAuthStore((state) => state.setAuth);
   const loginMutation = useLoginMutation();
+
   const [formValues, setFormValues] = useState<LoginRequest>({
     login_id: '',
     password: '',
@@ -119,9 +121,10 @@ function LoginPage() {
     try {
       const response = await loginMutation.mutateAsync(payload);
 
-      setAccessToken(response.access_token);
+      // [Refactor] #94: Access Token 메모리 저장, Refresh Token은 HttpOnly 쿠키로 관리됨
       const profile = await getCurrentUserProfile();
-      setAuthAccount(profile);
+      setAuth(response.access_token, profile);
+
       navigate(ROUTES.HOME);
     } catch (error) {
       const nextApiFieldErrors = extractAuthApiFieldErrors(error);
