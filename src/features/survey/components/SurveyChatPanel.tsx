@@ -32,6 +32,8 @@ function SurveyChatPanel() {
   const navigate = useNavigate();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const shouldRestoreFocusRef = useRef(false);
   const [inputValue, setInputValue] = useState('');
 
   const {
@@ -71,6 +73,31 @@ function SurveyChatPanel() {
       behavior: 'smooth',
     });
   }, [messages, error]);
+
+  const restoreTextareaFocus = useCallback(() => {
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+
+      if (!textarea || textarea.disabled) {
+        return;
+      }
+
+      textarea.focus();
+      const cursorPosition = textarea.value.length;
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (
+      !isSubmitting &&
+      !recommendationReady &&
+      shouldRestoreFocusRef.current
+    ) {
+      shouldRestoreFocusRef.current = false;
+      restoreTextareaFocus();
+    }
+  }, [isSubmitting, recommendationReady, restoreTextareaFocus]);
 
   const bootstrapSurvey = useCallback(
     async (force = false) => {
@@ -177,11 +204,14 @@ function SurveyChatPanel() {
       return;
     }
 
+    shouldRestoreFocusRef.current = true;
     setInputValue('');
     await submitMessage({ content: nextMessage, appendUserMessage: true });
   };
 
   const handleRetry = async () => {
+    shouldRestoreFocusRef.current = true;
+
     if (!lastSubmittedMessage) {
       await bootstrapSurvey(true);
       return;
@@ -230,12 +260,14 @@ function SurveyChatPanel() {
     clearError();
 
     if (!sessionId) {
+      shouldRestoreFocusRef.current = true;
       setInputValue('');
       resetSurveyState();
       await bootstrapSurvey();
       return;
     }
 
+    shouldRestoreFocusRef.current = true;
     setSubmitting(true);
 
     try {
@@ -404,6 +436,7 @@ function SurveyChatPanel() {
                     : '지금 떠오르는 취향이나 최근 즐긴 게임 이야기를 적어보세요.'}
                 </span>
                 <textarea
+                  ref={textareaRef}
                   value={inputValue}
                   onChange={(event) => setInputValue(event.target.value)}
                   onKeyDown={handleTextareaKeyDown}
