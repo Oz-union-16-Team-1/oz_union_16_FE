@@ -11,6 +11,8 @@ import type {
   DeleteAccountResponse,
   LoginRequest,
   LogoutResponse,
+  SocialAuthProvider,
+  SocialLoginCallbackRequest,
   SignupRequest,
 } from '../types/auth';
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
@@ -66,6 +68,9 @@ const getUnauthorizedError = (message: string) =>
 const findUserByNickname = (nickname: string) =>
   [...mockUsers.values()].find((user) => user.nickname === nickname);
 
+const isSocialAuthProvider = (value: string): value is SocialAuthProvider =>
+  value === 'google' || value === 'kakao' || value === 'naver';
+
 const loginHandlers = [
   http.post(`${AUTH_BASE_PATH}/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
@@ -101,6 +106,64 @@ const loginHandlers = [
       refresh_token: createRefreshToken(user.loginId),
     });
   }),
+
+  http.post(
+    `${AUTH_BASE_PATH}/login/:provider`,
+    async ({ params, request }) => {
+      const provider =
+        typeof params.provider === 'string' ? params.provider.trim() : '';
+
+      if (!isSocialAuthProvider(provider)) {
+        return HttpResponse.json(
+          {
+            error_detail: '지원하지 않는 소셜 로그인 제공자입니다.',
+          },
+          { status: 404 },
+        );
+      }
+
+      const body = (await request.json()) as SocialLoginCallbackRequest;
+      const code = body.code?.trim() ?? '';
+      const state = body.state?.trim() ?? '';
+
+      if (!code) {
+        return getFieldValidationError('code', '인가 코드가 필요합니다.');
+      }
+
+      if (provider === 'naver' && !state) {
+        return getFieldValidationError(
+          'state',
+          '네이버 로그인 state 값이 필요합니다.',
+        );
+      }
+
+      if (code === 'suspended-account') {
+        return HttpResponse.json(
+          {
+            error_detail: '정지된 계정입니다.',
+            suspended_at: '2026-04-01T09:00:00+09:00',
+          },
+          { status: 403 },
+        );
+      }
+
+      const user =
+        code === 'tester-social-code'
+          ? mockUsers.get('pgti-tester')
+          : mockUsers.get('pgti-demo');
+
+      if (!user) {
+        return getUnauthorizedError('연결된 회원 정보를 찾을 수 없습니다.');
+      }
+
+      await delay(450);
+
+      return HttpResponse.json({
+        access_token: createAccessToken(user.loginId),
+        refresh_token: createRefreshToken(user.loginId),
+      });
+    },
+  ),
 ];
 
 const signupHandlers = [

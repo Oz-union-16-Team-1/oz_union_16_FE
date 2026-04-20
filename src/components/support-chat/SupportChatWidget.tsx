@@ -26,8 +26,12 @@ const getPageLabel = (pathname: string) => {
     return '로그인';
   }
 
-  if (pathname === '/signup') {
+  if (pathname === '/join' || pathname === '/signup') {
     return '회원가입';
+  }
+
+  if (pathname === '/callback' || pathname === '/auth/callback') {
+    return '로그인';
   }
 
   if (pathname === '/my-page') {

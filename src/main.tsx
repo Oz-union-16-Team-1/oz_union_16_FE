@@ -1,9 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import App from './App';
+import LegacyRouteRedirect from './components/common/LegacyRouteRedirect';
 import { ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
 import MatchingListPage from './pages/matching/MatchingListPage';
@@ -53,8 +54,16 @@ const router = createBrowserRouter([
         element: <AuthCallbackPage />,
       },
       {
+        path: ROUTES.LEGACY_AUTH_CALLBACK,
+        element: <LegacyRouteRedirect to={`/${ROUTES.AUTH_CALLBACK}`} />,
+      },
+      {
         path: ROUTES.SIGNUP,
         element: <SignupPage />,
+      },
+      {
+        path: ROUTES.LEGACY_SIGNUP,
+        element: <Navigate to={`/${ROUTES.SIGNUP}`} replace />,
       },
       {
         path: ROUTES.MY_PAGE,
