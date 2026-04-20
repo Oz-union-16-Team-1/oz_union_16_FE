@@ -7,7 +7,9 @@ type AuthLayoutProps = {
   withPanel?: boolean;
   titleClassName?: string;
   subtitleClassName?: string;
+  mainClassName?: string;
   panelClassName?: string;
+  contentClassName?: string;
   children: ReactNode;
 };
 
@@ -17,7 +19,9 @@ function AuthLayout({
   withPanel = false,
   titleClassName = '',
   subtitleClassName = '',
+  mainClassName = '',
   panelClassName = '',
+  contentClassName = '',
   children,
 }: AuthLayoutProps) {
   const content = (
@@ -42,15 +46,21 @@ function AuthLayout({
     <div className="bg-login-page flex min-h-dvh flex-col text-white">
       <Header fixed={false} />
 
-      <main className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <main
+        className={`flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 ${mainClassName}`}
+      >
         {withPanel ? (
           <section
             className={`bg-auth-panel border-auth-panel shadow-auth-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
           >
-            <div className="mx-auto w-full max-w-[440px]">{content}</div>
+            <div className={`mx-auto w-full max-w-[440px] ${contentClassName}`}>
+              {content}
+            </div>
           </section>
         ) : (
-          <section className="w-full max-w-[440px]">{content}</section>
+          <section className={`w-full max-w-[440px] ${contentClassName}`}>
+            {content}
+          </section>
         )}
       </main>
     </div>
