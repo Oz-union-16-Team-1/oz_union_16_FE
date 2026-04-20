@@ -2,7 +2,11 @@ import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 type ToastMessageTone = 'success' | 'error';
 
-type ToastMessageVariant = 'fixed' | 'fixedCenter' | 'absoluteCenter';
+type ToastMessageVariant =
+  | 'fixed'
+  | 'fixedCenter'
+  | 'absoluteCenter'
+  | 'absoluteTopCenter';
 
 type ToastMessageProps = {
   message: string;
@@ -20,12 +24,17 @@ function ToastMessage({
   className = '',
 }: ToastMessageProps) {
   const Icon = tone === 'success' ? CheckCircle2 : AlertCircle;
-  const positioningClass =
-    variant === 'absoluteCenter'
-      ? 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
-      : variant === 'fixedCenter'
-        ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'
-        : 'fixed top-20 right-[clamp(1rem,5vw,20rem)]';
+  let positioningClass = 'fixed top-20 right-[clamp(1rem,5vw,20rem)]';
+
+  if (variant === 'absoluteCenter') {
+    positioningClass =
+      'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  } else if (variant === 'absoluteTopCenter') {
+    positioningClass = 'absolute left-1/2 top-4 -translate-x-1/2 sm:top-6';
+  } else if (variant === 'fixedCenter') {
+    positioningClass =
+      'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  }
 
   return (
     <div
