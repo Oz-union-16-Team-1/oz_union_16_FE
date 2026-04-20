@@ -19,6 +19,10 @@ interface MatchingStoreState {
     genre: MatchingGenreCard,
     candidates: MatchingCandidateItem[],
   ) => void;
+  restartFlow: (
+    genre: MatchingGenreCard,
+    candidates: MatchingCandidateItem[],
+  ) => void;
   setRating: (gameId: number, rating: MatchingRatingValue) => void;
   toggleLiked: (gameId: number) => void;
   goNext: () => void;
@@ -92,6 +96,14 @@ export const useMatchingStore = create<MatchingStoreState>((set) => ({
           isSameGenre,
         ),
       };
+    }),
+  restartFlow: (genre, candidates) =>
+    set({
+      selectedGenreSlug: genre.slug,
+      selectedGenreId: genre.genreId,
+      candidates,
+      currentIndex: 0,
+      evaluationsByGameId: createEvaluationMap(candidates),
     }),
   setRating: (gameId, rating) =>
     set((state) => ({
