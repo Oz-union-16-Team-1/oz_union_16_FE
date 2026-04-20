@@ -83,7 +83,6 @@ export interface SurveyResetResponse {
 }
 
 export interface SurveyResultQuery {
-  session_id: string;
   sort?: string;
   cursor?: string;
   page_size?: number;
@@ -110,7 +109,7 @@ export interface SurveyResultItem {
 
 export interface SurveyApiResultResponse {
   session_id?: string;
-  user_id: number;
+  user_id?: number;
   count?: number | null;
   next?: string | null;
   results: SurveyApiResultItem[];
@@ -118,7 +117,7 @@ export interface SurveyApiResultResponse {
 
 export interface SurveyResultResponse {
   session_id?: string;
-  user_id: number;
+  user_id?: number;
   count: number;
   next: string | null;
   results: SurveyResultItem[];

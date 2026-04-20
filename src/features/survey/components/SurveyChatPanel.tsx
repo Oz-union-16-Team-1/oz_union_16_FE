@@ -295,12 +295,8 @@ function SurveyChatPanel() {
   };
 
   const handleMoveToRecommendation = () => {
-    if (!sessionId) {
-      return;
-    }
-
     startTransition(() => {
-      navigate(`/${ROUTES.RECOMMENDATION_LIST}?session_id=${sessionId}`);
+      navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=survey`);
     });
   };
 

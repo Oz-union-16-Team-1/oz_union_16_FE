@@ -122,7 +122,7 @@ export const normalizeSurveyResultResponse = (
   payload: SurveyApiResultResponse,
 ): SurveyResultResponse => ({
   session_id: payload.session_id,
-  user_id: payload.user_id,
+  user_id: typeof payload.user_id === 'number' ? payload.user_id : undefined,
   count:
     typeof payload.count === 'number'
       ? payload.count

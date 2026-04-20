@@ -99,6 +99,7 @@ interface MockSurveySession {
 }
 
 const surveySessions = new Map<string, MockSurveySession>();
+let latestCompletedSurveySessionId: string | null = null;
 
 const createSessionId = () => crypto.randomUUID();
 
@@ -215,6 +216,7 @@ export const surveyHandlers = [
 
       if (session.askedQuestions >= session.totalQuestions) {
         surveySessions.set(sessionId, session);
+        latestCompletedSurveySessionId = sessionId;
 
         return HttpResponse.json({
           session_id: sessionId,
@@ -245,15 +247,10 @@ export const surveyHandlers = [
 
   http.get('/api/v1/survey/result', async ({ request }) => {
     const url = new URL(request.url);
-    const sessionId = url.searchParams.get('session_id');
     const cursor = Number(url.searchParams.get('cursor') ?? '0');
-    const pageSize = Number(url.searchParams.get('page_size') ?? '4');
+    const pageSize = Number(url.searchParams.get('page_size') ?? '5');
 
-    if (!sessionId) {
-      return getErrorResponse(400, 'session_id는 필수입니다.');
-    }
-
-    if (!surveySessions.has(sessionId)) {
+    if (!latestCompletedSurveySessionId) {
       return getErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
     }
 
@@ -264,7 +261,6 @@ export const surveyHandlers = [
     await delay(500);
 
     return HttpResponse.json({
-      session_id: sessionId,
       user_id: 1,
       count: recommendations.length,
       next,
@@ -280,6 +276,9 @@ export const surveyHandlers = [
     }
 
     surveySessions.delete(body.session_id);
+    if (latestCompletedSurveySessionId === body.session_id) {
+      latestCompletedSurveySessionId = null;
+    }
 
     const nextSessionId = createSessionId();
     surveySessions.set(nextSessionId, {
