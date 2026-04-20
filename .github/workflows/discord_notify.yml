@@ -64,10 +64,10 @@ jobs:
             for login in $(echo "$REVIEWERS_JSON" | jq -r '.[] | .login'); do
               case "$login" in
                 "chen4023")
-                  MENTIONS="$MENTIONS <@950597490086924368>"
+                  MENTIONS="$MENTIONS <@683563560063991848>"
                   ;;
                 "sysysysyb")
-                  MENTIONS="$MENTIONS <@1419497006753124382>"
+                  MENTIONS="$MENTIONS <@950597490086924368>"
                   ;;
                 "ninanochichi")
                   MENTIONS="$MENTIONS <@1304754118199480381>"
@@ -87,8 +87,8 @@ jobs:
             # 만약 요청된 리뷰어가 없으면 현재 리뷰어로 대체
             if [ -z "$MENTIONS" ]; then
               case "$CURRENT_REVIEWER" in
-                "chen4023") MENTIONS="<@950597490086924368>" ;;
-                "sysysysyb") MENTIONS="<@1419497006753124382>" ;;
+                "chen4023") MENTIONS="<@683563560063991848>" ;;
+                "sysysysyb") MENTIONS="<@950597490086924368>" ;;
                 "ninanochichi") MENTIONS="<@1304754118199480381>" ;;
                 "hj-devlog") MENTIONS="<@452332808631746561>" ;;
                 "JinMyeong99") MENTIONS="<@1224946488845795370>" ;;
@@ -168,10 +168,10 @@ jobs:
           # PR 작성자 Discord ID 매핑
           case "${{ github.event.pull_request.user.login }}" in
             "chen4023")
-              AUTHOR_MENTION="<@950597490086924368>"
+              AUTHOR_MENTION="<@683563560063991848>"
               ;;
             "sysysysyb")
-              AUTHOR_MENTION="<@1419497006753124382>"
+              AUTHOR_MENTION="<@950597490086924368>"
               ;;
             "ninanochichi")
               AUTHOR_MENTION="<@1304754118199480381>"
@@ -221,10 +221,10 @@ jobs:
           # PR 작성자 Discord ID 매핑
           case "${{ github.event.pull_request.user.login }}" in
             "chen4023")
-              AUTHOR_MENTION="<@950597490086924368>"
+              AUTHOR_MENTION="<@683563560063991848>"
               ;;
             "sysysysyb")
-              AUTHOR_MENTION="<@1419497006753124382>"
+              AUTHOR_MENTION="<@950597490086924368>"
               ;;
             "ninanochichi")
               AUTHOR_MENTION="<@1304754118199480381>"
