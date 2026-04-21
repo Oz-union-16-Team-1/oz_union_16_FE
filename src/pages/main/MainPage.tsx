@@ -6,7 +6,7 @@ import {
   ClipboardCheck,
   Search,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -15,6 +15,11 @@ import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import GameCard from '../../features/games/components/GameCard';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
+import {
+  GAME_CARD_BODY_CLASS,
+  GAME_CARD_MEDIA_CLASS,
+  GAME_CARD_SHELL_CLASS,
+} from '../../features/games/components/gameCardLayout';
 import { getTopGames, searchGames } from '../../features/games/gameApi';
 import { GAME_GENRE_FILTERS } from '../../features/games/genres';
 import { useDebouncedValue } from '../../features/games/hooks/useDebouncedValue';
@@ -25,6 +30,35 @@ import 'swiper/swiper.css';
 const SEARCH_DEBOUNCE_MS = 300;
 const GENRE_FILTER_MENU_ID = 'game-genre-filter-menu';
 const CTA_PENDING_MESSAGE = '준비 중입니다.';
+const GAME_CARD_SWIPER_BREAKPOINTS = {
+  640: {
+    slidesPerView: 2,
+    slidesPerGroup: 2,
+    spaceBetween: 20,
+  },
+  768: {
+    slidesPerView: 3,
+    slidesPerGroup: 3,
+    spaceBetween: 24,
+  },
+  1024: {
+    slidesPerView: 4,
+    slidesPerGroup: 4,
+    spaceBetween: 24,
+  },
+  1280: {
+    slidesPerView: 5,
+    slidesPerGroup: 5,
+    spaceBetween: 24,
+  },
+  1440: {
+    slidesPerView: 6,
+    slidesPerGroup: 6,
+    spaceBetween: 24,
+  },
+} as const;
+const GAME_CARD_SKELETON_COUNT = 6;
+const GAME_CARD_MEASURE_SLIDE_COUNT = 6;
 
 const MainPage = () => {
   const [searchText, setSearchText] = useState('');
@@ -95,20 +129,13 @@ const MainPage = () => {
                 key={`${debouncedSearchText}-${selectedGenre}`}
                 games={games}
                 onSelectGame={setSelectedGame}
+                showUpdatingOverlay={gamesQuery.isFetching}
               />
             ) : (
-              <div className="px-[clamp(1rem,5vw,20rem)]">
-                <EmptyGameList
-                  isFiltered={isSearchMode || selectedGenre !== '전체'}
-                />
-              </div>
+              <EmptyGameList
+                isFiltered={isSearchMode || selectedGenre !== '전체'}
+              />
             )}
-
-            {gamesQuery.isFetching && !gamesQuery.isLoading ? (
-              <p className="mt-3 px-[clamp(1rem,5vw,20rem)] text-sm text-white/50">
-                목록을 업데이트하는 중입니다.
-              </p>
-            ) : null}
           </div>
 
           <section className="mt-14 grid gap-6 px-[clamp(1rem,5vw,20rem)] lg:grid-cols-2">
@@ -218,9 +245,14 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
 type GameCarouselProps = {
   games: GameListItem[];
   onSelectGame: (game: GameListItem) => void;
+  showUpdatingOverlay?: boolean;
 };
 
-const GameCarousel = ({ games, onSelectGame }: GameCarouselProps) => {
+const GameCarousel = ({
+  games,
+  onSelectGame,
+  showUpdatingOverlay = false,
+}: GameCarouselProps) => {
   const swiperRef = useRef<SwiperInstance | null>(null);
 
   const scrollCards = (direction: 'previous' | 'next') => {
@@ -239,63 +271,69 @@ const GameCarousel = ({ games, onSelectGame }: GameCarouselProps) => {
   };
 
   return (
-    <div className="group/carousel relative left-1/2 w-screen -translate-x-1/2">
-      <SlideButton
-        direction="previous"
-        onClick={() => scrollCards('previous')}
-      />
+    <GameCardSwiperFrame
+      showNavigation
+      showUpdatingOverlay={showUpdatingOverlay}
+      onPrevious={() => scrollCards('previous')}
+      onNext={() => scrollCards('next')}
+      onSwiper={(swiper) => {
+        swiperRef.current = swiper;
+      }}
+    >
+      {games.map((game) => (
+        <SwiperSlide key={game.gameId} className="h-auto!">
+          <GameCard game={game} onSelectGame={onSelectGame} />
+        </SwiperSlide>
+      ))}
+    </GameCardSwiperFrame>
+  );
+};
 
-      <div className="px-[clamp(1rem,5vw,20rem)] py-2">
+type GameCardSwiperFrameProps = {
+  children: ReactNode;
+  showNavigation?: boolean;
+  showUpdatingOverlay?: boolean;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  onSwiper?: (swiper: SwiperInstance) => void;
+};
+
+const GameCardSwiperFrame = ({
+  children,
+  showNavigation = false,
+  showUpdatingOverlay = false,
+  onPrevious,
+  onNext,
+  onSwiper,
+}: GameCardSwiperFrameProps) => (
+  <div className="group/carousel relative left-1/2 w-screen -translate-x-1/2">
+    {showNavigation && onPrevious ? (
+      <SlideButton direction="previous" onClick={onPrevious} />
+    ) : null}
+
+    <div className="px-[clamp(1rem,5vw,20rem)] py-2">
+      <div className="relative">
         <Swiper
-          onSwiper={(swiper) => {
-            swiperRef.current = swiper;
-          }}
+          onSwiper={onSwiper}
           slidesPerView={1}
           slidesPerGroup={1}
           spaceBetween={20}
           speed={450}
           watchOverflow
-          breakpoints={{
-            640: {
-              slidesPerView: 2,
-              slidesPerGroup: 2,
-              spaceBetween: 20,
-            },
-            768: {
-              slidesPerView: 3,
-              slidesPerGroup: 3,
-              spaceBetween: 24,
-            },
-            1024: {
-              slidesPerView: 4,
-              slidesPerGroup: 4,
-              spaceBetween: 24,
-            },
-            1280: {
-              slidesPerView: 5,
-              slidesPerGroup: 5,
-              spaceBetween: 24,
-            },
-            1440: {
-              slidesPerView: 6,
-              slidesPerGroup: 6,
-              spaceBetween: 24,
-            },
-          }}
+          breakpoints={GAME_CARD_SWIPER_BREAKPOINTS}
           className="overflow-visible!"
         >
-          {games.map((game) => (
-            <SwiperSlide key={game.gameId} className="h-auto!">
-              <GameCard game={game} onSelectGame={onSelectGame} />
-            </SwiperSlide>
-          ))}
+          {children}
         </Swiper>
+        {showUpdatingOverlay ? <GameListUpdatingOverlay /> : null}
       </div>
-
-      <SlideButton direction="next" onClick={() => scrollCards('next')} />
     </div>
-  );
-};
+
+    {showNavigation && onNext ? (
+      <SlideButton direction="next" onClick={onNext} />
+    ) : null}
+  </div>
+);
 
 type SlideButtonProps = {
   direction: 'previous' | 'next';
@@ -324,35 +362,105 @@ const SlideButton = ({ direction, onClick }: SlideButtonProps) => {
 };
 
 const GameCardSkeletonList = () => (
-  <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden py-2">
-    <div className="grid auto-cols-[100%] grid-flow-col gap-5 px-[clamp(1rem,5vw,20rem)] min-[1440px]:auto-cols-[calc((100%-120px)/6)] sm:auto-cols-[calc((100%-20px)/2)] md:auto-cols-[calc((100%-48px)/3)] lg:auto-cols-[calc((100%-72px)/4)] lg:gap-6 xl:auto-cols-[calc((100%-96px)/5)]">
-      {Array.from({ length: 5 }, (_, index) => (
-        <div
-          key={index}
-          className="animate-pulse overflow-hidden rounded-lg bg-[#141414]"
-        >
-          <div className="aspect-4/5 bg-white/5" />
-          <div className="space-y-3 p-5">
-            <div className="h-5 w-40 rounded bg-white/10" />
-            <div className="h-4 w-24 rounded bg-white/10" />
+  <GameCardSwiperFrame>
+    {Array.from({ length: GAME_CARD_SKELETON_COUNT }, (_, index) => (
+      <SwiperSlide key={index} className="h-auto!">
+        <div className={`${GAME_CARD_SHELL_CLASS} animate-pulse`}>
+          <div className={`${GAME_CARD_MEDIA_CLASS} bg-white/5`} />
+          <div className={GAME_CARD_BODY_CLASS}>
+            <div className="min-w-0">
+              <div className="h-5 w-40 rounded bg-white/10" />
+              <div className="mt-3 h-4 w-24 rounded bg-white/10" />
+            </div>
           </div>
         </div>
-      ))}
-    </div>
-  </div>
+      </SwiperSlide>
+    ))}
+  </GameCardSwiperFrame>
 );
 
 type EmptyGameListProps = {
   isFiltered: boolean;
 };
 
-const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => (
-  <div className="flex min-h-80 items-center justify-center rounded-lg border border-white/10 bg-[#101010] px-6 text-center sm:min-h-90 lg:min-h-100">
-    <p className="text-base text-white/65">
-      {isFiltered
-        ? '조건에 맞는 게임 목록이 없습니다.'
-        : '표시할 인기 게임 목록이 없습니다.'}
-    </p>
+const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
+  const cardMeasureRef = useRef<HTMLDivElement | null>(null);
+  const [cardHeight, setCardHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const card = cardMeasureRef.current;
+
+    if (!card || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const updateCardHeight = () => {
+      setCardHeight(card.getBoundingClientRect().height);
+    };
+
+    updateCardHeight();
+
+    const resizeObserver = new ResizeObserver(updateCardHeight);
+    resizeObserver.observe(card);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="relative left-1/2 w-screen -translate-x-1/2">
+      <div className="relative px-[clamp(1rem,5vw,20rem)] py-2">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none invisible absolute inset-0"
+        >
+          <Swiper
+            slidesPerView={1}
+            slidesPerGroup={1}
+            spaceBetween={20}
+            watchOverflow
+            breakpoints={GAME_CARD_SWIPER_BREAKPOINTS}
+            className="overflow-visible!"
+          >
+            {Array.from(
+              { length: GAME_CARD_MEASURE_SLIDE_COUNT },
+              (_, index) => (
+                <SwiperSlide key={index} className="h-auto!">
+                  <div
+                    ref={index === 0 ? cardMeasureRef : undefined}
+                    className={GAME_CARD_SHELL_CLASS}
+                  >
+                    <div className={GAME_CARD_MEDIA_CLASS} />
+                    <div className={GAME_CARD_BODY_CLASS} />
+                  </div>
+                </SwiperSlide>
+              ),
+            )}
+          </Swiper>
+        </div>
+        <div
+          className="flex items-center justify-center rounded-lg border border-white/10 bg-[#101010] px-6 text-center"
+          style={cardHeight ? { height: `${cardHeight}px` } : undefined}
+        >
+          <p className="text-base text-white/65">
+            {isFiltered
+              ? '조건에 맞는 게임 목록이 없습니다.'
+              : '표시할 인기 게임 목록이 없습니다.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GameListUpdatingOverlay = () => (
+  <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-lg">
+    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+    <div className="absolute top-3 right-3 flex items-center gap-2">
+      <div className="h-2.5 w-14 animate-pulse rounded-full bg-white/20" />
+      <div className="h-2.5 w-8 animate-pulse rounded-full bg-white/15" />
+    </div>
   </div>
 );
 
