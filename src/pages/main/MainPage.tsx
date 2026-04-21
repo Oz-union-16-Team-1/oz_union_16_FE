@@ -58,7 +58,6 @@ const GAME_CARD_SWIPER_BREAKPOINTS = {
   },
 } as const;
 const GAME_CARD_SKELETON_COUNT = 6;
-const GAME_CARD_MEASURE_SLIDE_COUNT = 6;
 
 const MainPage = () => {
   const [searchText, setSearchText] = useState('');
@@ -223,7 +222,7 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
       {isOpen ? (
         <ul
           id={GENRE_FILTER_MENU_ID}
-          className="genre-menu-scrollbar absolute top-full left-0 z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-white/15 bg-[#101010] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
+          className="genre-menu-scrollbar bg-mypage-soft absolute top-full left-0 z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-white/15 p-1 shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
         >
           {GAME_GENRE_FILTERS.map((genre) => {
             const isSelected = genre === selectedGenre;
@@ -397,24 +396,49 @@ type EmptyGameListProps = {
 };
 
 const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
-  const cardMeasureRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [cardHeight, setCardHeight] = useState<number | null>(null);
 
   useEffect(() => {
-    const card = cardMeasureRef.current;
+    const el = containerRef.current;
 
-    if (!card || typeof ResizeObserver === 'undefined') {
+    if (!el || typeof ResizeObserver === 'undefined') {
       return;
     }
 
-    const updateCardHeight = () => {
-      setCardHeight(card.getBoundingClientRect().height);
+    const compute = () => {
+      const containerWidth = el.getBoundingClientRect().width;
+      const vw = window.innerWidth;
+
+      const sorted = (
+        Object.keys(GAME_CARD_SWIPER_BREAKPOINTS) as unknown as number[]
+      )
+        .map(Number)
+        .sort((a, b) => b - a);
+
+      let perView = 1;
+      let gap = 20;
+
+      for (const bp of sorted) {
+        if (vw >= bp) {
+          const config =
+            GAME_CARD_SWIPER_BREAKPOINTS[
+              bp as keyof typeof GAME_CARD_SWIPER_BREAKPOINTS
+            ];
+          perView = config.slidesPerView;
+          gap = config.spaceBetween;
+          break;
+        }
+      }
+
+      const slideWidth = (containerWidth - gap * (perView - 1)) / perView;
+      setCardHeight(Math.round(slideWidth * (5 / 4) + 92));
     };
 
-    updateCardHeight();
+    compute();
 
-    const resizeObserver = new ResizeObserver(updateCardHeight);
-    resizeObserver.observe(card);
+    const resizeObserver = new ResizeObserver(compute);
+    resizeObserver.observe(el);
 
     return () => {
       resizeObserver.disconnect();
@@ -423,44 +447,18 @@ const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
 
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2">
-      <div className="relative px-[clamp(1rem,5vw,20rem)] py-2">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none invisible absolute inset-0"
-        >
-          <Swiper
-            slidesPerView={1}
-            slidesPerGroup={1}
-            spaceBetween={20}
-            watchOverflow
-            breakpoints={GAME_CARD_SWIPER_BREAKPOINTS}
-            className="overflow-visible!"
+      <div className="px-[clamp(1rem,5vw,20rem)] py-2">
+        <div ref={containerRef}>
+          <div
+            className="bg-mypage-soft flex items-center justify-center rounded-lg border border-white/10 px-6 text-center"
+            style={cardHeight ? { height: `${cardHeight}px` } : undefined}
           >
-            {Array.from(
-              { length: GAME_CARD_MEASURE_SLIDE_COUNT },
-              (_, index) => (
-                <SwiperSlide key={index} className="h-auto!">
-                  <div
-                    ref={index === 0 ? cardMeasureRef : undefined}
-                    className={GAME_CARD_SHELL_CLASS}
-                  >
-                    <div className={GAME_CARD_MEDIA_CLASS} />
-                    <div className={GAME_CARD_BODY_CLASS} />
-                  </div>
-                </SwiperSlide>
-              ),
-            )}
-          </Swiper>
-        </div>
-        <div
-          className="flex items-center justify-center rounded-lg border border-white/10 bg-[#101010] px-6 text-center"
-          style={cardHeight ? { height: `${cardHeight}px` } : undefined}
-        >
-          <p className="text-base text-white/65">
-            {isFiltered
-              ? '조건에 맞는 게임 목록이 없습니다.'
-              : '표시할 인기 게임 목록이 없습니다.'}
-          </p>
+            <p className="text-base text-white/65">
+              {isFiltered
+                ? '조건에 맞는 게임 목록이 없습니다.'
+                : '표시할 인기 게임 목록이 없습니다.'}
+            </p>
+          </div>
         </div>
       </div>
     </div>
