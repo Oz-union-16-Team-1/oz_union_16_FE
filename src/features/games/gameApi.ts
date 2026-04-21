@@ -1,8 +1,5 @@
-import { AxiosError } from 'axios';
-
 import { api } from '../../api/axios';
-import { getGameGenreId, matchesGenreFilter } from './genres';
-import { mockTopGames } from './mockGames';
+import { getGameGenreId } from './genres';
 import type {
   GameDetail,
   GameLikeResponse,
@@ -18,24 +15,10 @@ import type {
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_SORT = 'rating_desc';
 
-const hasApiBaseUrl = Boolean(import.meta.env.VITE_API_BASE_URL);
-
 const getGenreQueryParams = (genre: GetTopGamesParams['genre'] = '전체') => {
   const genreId = getGameGenreId(genre);
 
   return genreId ? { genre_id: genreId } : {};
-};
-
-const getMockDetail = async (gameId: number) => {
-  const { getMockGameDetail } = await import('./mockGameDetails');
-
-  return getMockGameDetail(gameId);
-};
-
-const updateMockLikeStatus = async (gameId: number, isLiked: boolean) => {
-  const { updateMockGameLikeStatus } = await import('./mockGameDetails');
-
-  return updateMockGameLikeStatus(gameId, isLiked);
 };
 
 const normalizeNullableString = (value: string | null | undefined) => {
@@ -81,52 +64,17 @@ const normalizeGameLikeResponse = (
   likeCount: response.like_count ?? 0,
 });
 
-const isNotFoundError = (error: unknown) =>
-  error instanceof AxiosError && error.response?.status === 404;
-
-const filterGames = (
-  games: GameListItem[],
-  {
-    search = '',
-    genre = '전체',
-  }: {
-    search?: string;
-    genre?: GetTopGamesParams['genre'];
-  } = {},
-) => {
-  const normalizedSearch = search.trim().toLowerCase();
-
-  return games.filter((game) => {
-    const matchesSearch =
-      !normalizedSearch ||
-      [game.name, ...game.genres].some((keyword) =>
-        keyword.toLowerCase().includes(normalizedSearch),
-      );
-    const matchesGenre = matchesGenreFilter(game.genres, genre);
-
-    return matchesSearch && matchesGenre;
-  });
-};
-
 export const getTopGames = async ({
   genre = '전체',
 }: GetTopGamesParams = {}): Promise<GameListItem[]> => {
-  if (!hasApiBaseUrl) {
-    return filterGames(mockTopGames, { genre });
-  }
+  const response = await api.get<GameListResponse>(
+    '/api/v1/games/list/top100',
+    {
+      params: getGenreQueryParams(genre),
+    },
+  );
 
-  try {
-    const response = await api.get<GameListResponse>(
-      '/api/v1/games/list/top100',
-      {
-        params: getGenreQueryParams(genre),
-      },
-    );
-
-    return response.data.results.map(normalizeGameListItem);
-  } catch {
-    return filterGames(mockTopGames, { genre });
-  }
+  return response.data.results.map(normalizeGameListItem);
 };
 
 export const searchGames = async ({
@@ -136,53 +84,29 @@ export const searchGames = async ({
   pageSize = DEFAULT_PAGE_SIZE,
   sort = DEFAULT_SORT,
 }: SearchGamesParams): Promise<GameListItem[]> => {
-  if (!hasApiBaseUrl) {
-    return filterGames(mockTopGames, { search, genre });
-  }
+  const response = await api.get<GameListResponse>('/api/v1/games/list', {
+    params: {
+      search,
+      fuzzy: true,
+      sort,
+      page,
+      page_size: pageSize,
+      ...getGenreQueryParams(genre),
+    },
+  });
 
-  try {
-    const response = await api.get<GameListResponse>('/api/v1/games/list', {
-      params: {
-        search,
-        fuzzy: true,
-        sort,
-        page,
-        page_size: pageSize,
-        ...getGenreQueryParams(genre),
-      },
-    });
-
-    return response.data.results.map(normalizeGameListItem);
-  } catch {
-    return filterGames(mockTopGames, { search, genre });
-  }
+  return response.data.results.map(normalizeGameListItem);
 };
 
 export const getGameDetail = async (gameId: number): Promise<GameDetail> => {
-  if (!hasApiBaseUrl) {
-    return getMockDetail(gameId);
-  }
+  const response = await api.get<RawGameDetailResponse>(
+    `/api/v1/games/list/${gameId}`,
+  );
 
-  try {
-    const response = await api.get<RawGameDetailResponse>(
-      `/api/v1/games/list/${gameId}`,
-    );
-
-    return normalizeGameDetail(response.data);
-  } catch (error) {
-    if (isNotFoundError(error)) {
-      throw error;
-    }
-
-    return getMockDetail(gameId);
-  }
+  return normalizeGameDetail(response.data);
 };
 
 export const likeGame = async (gameId: number): Promise<GameLikeResponse> => {
-  if (!hasApiBaseUrl) {
-    return updateMockLikeStatus(gameId, true);
-  }
-
   const response = await api.post<RawGameLikeResponse>(
     `/api/v1/games/${gameId}/like`,
   );
@@ -191,10 +115,6 @@ export const likeGame = async (gameId: number): Promise<GameLikeResponse> => {
 };
 
 export const unlikeGame = async (gameId: number): Promise<GameLikeResponse> => {
-  if (!hasApiBaseUrl) {
-    return updateMockLikeStatus(gameId, false);
-  }
-
   const response = await api.delete<RawGameLikeResponse>(
     `/api/v1/games/${gameId}/like`,
   );
