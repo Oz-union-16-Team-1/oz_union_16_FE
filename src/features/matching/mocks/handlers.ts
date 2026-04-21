@@ -21,6 +21,8 @@ type StoredMatchResult = {
   created_at_order: number;
 };
 
+const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
+
 let storedMatchResults: StoredMatchResult[] = [];
 
 const getRankedMatchResults = () =>
@@ -136,10 +138,16 @@ export const matchingHandlers = [
       })),
     });
   }),
-  http.get('/api/v1/match/responses/result', async () => {
+  http.get('/api/v1/match/responses/result', async ({ request }) => {
     if (storedMatchResults.length === 0) {
       return getErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
     }
+
+    const url = new URL(request.url);
+    const cursor = Number(url.searchParams.get('cursor') ?? '0');
+    const pageSize = Number(
+      url.searchParams.get('page_size') ?? DEFAULT_RECOMMENDATION_PAGE_SIZE,
+    );
 
     const results = getRankedMatchResults().map((result) => {
       const candidate = matchingMockCandidateMapById.get(result.game_id)!;
@@ -153,14 +161,17 @@ export const matchingHandlers = [
         is_liked: result.is_liked,
       };
     });
+    const startIndex = Number.isNaN(cursor) ? 0 : cursor;
+    const nextIndex = startIndex + pageSize;
+    const next = nextIndex < results.length ? String(nextIndex) : null;
 
     await delay(450);
 
     return HttpResponse.json({
       user_id: 1,
       count: results.length,
-      next: null,
-      results,
+      next,
+      results: results.slice(startIndex, nextIndex),
     });
   }),
 ];
