@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import type { GameListItem } from '../types';
+import {
+  GAME_CARD_BODY_CLASS,
+  GAME_CARD_MEDIA_CLASS,
+  GAME_CARD_SHELL_CLASS,
+} from './gameCardLayout';
 
 type GameCardProps = {
   game: GameListItem;
@@ -18,10 +23,10 @@ const GameCard = ({ game, onSelectGame }: GameCardProps) => {
     <button
       type="button"
       onClick={() => onSelectGame(game)}
-      className="group grid h-full w-full cursor-pointer snap-start scroll-ml-2 grid-rows-[minmax(0,1fr)_92px] overflow-hidden rounded-lg border border-white/5 bg-[#141414] text-left text-white transition hover:border-[#d20b12]/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
+      className={`${GAME_CARD_SHELL_CLASS} group cursor-pointer snap-start scroll-ml-2 transition hover:border-[#d20b12]/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]`}
       aria-label={`${game.name} 상세 정보 열기`}
     >
-      <div className="relative aspect-4/5 overflow-hidden bg-[#090909]">
+      <div className={GAME_CARD_MEDIA_CLASS}>
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
@@ -38,7 +43,7 @@ const GameCard = ({ game, onSelectGame }: GameCardProps) => {
         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] items-center gap-4 bg-[#151515] px-4 sm:px-5">
+      <div className={GAME_CARD_BODY_CLASS}>
         <div className="min-w-0">
           <h3 className="truncate text-base leading-7 font-medium sm:text-lg">
             {game.name}
