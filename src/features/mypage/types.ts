@@ -7,4 +7,5 @@ export interface FavoriteGamePreview {
   title: string;
   summary: string;
   thumbnailUrl: string | null;
+  genres: string[];
 }
