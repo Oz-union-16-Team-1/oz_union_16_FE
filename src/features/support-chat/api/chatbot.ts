@@ -6,6 +6,8 @@ import type {
   ChatbotStreamEvent,
 } from '../types/supportChat';
 
+// 고객센터 챗봇 전용 엔드포인트.
+// 설문 챗봇(`/api/v1/survey/chatbot/*`)과 경로를 명확히 분리해 사용한다.
 const CHATBOT_BASE_PATH = '/api/v1/chatbot';
 
 const createApiUrl = (
@@ -97,10 +99,24 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     return null;
   }
 
-  const parsed = JSON.parse(dataLines.join('\n')) as {
+  let parsed: {
     session_id?: number;
     content?: string;
   };
+
+  try {
+    parsed = JSON.parse(dataLines.join('\n')) as {
+      session_id?: number;
+      content?: string;
+    };
+  } catch (error) {
+    // 일부 malformed chunk가 와도 스트림 전체를 중단하지 않고 해당 이벤트만 건너뛴다.
+    if (import.meta.env.DEV) {
+      console.warn('[support-chat] SSE 이벤트 파싱에 실패했습니다.', error);
+    }
+
+    return null;
+  }
 
   if (eventName === 'start' && typeof parsed.session_id === 'number') {
     return {

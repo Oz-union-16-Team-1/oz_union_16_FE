@@ -53,7 +53,15 @@ function SupportChatComposer({
           <SendHorizontal size={16} />
         </button>
       </form>
-      {error ? <p className="mt-1 text-xs text-[#ff8b84]">{error}</p> : null}
+      {error ? (
+        <p
+          className="mt-1 text-xs text-[#ff8b84]"
+          role="alert"
+          aria-live="assertive"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

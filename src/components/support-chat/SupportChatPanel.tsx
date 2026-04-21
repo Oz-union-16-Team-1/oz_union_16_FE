@@ -66,6 +66,10 @@ function SupportChatPanel({
       <div
         ref={viewportRef}
         className="support-chat-scrollbar flex-1 overflow-y-auto px-4 py-4"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-label="고객센터 챗봇 대화 내역"
       >
         <div className="flex flex-col gap-4">
           {messages.map((message) => (

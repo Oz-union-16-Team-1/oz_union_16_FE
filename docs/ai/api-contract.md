@@ -15,7 +15,7 @@
 
 ### 2. 인증 관련 API 엔드포인트
 
-- **소셜 로그인 진입**: `GET /api/v1/accounts/login/{google|kakao|naver}` (백엔드 제공 OAuth 시작점)
+- **소셜 로그인 진입**: `GET /api/v1/accounts/social-login/{google|kakao|naver}` (백엔드 제공 OAuth 시작점)
 - **토큰 갱신**: `POST /api/v1/accounts/token/refresh` (쿠키의 리프레시 토큰을 사용하여 액세스 토큰 재발급)
 - **로그아웃**: `POST /api/v1/accounts/logout` (액세스 토큰 무효화 및 서버측 쿠키 삭제 요청)
 
@@ -171,8 +171,8 @@ MSW mock은 실제 API 경로와 응답 구조를 최대한 동일하게 맞춥�
 ### API Endpoints
 
 ```text
-POST   /api/v1/support/chat/send    # 메시지 전송 및 AI 응답 (Streaming)
-GET    /api/v1/support/faq          # 자주 묻는 질문 목록 조회
+POST   /api/v1/chatbot/messages     # 메시지 전송 (세션 생성/재사용)
+GET    /api/v1/chatbot/stream       # AI 응답 스트리밍 (SSE, query: session_id)
 ```
 
 ### Integration Details
@@ -180,6 +180,7 @@ GET    /api/v1/support/faq          # 자주 묻는 질문 목록 조회
 - **Widget**: `SupportChatWidget`을 통해 전역 레이아웃(`App.tsx`)에 배치.
 - **Mocking**: 백엔드 미완성 시 MSW를 통해 스트리밍 응답 시뮬레이션.
 - **State**: `useSupportChatStore`를 통한 대화 내역 및 위젯 상태 관리.
+- **Boundary**: 고객센터 챗봇 API(`/api/v1/chatbot/*`)는 설문 챗봇 API(`/api/v1/survey/chatbot/*`)와 별개로 운영하며, 경로를 혼용하지 않습니다.
 
 ---
 
