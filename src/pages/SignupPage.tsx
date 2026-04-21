@@ -93,8 +93,8 @@ const getSignupFieldErrors = (
         ? '비밀번호를 입력해주세요.'
         : touchedState.password &&
             trimmedPassword.length > 0 &&
-            trimmedPassword.length <= 8
-          ? '비밀번호가 8자 이하입니다.'
+            trimmedPassword.length < 8
+          ? '비밀번호는 8자 이상이어야 합니다.'
           : '',
     password_check:
       touchedState.password_check && !trimmedPasswordCheck
@@ -440,7 +440,7 @@ function SignupPage() {
 
       <form
         className="space-y-3 sm:space-y-3.5"
-        autoComplete="off"
+        autoComplete="on"
         onSubmit={handleSubmit}
       >
         <div
@@ -456,7 +456,7 @@ function SignupPage() {
           name="name"
           label="이름"
           type="text"
-          autoComplete="off"
+          autoComplete="name"
           placeholder="이름을 입력하세요"
           maxLength={NAME_MAX_LENGTH}
           value={formValues.name}
@@ -482,7 +482,7 @@ function SignupPage() {
           name="login_id"
           label="아이디"
           type="text"
-          autoComplete="new-password"
+          autoComplete="username"
           placeholder="아이디를 입력하세요"
           maxLength={LOGIN_ID_MAX_LENGTH}
           value={formValues.login_id}
@@ -540,7 +540,7 @@ function SignupPage() {
           name="nickname"
           label="닉네임"
           type="text"
-          autoComplete="off"
+          autoComplete="nickname"
           placeholder="닉네임을 입력하세요"
           maxLength={NICKNAME_MAX_LENGTH}
           value={formValues.nickname}

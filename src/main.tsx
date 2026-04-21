@@ -91,7 +91,15 @@ const enableMocking = async () => {
   const { worker } = await import('./mocks/browser');
 
   await worker.start({
-    onUnhandledRequest: 'bypass',
+    // DEV + MSW 환경에서 API 핸들러 누락을 빠르게 찾기 위한 로깅 정책.
+    onUnhandledRequest: (request, print) => {
+      const { pathname } = new URL(request.url);
+      const isApiRequest = pathname.startsWith('/api/');
+
+      if (isApiRequest) {
+        print.warning();
+      }
+    },
     serviceWorker: {
       url: '/mockServiceWorker.js',
     },
