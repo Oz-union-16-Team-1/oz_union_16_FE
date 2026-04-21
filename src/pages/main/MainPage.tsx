@@ -177,11 +177,23 @@ type GenreFilterProps = {
 
 const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const selectedOptionRef = useRef<HTMLButtonElement | null>(null);
 
   const selectGenre = (genre: GameGenreFilter) => {
     onSelectGenre(genre);
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    if (!isOpen || !selectedOptionRef.current) {
+      return;
+    }
+
+    selectedOptionRef.current.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [isOpen, selectedGenre]);
 
   return (
     <div
@@ -221,6 +233,7 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
                 <button
                   type="button"
                   onClick={() => selectGenre(genre)}
+                  ref={isSelected ? selectedOptionRef : undefined}
                   aria-label={isSelected ? `${genre} 선택됨` : `${genre} 선택`}
                   className={`flex min-h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 text-left text-sm transition ${
                     isSelected
