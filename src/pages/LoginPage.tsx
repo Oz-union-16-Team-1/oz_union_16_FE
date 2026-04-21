@@ -11,11 +11,14 @@ import AuthLinkButton from '../components/auth/AuthLinkButton';
 import AuthLayout from '../components/layout/AuthLayout';
 import AuthInputField from '../components/auth/AuthInputField';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
+import {
+  AUTH_SHARED_FORM_CLASS_NAMES,
+  AUTH_SHARED_LAYOUT_CLASS_NAMES,
+} from '../components/auth/authSharedStyles';
 import { ROUTES } from '../constants/routes';
 import {
   getCurrentUserProfile,
-  extractAuthApiErrorMessage,
-  extractAuthApiFieldErrors,
+  resolveLoginApiError,
 } from '../features/auth/api/auth';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
@@ -44,23 +47,6 @@ type DevMockLoginAccountsResponse = {
   accounts: DevMockLoginAccount[];
 };
 
-const LOGIN_MAIN_CLASS_NAME = 'min-h-0 py-1 sm:py-1.5';
-const LOGIN_PANEL_CLASS_NAME =
-  'max-w-[452px] px-[clamp(0.75rem,1.7vw,1.25rem)] py-[clamp(0.75rem,1.6dvh,1rem)] sm:px-[clamp(0.875rem,2vw,1.5rem)] sm:py-[clamp(0.875rem,1.9dvh,1.25rem)]';
-const LOGIN_CONTENT_CLASS_NAME = 'max-w-[360px]';
-const LOGIN_TITLE_CLASS_NAME = 'text-[clamp(1.75rem,3.6dvh,2.375rem)]';
-const LOGIN_SOCIAL_GROUP_CLASS_NAME = 'mt-[clamp(0.5rem,1.2dvh,0.875rem)]';
-const LOGIN_DIVIDER_CLASS_NAME =
-  'my-[clamp(0.5rem,1.2dvh,0.75rem)] gap-2.5 py-0';
-const LOGIN_FORM_CLASS_NAME = 'space-y-[clamp(0.5rem,1.25dvh,0.75rem)]';
-const LOGIN_FIELD_CLASS_NAME =
-  'h-[clamp(2.5rem,4.8dvh,2.75rem)] rounded-[0.875rem] px-[clamp(0.75rem,1.5vw,0.9375rem)] text-[clamp(0.85rem,1.45dvh,0.9375rem)]';
-const LOGIN_PRIMARY_BUTTON_CLASS_NAME =
-  'mt-[clamp(0.375rem,1dvh,0.625rem)] h-[clamp(2.5rem,4.8dvh,2.75rem)] text-[clamp(0.9rem,1.55dvh,1rem)] leading-none';
-const LOGIN_SECONDARY_BUTTON_CLASS_NAME =
-  'mt-[clamp(0.5rem,1.2dvh,0.75rem)] h-[clamp(2.5rem,4.8dvh,2.75rem)] text-[clamp(0.9rem,1.55dvh,1rem)] leading-none';
-const LOGIN_SIGNUP_SECTION_CLASS_NAME =
-  'border-login-divider mt-[clamp(0.625rem,1.4dvh,0.875rem)] border-t pt-[clamp(0.5rem,1.2dvh,0.75rem)]';
 const LOGIN_MOCK_FAB_CLASS_NAME =
   'support-chat-fab group fixed left-4 bottom-4 z-[95] flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none sm:left-6 sm:bottom-6';
 const LOGIN_MOCK_PANEL_CLASS_NAME =
@@ -81,6 +67,23 @@ const getLoginFieldErrors = (
         ? '비밀번호를 입력해주세요.'
         : '',
   } satisfies Record<LoginFieldName, string>;
+};
+
+const focusLoginFieldByName = (fieldName: LoginFieldName | null) => {
+  if (!fieldName) {
+    return;
+  }
+
+  const targetElementId =
+    fieldName === 'login_id' ? 'login-id' : 'login-password';
+
+  window.requestAnimationFrame(() => {
+    const targetElement = document.getElementById(targetElementId);
+
+    if (targetElement instanceof HTMLInputElement) {
+      targetElement.focus();
+    }
+  });
 };
 
 function LoginPage() {
@@ -259,6 +262,13 @@ function LoginPage() {
     const hasLocalError = Object.values(nextFieldErrors).some(Boolean);
 
     if (hasLocalError) {
+      const firstInvalidField: LoginFieldName | null = nextFieldErrors.login_id
+        ? 'login_id'
+        : nextFieldErrors.password
+          ? 'password'
+          : null;
+
+      focusLoginFieldByName(firstInvalidField);
       return;
     }
 
@@ -276,14 +286,11 @@ function LoginPage() {
 
       navigate(ROUTES.HOME);
     } catch (error) {
-      const nextApiFieldErrors = extractAuthApiFieldErrors(error);
+      const resolvedError = resolveLoginApiError(error, payload);
 
-      if (Object.keys(nextApiFieldErrors).length > 0) {
-        setApiFieldErrors(nextApiFieldErrors);
-        return;
-      }
-
-      setFormMessage(extractAuthApiErrorMessage(error));
+      setApiFieldErrors(resolvedError.fieldErrors);
+      setFormMessage(resolvedError.message);
+      focusLoginFieldByName(resolvedError.focusField);
     }
   };
 
@@ -292,19 +299,19 @@ function LoginPage() {
       <AuthLayout
         title="로그인"
         withPanel
-        titleClassName={LOGIN_TITLE_CLASS_NAME}
-        mainClassName={LOGIN_MAIN_CLASS_NAME}
-        panelClassName={LOGIN_PANEL_CLASS_NAME}
-        contentClassName={LOGIN_CONTENT_CLASS_NAME}
+        panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
+        contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
       >
         <AuthSocialLoginGroup
-          className={LOGIN_SOCIAL_GROUP_CLASS_NAME}
-          size="compact"
+          className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
         />
 
-        <AuthDivider className={LOGIN_DIVIDER_CLASS_NAME} />
+        <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
 
-        <form className={LOGIN_FORM_CLASS_NAME} onSubmit={handleSubmit}>
+        <form
+          className={AUTH_SHARED_FORM_CLASS_NAMES.form}
+          onSubmit={handleSubmit}
+        >
           <AuthInputField
             id="login-id"
             name="login_id"
@@ -322,8 +329,7 @@ function LoginPage() {
             }
             errorMessage={resolvedFieldErrors.login_id}
             disabled={loginMutation.isPending}
-            containerClassName="pt-[clamp(0.125rem,0.3dvh,0.1875rem)]"
-            className={LOGIN_FIELD_CLASS_NAME}
+            reserveMessageSpace
           />
 
           <AuthInputField
@@ -343,21 +349,30 @@ function LoginPage() {
             }
             errorMessage={resolvedFieldErrors.password}
             disabled={loginMutation.isPending}
-            className={LOGIN_FIELD_CLASS_NAME}
+            reserveMessageSpace
           />
 
           {noticeMessage ? (
-            <AuthFormMessage tone="success">{noticeMessage}</AuthFormMessage>
+            <AuthFormMessage
+              tone="success"
+              className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
+            >
+              {noticeMessage}
+            </AuthFormMessage>
           ) : null}
 
           {formMessage ? (
-            <AuthFormMessage>{formMessage}</AuthFormMessage>
+            <AuthFormMessage
+              className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
+            >
+              {formMessage}
+            </AuthFormMessage>
           ) : null}
 
           <div className="flex justify-end">
             <button
               type="button"
-              className="text-login-muted text-[clamp(0.675rem,1.1dvh,0.75rem)] font-medium transition-colors hover:text-white/80"
+              className={AUTH_SHARED_FORM_CLASS_NAMES.auxiliaryLink}
             >
               아이디/비밀번호를 잊어버리셨나요?
             </button>
@@ -365,20 +380,20 @@ function LoginPage() {
 
           <AuthButton
             type="submit"
-            className={`w-full ${LOGIN_PRIMARY_BUTTON_CLASS_NAME}`}
+            className={AUTH_SHARED_FORM_CLASS_NAMES.submitButton}
             disabled={loginMutation.isPending}
           >
             {loginMutation.isPending ? '로그인 중...' : '로그인'}
           </AuthButton>
         </form>
 
-        <div className={LOGIN_SIGNUP_SECTION_CLASS_NAME}>
-          <p className="text-login-helper text-center text-[clamp(0.675rem,1.15dvh,0.75rem)] leading-[1.1rem] font-normal">
+        <div className={AUTH_SHARED_FORM_CLASS_NAMES.footerSection}>
+          <p className={AUTH_SHARED_FORM_CLASS_NAMES.footerHelperText}>
             아직 PGTI 회원이 아니신가요?
           </p>
           <AuthLinkButton
             to={`/${ROUTES.SIGNUP}`}
-            className={`w-full ${LOGIN_SECONDARY_BUTTON_CLASS_NAME}`}
+            className={AUTH_SHARED_FORM_CLASS_NAMES.footerLinkButton}
           >
             회원가입
           </AuthLinkButton>
