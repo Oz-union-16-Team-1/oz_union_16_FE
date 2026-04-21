@@ -184,12 +184,12 @@ function SupportChatWidget() {
       return;
     }
 
-    const assistantMessageId = crypto.randomUUID();
+    const assistantPlaceholderMessageId = crypto.randomUUID();
 
     clearError();
     hideQuickActions();
     appendUserMessage(trimmedMessage);
-    beginAssistantMessage(assistantMessageId);
+    beginAssistantMessage(assistantPlaceholderMessageId);
     setSubmitting(true);
 
     try {
@@ -223,17 +223,19 @@ function SupportChatWidget() {
         signal: abortController.signal,
         onEvent: (event) => {
           if (event.type === 'chunk') {
-            appendAssistantChunk(assistantMessageId, event.content);
+            appendAssistantChunk(assistantPlaceholderMessageId, event.content);
           }
 
           if (event.type === 'complete') {
-            finalizeAssistantMessage(assistantMessageId);
+            finalizeAssistantMessage(assistantPlaceholderMessageId);
             setSubmitting(false);
           }
         },
       });
     } catch (requestError) {
-      removeMessage(assistantMessageId);
+      // 스트림 실패 시에는 사용자 메시지는 보존하고,
+      // 임시 assistant 메시지만 제거한 뒤 오류 메시지를 안내한다.
+      removeMessage(assistantPlaceholderMessageId);
       const errorMessage = extractSupportChatErrorMessage(requestError);
 
       if (errorMessage) {

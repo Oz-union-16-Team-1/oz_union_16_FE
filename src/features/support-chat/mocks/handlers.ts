@@ -10,6 +10,8 @@ import type {
   ChatbotMessageResponse,
 } from '../types/supportChat';
 
+// 고객센터 챗봇 mock 전용 엔드포인트.
+// 설문 챗봇(`/api/v1/survey/chatbot/*`) mock과 경계를 분리한다.
 const CHATBOT_BASE_PATH = '/api/v1/chatbot';
 
 type MockChatSession = {
