@@ -101,8 +101,32 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       queryClient.setQueriesData<LikedGamesResponse>(
         { queryKey: ['auth', 'me', 'game-like'] },
         (current) => {
-          if (!current || response.isLiked) {
+          if (!current) {
             return current;
+          }
+
+          if (response.isLiked) {
+            const alreadyExists = current.results.some(
+              (likedGame) => likedGame.game_id === response.gameId,
+            );
+
+            if (alreadyExists) {
+              return current;
+            }
+
+            const nextLikedGame = {
+              game_id: response.gameId,
+              game_title: (detail?.title ?? game.name).trim() || 'N/A',
+              thumbnail_url: detail?.coverImageUrl ?? game.thumbnailUrl,
+              genres: detail?.genres?.length ? detail.genres : game.genres,
+              liked_at: new Date().toISOString(),
+            };
+
+            return {
+              ...current,
+              count: current.count + 1,
+              results: [nextLikedGame, ...current.results],
+            };
           }
 
           const nextResults = current.results.filter(

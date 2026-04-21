@@ -67,7 +67,7 @@ function MyPageProfileSection({
               event.currentTarget.value = '';
             }}
           />
-          {isProfileImageUploading ? '업로드 중...' : '프로필 이미지 변경'}
+          {isProfileImageUploading ? '업로드 중...' : '프로필 변경'}
         </label>
       </div>
 

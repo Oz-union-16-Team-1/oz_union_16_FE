@@ -460,7 +460,7 @@ function MyPage() {
       void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       setToast({
         tone: 'success',
-        message: '프로필 이미지가 변경되었습니다.',
+        message: '프로필이 변경되었습니다.',
       });
     } catch (error) {
       setToast({

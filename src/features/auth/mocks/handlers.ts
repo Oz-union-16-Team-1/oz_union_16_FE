@@ -1,6 +1,8 @@
 import { delay, http, HttpResponse } from 'msw';
 
 import { AUTH_BASE_PATH } from '../constants/auth';
+import { mockTopGames } from '../../games/mockGames';
+import type { RawGameLikeResponse } from '../../games/types';
 import type {
   AuthGender,
   CheckIdDuplicateRequest,
@@ -33,58 +35,17 @@ const MOCK_S3_HOST = 'https://mock-s3.oz-union-16.com';
 let refreshSessionLoginId: string | null = null;
 let pendingSocialLoginId: string | null = null;
 
-const mockLikedGamesByLoginId = new Map<string, LikedGameItemResponse[]>([
-  [
-    'pgti-demo',
-    [
-      {
-        game_id: 901,
-        game_title: 'Eclipse Gate',
-        thumbnail_url:
-          'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80',
-        genres: ['Action', 'RPG'],
-        liked_at: '2026-04-17T10:15:00Z',
-      },
-      {
-        game_id: 902,
-        game_title: 'Frozen Crown',
-        thumbnail_url:
-          'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
-        genres: ['Adventure', 'Action'],
-        liked_at: '2026-04-18T08:30:00Z',
-      },
-      {
-        game_id: 905,
-        game_title: 'Moonlit Archive',
-        thumbnail_url:
-          'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=1200&q=80',
-        genres: ['Puzzle', 'Adventure'],
-        liked_at: '2026-04-19T02:20:00Z',
-      },
-    ],
-  ],
-  [
-    'pgti-tester',
-    [
-      {
-        game_id: 903,
-        game_title: 'Crimson Trail',
-        thumbnail_url:
-          'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=1200&q=80',
-        genres: ['Action', 'Shooter'],
-        liked_at: '2026-04-15T06:42:00Z',
-      },
-      {
-        game_id: 906,
-        game_title: 'Neon Drift',
-        thumbnail_url:
-          'https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=1200&q=80',
-        genres: ['Racing', 'Arcade'],
-        liked_at: '2026-04-20T13:05:00Z',
-      },
-    ],
-  ],
-]);
+const mockLikedGamesByLoginId = new Map<string, LikedGameItemResponse[]>(
+  [...mockUsers.keys()].map((loginId) => [loginId, []]),
+);
+const mockGameLikeCountByGameId = new Map<number, number>();
+const mockUploadedProfileImagesByPath = new Map<
+  string,
+  { contentType: string; bytes: ArrayBuffer }
+>();
+const mockTopGameById = new Map(
+  mockTopGames.map((game) => [game.gameId, game]),
+);
 
 const getAuthorizedUser = (authorization: string | null) => {
   if (!authorization?.startsWith('Bearer ')) {
@@ -172,6 +133,51 @@ const sanitizeFileName = (fileName: string) => {
   const safeFileName = normalizedFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
 
   return safeFileName || `profile-${Date.now()}.png`;
+};
+
+const getProfileImagePathKey = (loginId: string, fileName: string) =>
+  `${loginId}/${fileName}`;
+
+const getOrCreateLikedGames = (loginId: string) => {
+  const likedGames = mockLikedGamesByLoginId.get(loginId);
+
+  if (likedGames) {
+    return likedGames;
+  }
+
+  const nextLikedGames: LikedGameItemResponse[] = [];
+  mockLikedGamesByLoginId.set(loginId, nextLikedGames);
+
+  return nextLikedGames;
+};
+
+const getCurrentLikeCount = (gameId: number) =>
+  Math.max(0, mockGameLikeCountByGameId.get(gameId) ?? 0);
+
+const increaseLikeCount = (gameId: number) => {
+  const nextLikeCount = getCurrentLikeCount(gameId) + 1;
+  mockGameLikeCountByGameId.set(gameId, nextLikeCount);
+
+  return nextLikeCount;
+};
+
+const decreaseLikeCount = (gameId: number) => {
+  const nextLikeCount = Math.max(0, getCurrentLikeCount(gameId) - 1);
+  mockGameLikeCountByGameId.set(gameId, nextLikeCount);
+
+  return nextLikeCount;
+};
+
+const createLikedGameItem = (gameId: number): LikedGameItemResponse => {
+  const game = mockTopGameById.get(gameId);
+
+  return {
+    game_id: gameId,
+    game_title: game?.name ?? `게임 ${gameId}`,
+    thumbnail_url: game?.thumbnailUrl ?? null,
+    genres: game?.genres ?? [],
+    liked_at: new Date().toISOString(),
+  };
 };
 
 const loginHandlers = [
@@ -485,7 +491,7 @@ const accountHandlers = [
       requestUrl.searchParams.get('page_size'),
       20,
     );
-    const likedGames = mockLikedGamesByLoginId.get(user.loginId) ?? [];
+    const likedGames = getOrCreateLikedGames(user.loginId);
     const startIndex = (page - 1) * pageSize;
     const pagedResults = likedGames.slice(startIndex, startIndex + pageSize);
 
@@ -497,18 +503,49 @@ const accountHandlers = [
     } satisfies LikedGamesResponse);
   }),
 
-  http.put(`${MOCK_S3_HOST}/upload/:loginId/:fileName`, async ({ params }) => {
+  http.put(
+    `${MOCK_S3_HOST}/upload/:loginId/:fileName`,
+    async ({ request, params }) => {
+      const loginId = typeof params.loginId === 'string' ? params.loginId : '';
+      const fileName =
+        typeof params.fileName === 'string' ? params.fileName : '';
+      const user = mockUsers.get(loginId);
+
+      if (user && fileName) {
+        const bytes = await request.arrayBuffer();
+        const contentType =
+          request.headers.get('Content-Type') || 'application/octet-stream';
+        const imageKey = getProfileImagePathKey(loginId, fileName);
+
+        mockUploadedProfileImagesByPath.set(imageKey, {
+          bytes,
+          contentType,
+        });
+        user.profileImageUrl = `${MOCK_S3_HOST}/public/${loginId}/${fileName}`;
+      }
+
+      await delay(120);
+
+      return new HttpResponse(null, { status: 200 });
+    },
+  ),
+
+  http.get(`${MOCK_S3_HOST}/public/:loginId/:fileName`, async ({ params }) => {
     const loginId = typeof params.loginId === 'string' ? params.loginId : '';
     const fileName = typeof params.fileName === 'string' ? params.fileName : '';
-    const user = mockUsers.get(loginId);
+    const imageKey = getProfileImagePathKey(loginId, fileName);
+    const uploadedImage = mockUploadedProfileImagesByPath.get(imageKey);
 
-    if (user && fileName) {
-      user.profileImageUrl = `${MOCK_S3_HOST}/public/${loginId}/${fileName}`;
+    if (!uploadedImage) {
+      return new HttpResponse(null, { status: 404 });
     }
 
-    await delay(120);
-
-    return new HttpResponse(null, { status: 200 });
+    return new HttpResponse(uploadedImage.bytes, {
+      status: 200,
+      headers: {
+        'Content-Type': uploadedImage.contentType,
+      },
+    });
   }),
 
   http.delete(
@@ -532,7 +569,7 @@ const accountHandlers = [
         );
       }
 
-      const likedGames = mockLikedGamesByLoginId.get(user.loginId) ?? [];
+      const likedGames = getOrCreateLikedGames(user.loginId);
       const nextLikedGames = likedGames.filter(
         (game) => game.game_id !== gameId,
       );
@@ -547,6 +584,7 @@ const accountHandlers = [
       }
 
       mockLikedGamesByLoginId.set(user.loginId, nextLikedGames);
+      decreaseLikeCount(gameId);
 
       await delay(200);
 
@@ -654,12 +692,91 @@ const accountHandlers = [
 
     mockUsers.delete(user.loginId);
     mockLikedGamesByLoginId.delete(user.loginId);
+    [...mockUploadedProfileImagesByPath.keys()]
+      .filter((key) => key.startsWith(`${user.loginId}/`))
+      .forEach((key) => {
+        mockUploadedProfileImagesByPath.delete(key);
+      });
 
     await delay(220);
 
     return HttpResponse.json({
       detail: '회원 탈퇴가 완료되었습니다.',
     } satisfies DeleteAccountResponse);
+  }),
+];
+
+const gameLikeHandlers = [
+  http.post('/api/v1/games/:gameId/like', async ({ request, params }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    const gameIdParam =
+      typeof params.gameId === 'string' ? params.gameId.trim() : '';
+    const gameId = Number(gameIdParam);
+
+    if (!Number.isInteger(gameId) || gameId <= 0) {
+      return getFieldValidationError(
+        'game_id',
+        '유효한 게임 ID를 전달해주세요.',
+      );
+    }
+
+    const likedGames = getOrCreateLikedGames(user.loginId);
+    const alreadyLiked = likedGames.some((game) => game.game_id === gameId);
+
+    if (!alreadyLiked) {
+      likedGames.unshift(createLikedGameItem(gameId));
+      increaseLikeCount(gameId);
+    }
+
+    await delay(180);
+
+    return HttpResponse.json({
+      game_id: gameId,
+      is_liked: true,
+      like_count: getCurrentLikeCount(gameId),
+    } satisfies RawGameLikeResponse);
+  }),
+
+  http.delete('/api/v1/games/:gameId/like', async ({ request, params }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    const gameIdParam =
+      typeof params.gameId === 'string' ? params.gameId.trim() : '';
+    const gameId = Number(gameIdParam);
+
+    if (!Number.isInteger(gameId) || gameId <= 0) {
+      return getFieldValidationError(
+        'game_id',
+        '유효한 게임 ID를 전달해주세요.',
+      );
+    }
+
+    const likedGames = getOrCreateLikedGames(user.loginId);
+    const nextLikedGames = likedGames.filter((game) => game.game_id !== gameId);
+
+    if (nextLikedGames.length !== likedGames.length) {
+      mockLikedGamesByLoginId.set(user.loginId, nextLikedGames);
+      decreaseLikeCount(gameId);
+    }
+
+    await delay(180);
+
+    return HttpResponse.json({
+      game_id: gameId,
+      is_liked: false,
+      like_count: getCurrentLikeCount(gameId),
+    } satisfies RawGameLikeResponse);
   }),
 ];
 
@@ -686,5 +803,6 @@ export const authHandlers = [
   ...loginHandlers,
   ...signupHandlers,
   ...accountHandlers,
+  ...gameLikeHandlers,
   ...logoutHandlers,
 ];
