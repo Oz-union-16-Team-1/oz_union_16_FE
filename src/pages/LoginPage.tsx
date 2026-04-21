@@ -18,6 +18,7 @@ import {
 } from '../features/auth/api/auth';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
+import { getSocialCallbackErrorMessage } from '../features/auth/utils/socialAuth';
 import { mockServiceWorkerEnabled } from '../lib/env';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -96,8 +97,11 @@ function LoginPage() {
   });
   const [apiFieldErrors, setApiFieldErrors] = useState<LoginFieldErrors>({});
   const locationState = location.state as LoginLocationState | null;
+  const locationSearchErrorMessage = getSocialCallbackErrorMessage(
+    new URLSearchParams(location.search),
+  );
   const [formMessage, setFormMessage] = useState(
-    locationState?.errorMessage ?? '',
+    locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
   );
   const [noticeMessage, setNoticeMessage] = useState(
     locationState?.noticeMessage ?? '',
@@ -108,6 +112,16 @@ function LoginPage() {
     password: apiFieldErrors.password ?? fieldErrors.password,
   };
   const showMockAccounts = mockServiceWorkerEnabled && mockAccounts.length > 0;
+
+  useEffect(() => {
+    setFormMessage(
+      locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
+    );
+  }, [locationState?.errorMessage, locationSearchErrorMessage]);
+
+  useEffect(() => {
+    setNoticeMessage(locationState?.noticeMessage ?? '');
+  }, [locationState?.noticeMessage]);
 
   useEffect(() => {
     if (!mockServiceWorkerEnabled) {

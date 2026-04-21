@@ -11,6 +11,10 @@ export interface LoginResponse {
   refresh_token?: string | null;
 }
 
+export interface RefreshAccessTokenResponse {
+  access_token: string;
+}
+
 export interface LogoutResponse {
   detail: string;
 }
@@ -59,11 +63,6 @@ export interface CheckIdDuplicateRequest {
 
 export interface DuplicateCheckResponse {
   detail: string;
-}
-
-export interface SocialLoginCallbackRequest {
-  code: string;
-  state?: string;
 }
 
 export type { ErrorResponseBody } from './api';

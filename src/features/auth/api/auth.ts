@@ -1,6 +1,7 @@
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 
 import { api } from '@/api/axios';
+import { apiBaseUrl } from '@/lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import type {
   CheckIdDuplicateRequest,
@@ -14,11 +15,13 @@ import type {
   LoginRequest,
   LoginResponse,
   LogoutResponse,
-  SocialAuthProvider,
-  SocialLoginCallbackRequest,
+  RefreshAccessTokenResponse,
   SignupRequest,
   SignupResponse,
 } from '../types/auth';
+
+const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
+const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
 
 export const login = async (payload: LoginRequest) => {
   const response = await api.post<LoginResponse>(
@@ -35,14 +38,15 @@ export const logout = async () => {
   return response.data;
 };
 
-export const completeSocialLogin = async (
-  provider: SocialAuthProvider,
-  payload: SocialLoginCallbackRequest,
-) => {
-  const response = await api.get<LoginResponse>(
-    `${AUTH_BASE_PATH}/social-login/${provider}/callback`,
+export const refreshAccessToken = async () => {
+  const response = await axios.post<RefreshAccessTokenResponse>(
+    `${authApiUrl}/token/refresh`,
+    {},
     {
-      params: payload,
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     },
   );
 

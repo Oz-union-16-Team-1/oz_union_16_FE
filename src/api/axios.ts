@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+import { refreshAccessToken } from '../features/auth/api/auth';
 import { apiBaseUrl } from '../lib/env';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -60,16 +61,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Refresh Token은 쿠키에 담겨 자동으로 전송됨
-        const response = await axios.post(
-          `${apiBaseUrl}/api/v1/accounts/token/refresh`,
-          {},
-          {
-            withCredentials: true,
-          },
-        );
-
-        const { access_token } = response.data;
+        const { access_token } = await refreshAccessToken();
 
         // 새 토큰 저장
         useAuthStore.getState().setAccessToken(access_token);
