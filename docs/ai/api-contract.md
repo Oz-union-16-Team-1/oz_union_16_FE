@@ -18,6 +18,10 @@
 - **소셜 로그인 진입**: `GET /api/v1/accounts/social-login/{google|kakao|naver}` (백엔드 제공 OAuth 시작점)
 - **토큰 갱신**: `POST /api/v1/accounts/token/refresh` (쿠키의 리프레시 토큰을 사용하여 액세스 토큰 재발급)
 - **로그아웃**: `POST /api/v1/accounts/logout` (액세스 토큰 무효화 및 서버측 쿠키 삭제 요청)
+- **비밀번호 변경**: `POST /api/v1/accounts/me/change-password`
+- **회원 탈퇴**: `DELETE /api/v1/accounts/me` (request body에 `password` 포함)
+- **마이페이지 찜 목록 조회**: `GET /api/v1/accounts/me/game-like`
+- **마이페이지 찜 해제**: `DELETE /api/v1/accounts/me/game-like/{game_id}`
 
 ### 3. 로그아웃 및 세션 초기화 규정
 
@@ -29,6 +33,11 @@
 
 - **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
 - **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
+
+### 5. 마이페이지 프로필 표시 필드
+
+- `GET /api/v1/accounts/me` 응답은 최소 `nickname`, `name`, `gender`, `email`을 포함한다고 가정합니다.
+- 프론트 마이페이지 상단 프로필 영역은 위 4개 필드를 우선 노출하고, 누락 값은 `N/A`로 처리합니다.
 
 ## Survey and Recommendation
 

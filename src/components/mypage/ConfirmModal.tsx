@@ -38,9 +38,9 @@ function ConfirmModal({
 
       <div className="bg-mypage-panel border-mypage-panel shadow-mypage-float relative z-10 w-full max-w-md rounded-[28px] border px-5 py-6 backdrop-blur-xl sm:px-6">
         <h2 className="text-2xl font-semibold text-white">{title}</h2>
-        <p className="text-mypage-muted mt-3 text-sm/6 sm:text-base/7">
+        <div className="text-mypage-muted mt-3 text-sm/6 sm:text-base/7">
           {description}
-        </p>
+        </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <AuthButton

@@ -9,15 +9,22 @@ import type {
   ChangePasswordRequest,
   ChangePasswordResponse,
   CurrentUserProfileResponse,
+  DeleteAccountRequest,
   DeleteAccountResponse,
+  DeleteLikedGameResponse,
   DuplicateCheckResponse,
   ErrorResponseBody,
+  LikedGamesRequest,
+  LikedGamesResponse,
   LoginRequest,
   LoginResponse,
   LogoutResponse,
+  ProfileImagePresignedUrlRequest,
+  ProfileImagePresignedUrlResponse,
   RefreshAccessTokenResponse,
   SignupRequest,
   SignupResponse,
+  UploadFileToS3Request,
 } from '../types/auth';
 
 const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
@@ -61,18 +68,68 @@ export const getCurrentUserProfile = async () => {
   return response.data;
 };
 
-export const changePassword = async (payload: ChangePasswordRequest) => {
-  const response = await api.post<ChangePasswordResponse>(
-    `${AUTH_BASE_PATH}/change-password`,
+export const getLikedGames = async (payload: LikedGamesRequest = {}) => {
+  const response = await api.get<LikedGamesResponse>(
+    `${AUTH_BASE_PATH}/me/game-like`,
+    {
+      params: payload,
+    },
+  );
+
+  return response.data;
+};
+
+export const unlikeLikedGame = async (gameId: number) => {
+  const response = await api.delete<DeleteLikedGameResponse>(
+    `${AUTH_BASE_PATH}/me/game-like/${gameId}`,
+  );
+
+  return response.data;
+};
+
+export const getProfileImagePresignedUrl = async (
+  payload: ProfileImagePresignedUrlRequest,
+) => {
+  // Presigned URL 발급 경로는 백엔드 정책 고정 시 해당 엔드포인트로 유지합니다.
+  const response = await api.post<ProfileImagePresignedUrlResponse>(
+    `${AUTH_BASE_PATH}/me/profile-image/presigned-url`,
     payload,
   );
 
   return response.data;
 };
 
-export const deleteAccount = async () => {
-  const response = await api.post<DeleteAccountResponse>(
-    `${AUTH_BASE_PATH}/delete-account`,
+export const uploadFileToS3 = async ({
+  presigned_url,
+  file,
+  content_type,
+}: UploadFileToS3Request) => {
+  const resolvedContentType =
+    content_type || file.type || 'application/octet-stream';
+
+  await axios.put(presigned_url, file, {
+    headers: {
+      'Content-Type': resolvedContentType,
+    },
+    withCredentials: false,
+  });
+};
+
+export const changePassword = async (payload: ChangePasswordRequest) => {
+  const response = await api.post<ChangePasswordResponse>(
+    `${AUTH_BASE_PATH}/me/change-password`,
+    payload,
+  );
+
+  return response.data;
+};
+
+export const deleteAccount = async (payload: DeleteAccountRequest) => {
+  const response = await api.delete<DeleteAccountResponse>(
+    `${AUTH_BASE_PATH}/me`,
+    {
+      data: payload,
+    },
   );
 
   return response.data;
