@@ -1,4 +1,4 @@
-import { apiBaseUrl } from '@/lib/env';
+import { apiBaseUrl, mockServiceWorkerEnabled } from '@/lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import type { SocialAuthProvider } from '../types/auth';
 
@@ -33,6 +33,10 @@ const getSocialLoginStartUrlFromEnv = (provider: SocialAuthProvider) => {
 };
 
 export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
+  if (mockServiceWorkerEnabled) {
+    return SOCIAL_AUTH_START_PATHS[provider];
+  }
+
   const configuredUrl = getSocialLoginStartUrlFromEnv(provider);
 
   if (configuredUrl) {

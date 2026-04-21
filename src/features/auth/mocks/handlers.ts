@@ -70,6 +70,18 @@ const getUnauthorizedError = (message: string) =>
 const findUserByNickname = (nickname: string) =>
   [...mockUsers.values()].find((user) => user.nickname === nickname);
 
+const getDevLoginAccounts = () =>
+  [...mockUsers.values()]
+    .sort((a, b) => a.id - b.id)
+    .map(({ loginId, password, name, nickname, gender, note }) => ({
+      loginId,
+      password,
+      name,
+      nickname,
+      gender,
+      note,
+    }));
+
 const isSocialAuthProvider = (value: string): value is SocialAuthProvider =>
   value === 'google' || value === 'kakao' || value === 'naver';
 
@@ -82,6 +94,14 @@ const getMockSocialLoginId = (provider: SocialAuthProvider) => {
 };
 
 const loginHandlers = [
+  http.get(`${AUTH_BASE_PATH}/dev-login-accounts`, async () => {
+    await delay(120);
+
+    return HttpResponse.json({
+      accounts: getDevLoginAccounts(),
+    });
+  }),
+
   http.get(`${AUTH_BASE_PATH}/social-login/:provider`, async ({ params }) => {
     const provider =
       typeof params.provider === 'string' ? params.provider.trim() : '';

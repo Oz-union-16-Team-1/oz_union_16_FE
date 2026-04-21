@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { KeyRound, X } from 'lucide-react';
 
+import { api } from '../api/axios';
 import AuthButton from '../components/auth/AuthButton';
 import AuthDivider from '../components/auth/AuthDivider';
 import AuthFormMessage from '../components/auth/AuthFormMessage';
@@ -37,6 +38,10 @@ type DevMockLoginAccount = {
   nickname: string;
   gender: string;
   note: string;
+};
+
+type DevMockLoginAccountsResponse = {
+  accounts: DevMockLoginAccount[];
 };
 
 const LOGIN_MAIN_CLASS_NAME = 'min-h-0 py-1 sm:py-1.5';
@@ -130,20 +135,32 @@ function LoginPage() {
 
     let isMounted = true;
 
-    void import('../features/auth/mocks/mockUsers')
-      .then(({ mockLoginAccounts }) => {
+    void api
+      .get<DevMockLoginAccountsResponse>('/api/v1/accounts/dev-login-accounts')
+      .then(({ data }) => {
         if (!isMounted) {
           return;
         }
 
-        setMockAccounts(mockLoginAccounts);
+        setMockAccounts(data.accounts);
       })
-      .catch(() => {
-        if (!isMounted) {
-          return;
-        }
+      .catch(async () => {
+        try {
+          const { mockLoginAccounts } =
+            await import('../features/auth/mocks/mockUsers');
 
-        setMockAccounts([]);
+          if (!isMounted) {
+            return;
+          }
+
+          setMockAccounts(mockLoginAccounts);
+        } catch {
+          if (!isMounted) {
+            return;
+          }
+
+          setMockAccounts([]);
+        }
       });
 
     return () => {
