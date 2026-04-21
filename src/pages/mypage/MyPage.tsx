@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { Heart, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import AuthButton from '../../components/auth/AuthButton';
 import Header from '../../components/common/Header';
@@ -23,9 +24,19 @@ import {
   useChangePasswordMutation,
   useCurrentUserProfileQuery,
   useDeleteAccountMutation,
+  useLikedGamesQuery,
+  useProfileImagePresignedUrlMutation,
+  useUnlikeLikedGameMutation,
+  useUploadFileToS3Mutation,
 } from '../../features/auth/api/useAuthApi';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
-import { mockFavoriteGames } from '../../features/mypage/mockData';
+import type {
+  AuthGender,
+  CurrentUserProfileResponse,
+  LikedGameItemResponse,
+} from '../../features/auth/types/auth';
+import GameDetailModal from '../../features/games/components/GameDetailModal';
+import type { GameListItem } from '../../features/games/types';
 import type { FavoriteGamePreview } from '../../features/mypage/types';
 import {
   clearAuthTokens,
@@ -75,8 +86,8 @@ const getPasswordFieldErrors = (
         ? '새 비밀번호를 입력해주세요.'
         : touchedState.newPassword &&
             trimmedNewPassword.length > 0 &&
-            trimmedNewPassword.length <= 8
-          ? '비밀번호가 8자 이하입니다.'
+            trimmedNewPassword.length < 8
+          ? '비밀번호는 8자 이상이어야 합니다.'
           : '',
     newPasswordConfirm:
       touchedState.newPasswordConfirm && !trimmedNewPasswordConfirm
@@ -98,13 +109,75 @@ const mapPasswordApiFieldErrors = (
   newPasswordConfirm: fieldErrors.new_password_confirm,
 });
 
+const formatLikedAt = (likedAt: string) => {
+  const date = new Date(likedAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString('ko-KR');
+};
+
+const toFavoriteGamePreview = (
+  game: LikedGameItemResponse,
+): FavoriteGamePreview => {
+  const normalizedGenres = game.genres.filter((genre) => genre.trim());
+  const likedAtLabel = formatLikedAt(game.liked_at);
+
+  const summaryParts = [
+    normalizedGenres.length > 0
+      ? `장르: ${normalizedGenres.join(', ')}`
+      : '장르 정보 없음',
+    likedAtLabel ? `찜한 날짜: ${likedAtLabel}` : null,
+  ].filter(Boolean);
+
+  return {
+    gameId: game.game_id,
+    title: game.game_title.trim() || 'N/A',
+    summary: summaryParts.join(' · '),
+    thumbnailUrl: game.thumbnail_url,
+    genres: normalizedGenres,
+  };
+};
+
+const toFavoriteGameListItem = (game: FavoriteGamePreview): GameListItem => ({
+  gameId: game.gameId,
+  name: game.title,
+  genres: game.genres.length > 0 ? game.genres : ['N/A'],
+  thumbnailUrl: game.thumbnailUrl,
+  rating: null,
+  isLiked: true,
+});
+
+const toGenderLabel = (gender?: AuthGender) => {
+  if (gender === 'M') {
+    return '남성';
+  }
+
+  if (gender === 'W') {
+    return '여성';
+  }
+
+  return 'N/A';
+};
+
 function MyPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hasAccessToken = Boolean(getAccessToken());
   const { logout, isPending: isLogoutPending } = useLogoutAction();
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
+  const unlikeLikedGameMutation = useUnlikeLikedGameMutation();
+  const profileImagePresignedUrlMutation =
+    useProfileImagePresignedUrlMutation();
+  const uploadFileToS3Mutation = useUploadFileToS3Mutation();
   const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
+  const likedGamesQuery = useLikedGamesQuery(hasAccessToken, {
+    page: 1,
+    page_size: 100,
+  });
   const storedAccount = useAuthStore((state) => state.account);
 
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
@@ -118,9 +191,12 @@ function MyPage() {
   const [passwordPanelMessage, setPasswordPanelMessage] =
     useState<PasswordPanelMessage>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [favoriteGames, setFavoriteGames] = useState(mockFavoriteGames);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletePasswordError, setDeletePasswordError] = useState('');
   const [selectedFavoriteGame, setSelectedFavoriteGame] =
     useState<FavoriteGamePreview | null>(null);
+  const [selectedDetailGame, setSelectedDetailGame] =
+    useState<GameListItem | null>(null);
 
   const localFieldErrors = useMemo(
     () => getPasswordFieldErrors(passwordValues, touchedState),
@@ -134,6 +210,9 @@ function MyPage() {
     newPasswordConfirm:
       apiFieldErrors.newPasswordConfirm ?? localFieldErrors.newPasswordConfirm,
   };
+  const favoriteGames = useMemo(() => {
+    return (likedGamesQuery.data?.results ?? []).map(toFavoriteGamePreview);
+  }, [likedGamesQuery.data]);
 
   useEffect(() => {
     if (!toast) {
@@ -186,6 +265,15 @@ function MyPage() {
   const favoriteCount = favoriteGames.length;
   const resolvedProfile = profileQuery.data ?? storedAccount;
   const isProfileLoading = profileQuery.isLoading && !resolvedProfile;
+  const isFavoriteGamesLoading = likedGamesQuery.isLoading && !favoriteCount;
+  const isFavoriteGamesError = likedGamesQuery.isError && !favoriteCount;
+  const profileName = resolvedProfile?.name || 'N/A';
+  const profileEmail = resolvedProfile?.email || null;
+  const profileGenderLabel = toGenderLabel(resolvedProfile?.gender);
+  const profileImageUrl = resolvedProfile?.profile_img_url ?? null;
+  const isProfileImageUploading =
+    profileImagePresignedUrlMutation.isPending ||
+    uploadFileToS3Mutation.isPending;
 
   const resetPasswordPanel = () => {
     setPasswordValues(initialPasswordValues);
@@ -284,8 +372,17 @@ function MyPage() {
   };
 
   const handleDeleteAccount = async () => {
+    const trimmedPassword = deletePassword.trim();
+
+    if (!trimmedPassword) {
+      setDeletePasswordError('현재 비밀번호를 입력해주세요.');
+      return;
+    }
+
     try {
-      const response = await deleteAccountMutation.mutateAsync();
+      const response = await deleteAccountMutation.mutateAsync({
+        password: trimmedPassword,
+      });
 
       clearAuthTokens();
       navigate(`/${ROUTES.LOGIN}`, {
@@ -295,34 +392,109 @@ function MyPage() {
         },
       });
     } catch (error) {
+      const fieldErrors = extractAuthApiFieldErrors(error);
+
+      if (fieldErrors.password) {
+        setDeletePasswordError(fieldErrors.password);
+        return;
+      }
+
+      const errorMessage = extractAuthApiErrorMessage(error);
+
+      if (errorMessage.includes('비밀번호')) {
+        setDeletePasswordError(errorMessage);
+        return;
+      }
+
+      setToast({
+        tone: 'error',
+        message: errorMessage,
+      });
+    }
+  };
+
+  const handleProfileImageSelect = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setToast({
+        tone: 'error',
+        message: '이미지 파일만 업로드할 수 있습니다.',
+      });
+      return;
+    }
+
+    try {
+      const presignedResponse =
+        await profileImagePresignedUrlMutation.mutateAsync({
+          file_name: file.name,
+          content_type: file.type || 'application/octet-stream',
+        });
+
+      await uploadFileToS3Mutation.mutateAsync({
+        presigned_url: presignedResponse.presigned_url,
+        file,
+        content_type: file.type || 'application/octet-stream',
+      });
+
+      queryClient.setQueryData<CurrentUserProfileResponse>(
+        ['auth', 'me'],
+        (currentProfile) =>
+          currentProfile
+            ? {
+                ...currentProfile,
+                profile_img_url: presignedResponse.file_url,
+              }
+            : currentProfile,
+      );
+
+      if (resolvedProfile) {
+        setAuthAccount({
+          ...resolvedProfile,
+          profile_img_url: presignedResponse.file_url,
+        });
+      }
+
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      setToast({
+        tone: 'success',
+        message: '프로필 이미지가 변경되었습니다.',
+      });
+    } catch (error) {
       setToast({
         tone: 'error',
         message: extractAuthApiErrorMessage(error),
       });
-      setIsDeleteModalOpen(false);
     }
   };
 
-  const handleFavoriteGameCardClick = () => {
-    setToast({
-      tone: 'success',
-      message: '게임 상세 페이지는 현재 준비 중입니다.',
-    });
+  const handleFavoriteGameCardClick = (game: FavoriteGamePreview) => {
+    setSelectedDetailGame(toFavoriteGameListItem(game));
   };
 
-  const handleFavoriteGameDeleteConfirm = () => {
+  const handleFavoriteGameDeleteConfirm = async () => {
     if (!selectedFavoriteGame) {
       return;
     }
 
-    setFavoriteGames((current) =>
-      current.filter((game) => game.gameId !== selectedFavoriteGame.gameId),
-    );
-    setSelectedFavoriteGame(null);
-    setToast({
-      tone: 'success',
-      message: '찜한 게임이 목록에서 삭제되었습니다.',
-    });
+    try {
+      const response = await unlikeLikedGameMutation.mutateAsync(
+        selectedFavoriteGame.gameId,
+      );
+
+      setSelectedFavoriteGame(null);
+      setToast({
+        tone: 'success',
+        message: response.detail || '찜한 게임이 목록에서 삭제되었습니다.',
+      });
+    } catch (error) {
+      setToast({
+        tone: 'error',
+        message: extractAuthApiErrorMessage(error),
+      });
+    }
   };
 
   return (
@@ -333,12 +505,20 @@ function MyPage() {
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
         <MyPageProfileSection
           nickname={resolvedProfile?.nickname ?? '회원'}
+          name={profileName}
+          email={profileEmail}
+          genderLabel={profileGenderLabel}
+          profileImageUrl={profileImageUrl}
           isProfileLoading={isProfileLoading}
+          isProfileImageUploading={isProfileImageUploading}
           isLoggingOut={isLogoutPending}
           isPasswordPanelOpen={isPasswordPanelOpen}
           onPasswordToggle={() => setIsPasswordPanelOpen((current) => !current)}
           onLogout={() => {
             void logout();
+          }}
+          onProfileImageSelect={(file) => {
+            void handleProfileImageSelect(file);
           }}
         >
           {isPasswordPanelOpen ? (
@@ -370,14 +550,24 @@ function MyPage() {
               </div>
             </div>
             <p className="text-mypage-muted text-sm">
-              {favoriteCount > 0
-                ? `총 ${favoriteCount}개의 게임이 저장되어 있어요`
-                : '아직 저장된 게임이 없어요'}
+              {isFavoriteGamesLoading
+                ? '찜 목록을 불러오는 중입니다.'
+                : favoriteCount > 0
+                  ? `총 ${favoriteCount}개의 게임이 저장되어 있어요`
+                  : '아직 저장된 게임이 없어요'}
             </p>
           </div>
 
           <div className="mypage-scrollbar mt-5 max-h-[720px] overflow-y-auto pr-1">
-            {favoriteCount > 0 ? (
+            {isFavoriteGamesLoading ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-mypage-muted py-8 text-center text-sm"
+              >
+                찜 목록을 불러오는 중입니다...
+              </p>
+            ) : favoriteCount > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {favoriteGames.map((game) => (
                   <FavoriteGameCard
@@ -388,6 +578,14 @@ function MyPage() {
                   />
                 ))}
               </div>
+            ) : isFavoriteGamesError ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="py-8 text-center text-sm text-red-300"
+              >
+                찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+              </p>
             ) : (
               <FavoriteGamesEmptyState />
             )}
@@ -405,7 +603,11 @@ function MyPage() {
             type="button"
             variant="secondary"
             className="border-mypage-divider text-mypage-muted w-full max-w-44 hover:text-white"
-            onClick={() => setIsDeleteModalOpen(true)}
+            onClick={() => {
+              setDeletePassword('');
+              setDeletePasswordError('');
+              setIsDeleteModalOpen(true);
+            }}
           >
             회원탈퇴
           </AuthButton>
@@ -424,10 +626,49 @@ function MyPage() {
       <ConfirmModal
         open={isDeleteModalOpen}
         title="회원탈퇴 하시겠습니까?"
-        description="탈퇴를 진행하면 현재 로그인 세션이 종료되고, 로그인 화면으로 이동합니다."
+        description={
+          <div className="space-y-3">
+            <p>
+              탈퇴를 진행하면 현재 로그인 세션이 종료되고, 로그인 화면으로
+              이동합니다.
+            </p>
+            <div className="space-y-2">
+              <label
+                htmlFor="delete-account-password"
+                className="block text-sm font-medium text-white"
+              >
+                현재 비밀번호
+              </label>
+              <input
+                id="delete-account-password"
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(event) => {
+                  setDeletePassword(event.target.value);
+
+                  if (deletePasswordError) {
+                    setDeletePasswordError('');
+                  }
+                }}
+                className="auth-input-autofill placeholder-login-muted bg-login-field border-login-field h-12 w-full rounded-xl border px-4 text-base text-white transition outline-none hover:border-white/15 focus-visible:ring-2 focus-visible:ring-white/20"
+                placeholder="현재 비밀번호를 입력하세요"
+              />
+              {deletePasswordError ? (
+                <p className="pl-1 text-sm/5 font-medium text-red-400">
+                  {deletePasswordError}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        }
         confirmLabel="회원탈퇴"
         isPending={deleteAccountMutation.isPending}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletePassword('');
+          setDeletePasswordError('');
+        }}
         onConfirm={() => {
           void handleDeleteAccount();
         }}
@@ -438,9 +679,19 @@ function MyPage() {
         description={`'${selectedFavoriteGame?.title ?? ''}'을(를) 찜한 목록에서 삭제하시겠습니까?`}
         confirmLabel="예"
         cancelLabel="아니오"
+        isPending={unlikeLikedGameMutation.isPending}
         onClose={() => setSelectedFavoriteGame(null)}
-        onConfirm={handleFavoriteGameDeleteConfirm}
+        onConfirm={() => {
+          void handleFavoriteGameDeleteConfirm();
+        }}
       />
+      {selectedDetailGame ? (
+        <GameDetailModal
+          key={selectedDetailGame.gameId}
+          game={selectedDetailGame}
+          onClose={() => setSelectedDetailGame(null)}
+        />
+      ) : null}
     </div>
   );
 }

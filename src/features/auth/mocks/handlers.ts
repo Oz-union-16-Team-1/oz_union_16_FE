@@ -8,9 +8,15 @@ import type {
   ChangePasswordRequest,
   ChangePasswordResponse,
   CurrentUserProfileResponse,
+  DeleteAccountRequest,
   DeleteAccountResponse,
+  DeleteLikedGameResponse,
+  LikedGameItemResponse,
+  LikedGamesResponse,
   LoginRequest,
   LogoutResponse,
+  ProfileImagePresignedUrlRequest,
+  ProfileImagePresignedUrlResponse,
   SocialAuthProvider,
   SignupRequest,
 } from '../types/auth';
@@ -23,8 +29,62 @@ const validGenders: AuthGender[] = ['M', 'W'];
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
 const createRefreshToken = (loginId: string) => `mock-refresh-token-${loginId}`;
+const MOCK_S3_HOST = 'https://mock-s3.oz-union-16.com';
 let refreshSessionLoginId: string | null = null;
 let pendingSocialLoginId: string | null = null;
+
+const mockLikedGamesByLoginId = new Map<string, LikedGameItemResponse[]>([
+  [
+    'pgti-demo',
+    [
+      {
+        game_id: 901,
+        game_title: 'Eclipse Gate',
+        thumbnail_url:
+          'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80',
+        genres: ['Action', 'RPG'],
+        liked_at: '2026-04-17T10:15:00Z',
+      },
+      {
+        game_id: 902,
+        game_title: 'Frozen Crown',
+        thumbnail_url:
+          'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
+        genres: ['Adventure', 'Action'],
+        liked_at: '2026-04-18T08:30:00Z',
+      },
+      {
+        game_id: 905,
+        game_title: 'Moonlit Archive',
+        thumbnail_url:
+          'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=1200&q=80',
+        genres: ['Puzzle', 'Adventure'],
+        liked_at: '2026-04-19T02:20:00Z',
+      },
+    ],
+  ],
+  [
+    'pgti-tester',
+    [
+      {
+        game_id: 903,
+        game_title: 'Crimson Trail',
+        thumbnail_url:
+          'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=1200&q=80',
+        genres: ['Action', 'Shooter'],
+        liked_at: '2026-04-15T06:42:00Z',
+      },
+      {
+        game_id: 906,
+        game_title: 'Neon Drift',
+        thumbnail_url:
+          'https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=1200&q=80',
+        genres: ['Racing', 'Arcade'],
+        liked_at: '2026-04-20T13:05:00Z',
+      },
+    ],
+  ],
+]);
 
 const getAuthorizedUser = (authorization: string | null) => {
   if (!authorization?.startsWith('Bearer ')) {
@@ -91,6 +151,27 @@ const getMockSocialLoginId = (provider: SocialAuthProvider) => {
   }
 
   return 'pgti-demo';
+};
+
+const parsePositiveInteger = (value: string | null, fallback: number) => {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    return fallback;
+  }
+
+  return parsedValue;
+};
+
+const sanitizeFileName = (fileName: string) => {
+  const normalizedFileName = fileName.trim().replace(/\s+/g, '-');
+  const safeFileName = normalizedFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  return safeFileName || `profile-${Date.now()}.png`;
 };
 
 const loginHandlers = [
@@ -267,10 +348,13 @@ const signupHandlers = [
       name,
       nickname,
       gender,
+      email: `${loginId}@example.com`,
+      profileImageUrl: null,
       note: 'MSW 회원가입으로 생성된 테스트 계정',
     };
 
     mockUsers.set(loginId, newUser);
+    mockLikedGamesByLoginId.set(loginId, []);
 
     await delay(450);
 
@@ -340,12 +424,139 @@ const accountHandlers = [
       name: user.name,
       nickname: user.nickname,
       gender: user.gender,
+      email: user.email,
+      profile_img_url: user.profileImageUrl,
     };
 
     return HttpResponse.json(responseBody);
   }),
 
-  http.post(`${AUTH_BASE_PATH}/change-password`, async ({ request }) => {
+  http.post(
+    `${AUTH_BASE_PATH}/me/profile-image/presigned-url`,
+    async ({ request }) => {
+      const authorization = request.headers.get('Authorization');
+      const user = getAuthorizedUser(authorization);
+
+      if (!user) {
+        return getUnauthorizedError('로그인이 필요합니다.');
+      }
+
+      const body = (await request.json()) as ProfileImagePresignedUrlRequest;
+      const fileName = body.file_name.trim();
+      const contentType = body.content_type.trim();
+
+      if (!fileName) {
+        return getFieldValidationError(
+          'file_name',
+          '"file_name"이 필드는 필수 항목입니다.',
+        );
+      }
+
+      if (!contentType) {
+        return getFieldValidationError(
+          'content_type',
+          '"content_type"이 필드는 필수 항목입니다.',
+        );
+      }
+
+      const uploadFileName = `${Date.now()}-${sanitizeFileName(fileName)}`;
+      const responseBody: ProfileImagePresignedUrlResponse = {
+        presigned_url: `${MOCK_S3_HOST}/upload/${user.loginId}/${uploadFileName}`,
+        file_url: `${MOCK_S3_HOST}/public/${user.loginId}/${uploadFileName}`,
+      };
+
+      await delay(100);
+
+      return HttpResponse.json(responseBody);
+    },
+  ),
+
+  http.get(`${AUTH_BASE_PATH}/me/game-like`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    const requestUrl = new URL(request.url);
+    const page = parsePositiveInteger(requestUrl.searchParams.get('page'), 1);
+    const pageSize = parsePositiveInteger(
+      requestUrl.searchParams.get('page_size'),
+      20,
+    );
+    const likedGames = mockLikedGamesByLoginId.get(user.loginId) ?? [];
+    const startIndex = (page - 1) * pageSize;
+    const pagedResults = likedGames.slice(startIndex, startIndex + pageSize);
+
+    await delay(200);
+
+    return HttpResponse.json({
+      count: likedGames.length,
+      results: pagedResults,
+    } satisfies LikedGamesResponse);
+  }),
+
+  http.put(`${MOCK_S3_HOST}/upload/:loginId/:fileName`, async ({ params }) => {
+    const loginId = typeof params.loginId === 'string' ? params.loginId : '';
+    const fileName = typeof params.fileName === 'string' ? params.fileName : '';
+    const user = mockUsers.get(loginId);
+
+    if (user && fileName) {
+      user.profileImageUrl = `${MOCK_S3_HOST}/public/${loginId}/${fileName}`;
+    }
+
+    await delay(120);
+
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+  http.delete(
+    `${AUTH_BASE_PATH}/me/game-like/:gameId`,
+    async ({ request, params }) => {
+      const authorization = request.headers.get('Authorization');
+      const user = getAuthorizedUser(authorization);
+
+      if (!user) {
+        return getUnauthorizedError('로그인이 필요합니다.');
+      }
+
+      const gameIdParam =
+        typeof params.gameId === 'string' ? params.gameId.trim() : '';
+      const gameId = Number(gameIdParam);
+
+      if (!Number.isInteger(gameId) || gameId <= 0) {
+        return getFieldValidationError(
+          'game_id',
+          '유효한 게임 ID를 전달해주세요.',
+        );
+      }
+
+      const likedGames = mockLikedGamesByLoginId.get(user.loginId) ?? [];
+      const nextLikedGames = likedGames.filter(
+        (game) => game.game_id !== gameId,
+      );
+
+      if (nextLikedGames.length === likedGames.length) {
+        return HttpResponse.json(
+          {
+            error_detail: '찜한 게임을 찾을 수 없습니다.',
+          },
+          { status: 404 },
+        );
+      }
+
+      mockLikedGamesByLoginId.set(user.loginId, nextLikedGames);
+
+      await delay(200);
+
+      return HttpResponse.json({
+        detail: '찜한 게임이 목록에서 삭제되었습니다.',
+      } satisfies DeleteLikedGameResponse);
+    },
+  ),
+
+  http.post(`${AUTH_BASE_PATH}/me/change-password`, async ({ request }) => {
     const authorization = request.headers.get('Authorization');
     const user = getAuthorizedUser(authorization);
 
@@ -411,7 +622,7 @@ const accountHandlers = [
     } satisfies ChangePasswordResponse);
   }),
 
-  http.post(`${AUTH_BASE_PATH}/delete-account`, async ({ request }) => {
+  http.delete(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
     const authorization = request.headers.get('Authorization');
     const user = getAuthorizedUser(authorization);
 
@@ -419,7 +630,30 @@ const accountHandlers = [
       return getUnauthorizedError('로그인이 필요합니다.');
     }
 
+    const body = (await request.json().catch(() => ({}))) as
+      | DeleteAccountRequest
+      | Record<string, unknown>;
+    const password =
+      typeof body.password === 'string' ? body.password.trim() : '';
+
+    if (!password) {
+      return getFieldValidationError(
+        'password',
+        '"password"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    if (user.password !== password) {
+      return HttpResponse.json(
+        {
+          error_detail: '현재 비밀번호가 올바르지 않습니다.',
+        },
+        { status: 400 },
+      );
+    }
+
     mockUsers.delete(user.loginId);
+    mockLikedGamesByLoginId.delete(user.loginId);
 
     await delay(220);
 
