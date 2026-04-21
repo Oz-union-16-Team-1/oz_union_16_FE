@@ -13,6 +13,7 @@ type AuthRadioGroupProps = {
   defaultValue?: string;
   onChange?: ChangeEventHandler<HTMLInputElement>;
   errorMessage?: string;
+  reserveMessageSpace?: boolean;
   required?: boolean;
   disabled?: boolean;
 };
@@ -25,6 +26,7 @@ function AuthRadioGroup({
   defaultValue,
   onChange,
   errorMessage,
+  reserveMessageSpace = false,
   required = false,
   disabled = false,
 }: AuthRadioGroupProps) {
@@ -64,9 +66,13 @@ function AuthRadioGroup({
           </label>
         ))}
       </div>
-      {errorMessage ? (
-        <p className="pl-1 text-sm/5 font-medium text-red-400">
-          {errorMessage}
+      {errorMessage || reserveMessageSpace ? (
+        <p
+          role={errorMessage ? 'alert' : undefined}
+          aria-hidden={!errorMessage}
+          className={`min-h-5 pl-1 text-sm/5 font-medium ${errorMessage ? 'text-red-400' : 'text-transparent'}`}
+        >
+          {errorMessage ?? ''}
         </p>
       ) : null}
     </fieldset>

@@ -8,6 +8,7 @@ type AuthInputFieldProps = {
   errorMessage?: string;
   helperMessage?: string;
   helperMessageTone?: AuthInputFieldMessageTone;
+  reserveMessageSpace?: boolean;
   action?: ReactNode;
   toast?: ReactNode;
   containerClassName?: string;
@@ -19,6 +20,7 @@ function AuthInputField({
   errorMessage,
   helperMessage,
   helperMessageTone = 'muted',
+  reserveMessageSpace = false,
   action,
   toast,
   containerClassName = '',
@@ -47,16 +49,20 @@ function AuthInputField({
           aria-invalid={Boolean(errorMessage)}
           className={`auth-input-autofill placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${className} ${
             errorMessage
-              ? 'border-red-500 hover:border-red-400 focus-visible:ring-red-500/20'
-              : 'border-login-field hover:border-white/15 focus-visible:ring-white/20'
+              ? 'border-red-500 hover:border-red-400 focus-visible:border-red-400 focus-visible:ring-red-500/25'
+              : 'border-login-field hover:border-white/20 focus-visible:border-white/35 focus-visible:ring-white/25'
           }`}
         />
         {action}
         {toast}
       </div>
-      {resolvedMessage ? (
-        <p className={`pl-1 text-sm/5 font-medium ${resolvedMessageClassName}`}>
-          {resolvedMessage}
+      {resolvedMessage || reserveMessageSpace ? (
+        <p
+          role={errorMessage ? 'alert' : undefined}
+          aria-hidden={!resolvedMessage}
+          className={`min-h-5 pl-1 text-sm/5 font-medium ${resolvedMessage ? resolvedMessageClassName : 'text-transparent'}`}
+        >
+          {resolvedMessage ?? ''}
         </p>
       ) : null}
     </div>
