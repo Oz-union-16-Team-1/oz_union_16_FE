@@ -222,7 +222,7 @@ const GenreFilter = ({ selectedGenre, onSelectGenre }: GenreFilterProps) => {
       {isOpen ? (
         <ul
           id={GENRE_FILTER_MENU_ID}
-          className="genre-menu-scrollbar absolute top-full left-0 z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-white/15 bg-[#101010] p-1 shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
+          className="genre-menu-scrollbar bg-mypage-soft absolute top-full left-0 z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-white/15 p-1 shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
         >
           {GAME_GENRE_FILTERS.map((genre) => {
             const isSelected = genre === selectedGenre;
@@ -450,7 +450,7 @@ const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
       <div className="px-[clamp(1rem,5vw,20rem)] py-2">
         <div ref={containerRef}>
           <div
-            className="flex items-center justify-center rounded-lg border border-white/10 bg-[#101010] px-6 text-center"
+            className="bg-mypage-soft flex items-center justify-center rounded-lg border border-white/10 px-6 text-center"
             style={cardHeight ? { height: `${cardHeight}px` } : undefined}
           >
             <p className="text-base text-white/65">
