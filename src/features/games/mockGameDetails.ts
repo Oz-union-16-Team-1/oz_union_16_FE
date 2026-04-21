@@ -1,4 +1,3 @@
-import { mockTopGames } from './mockGames';
 import type { GameDetail } from './types';
 
 const steamCoverUrl = (gameId: number) =>
@@ -299,51 +298,4 @@ export const mockGameDetails: Record<number, GameDetail> = {
     likeCount: 1120,
     officialSite: 'https://terraria.org/',
   }),
-};
-
-export const getMockGameDetail = (gameId: number): GameDetail => {
-  const detail = mockGameDetails[gameId];
-
-  if (detail) {
-    return detail;
-  }
-
-  const game = mockTopGames.find((item) => item.gameId === gameId);
-
-  return {
-    gameId,
-    title: game?.name ?? 'N/A',
-    genres: game?.genres.length ? game.genres : ['N/A'],
-    releaseDate: null,
-    developer: null,
-    publisher: null,
-    promoVideoUrl: null,
-    promoEmbedUrl: null,
-    coverImageUrl: game?.thumbnailUrl ?? null,
-    description: null,
-    externalLinks: {
-      officialSite: null,
-      steam: game ? steamStoreUrl(game.gameId) : null,
-      epicStore: null,
-    },
-    likeCount: 0,
-    isLiked: game?.isLiked ?? null,
-  };
-};
-
-export const updateMockGameLikeStatus = (gameId: number, isLiked: boolean) => {
-  const detail = mockGameDetails[gameId] ?? getMockGameDetail(gameId);
-  const currentLiked = detail.isLiked === true;
-  const likeCountAdjustment = currentLiked === isLiked ? 0 : isLiked ? 1 : -1;
-  const likeCount = Math.max(0, detail.likeCount + likeCountAdjustment);
-
-  detail.isLiked = isLiked;
-  detail.likeCount = likeCount;
-  mockGameDetails[gameId] = detail;
-
-  return {
-    gameId,
-    isLiked,
-    likeCount,
-  };
 };
