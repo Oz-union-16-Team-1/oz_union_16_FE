@@ -9,6 +9,10 @@ import AuthInputActionButton from '../components/auth/AuthInputActionButton';
 import AuthInputField from '../components/auth/AuthInputField';
 import AuthRadioGroup from '../components/auth/AuthRadioGroup';
 import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
+import {
+  AUTH_SHARED_FORM_CLASS_NAMES,
+  AUTH_SHARED_LAYOUT_CLASS_NAMES,
+} from '../components/auth/authSharedStyles';
 import AuthLayout from '../components/layout/AuthLayout';
 import ToastMessage from '../components/mypage/ToastMessage';
 import { ROUTES } from '../constants/routes';
@@ -432,14 +436,18 @@ function SignupPage() {
       title="회원가입"
       subtitle="회원가입 후 취향 기반 게임 추천을 시작해보세요"
       withPanel
+      panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
+      contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
       subtitleClassName="mx-auto max-w-[290px] sm:max-w-[320px]"
     >
-      <AuthSocialLoginGroup className="mt-6 sm:mt-7" />
+      <AuthSocialLoginGroup
+        className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
+      />
 
-      <AuthDivider className="my-5 sm:my-6" />
+      <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
 
       <form
-        className="space-y-3 sm:space-y-3.5"
+        className={AUTH_SHARED_FORM_CLASS_NAMES.form}
         autoComplete="on"
         onSubmit={handleSubmit}
       >
@@ -474,6 +482,7 @@ function SignupPage() {
               : ''
           }
           disabled={isSubmitting}
+          reserveMessageSpace
           containerClassName="pt-1"
         />
 
@@ -507,6 +516,7 @@ function SignupPage() {
             loginIdCheckState.tone === 'success' ? 'success' : 'muted'
           }
           disabled={isSubmitting}
+          reserveMessageSpace
           action={
             <AuthInputActionButton
               onClick={handleCheckLoginIdDuplicate}
@@ -562,6 +572,7 @@ function SignupPage() {
           }
           helperMessageTone="success"
           disabled={isSubmitting}
+          reserveMessageSpace
           action={
             <AuthInputActionButton
               onClick={handleCheckNicknameDuplicate}
@@ -609,6 +620,7 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.password}
           disabled={isSubmitting}
+          reserveMessageSpace
         />
 
         <AuthInputField
@@ -630,6 +642,7 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.password_check}
           disabled={isSubmitting}
+          reserveMessageSpace
         />
 
         <AuthRadioGroup
@@ -642,13 +655,20 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.gender}
           disabled={isSubmitting}
+          reserveMessageSpace
         />
 
-        {formMessage ? <AuthFormMessage>{formMessage}</AuthFormMessage> : null}
+        {formMessage ? (
+          <AuthFormMessage
+            className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
+          >
+            {formMessage}
+          </AuthFormMessage>
+        ) : null}
 
         <AuthButton
           type="submit"
-          className="mt-1 w-full sm:mt-2"
+          className={AUTH_SHARED_FORM_CLASS_NAMES.submitButton}
           disabled={isSubmitting}
         >
           {isSubmitting ? '회원가입 중...' : '회원가입'}

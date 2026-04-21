@@ -29,6 +29,12 @@ import type {
 
 const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
 const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
+const DEFAULT_API_ERROR_MESSAGE =
+  '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+const LOGIN_400_ERROR_MESSAGE = '아이디 또는 비밀번호를 입력해주세요.';
+const LOGIN_401_ERROR_MESSAGE = '아이디 또는 비밀번호가 올바르지 않습니다.';
+const LOGIN_403_ERROR_MESSAGE =
+  '접근 권한이 없거나 이용이 제한된 계정입니다. 고객센터에 문의하세요.';
 
 export const login = async (payload: LoginRequest) => {
   const response = await api.post<LoginResponse>(
@@ -242,7 +248,109 @@ export const extractAuthApiErrorMessage = (error: unknown) => {
     return errorDetailMessage;
   }
 
-  return '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+  return DEFAULT_API_ERROR_MESSAGE;
+};
+
+type LoginErrorStatusCode = 400 | 401 | 403;
+
+type ResolveLoginApiErrorResult = {
+  statusCode: LoginErrorStatusCode | null;
+  fieldErrors: Partial<Record<keyof LoginRequest, string>>;
+  message: string;
+  focusField: keyof LoginRequest | null;
+};
+
+const getFirstLoginErrorField = (
+  fieldErrors: Partial<Record<keyof LoginRequest, string>>,
+  payload?: Partial<LoginRequest>,
+) => {
+  if (fieldErrors.login_id) {
+    return 'login_id';
+  }
+
+  if (fieldErrors.password) {
+    return 'password';
+  }
+
+  if (payload) {
+    const loginId = payload.login_id?.trim() ?? '';
+    const password = payload.password?.trim() ?? '';
+
+    if (!loginId) {
+      return 'login_id';
+    }
+
+    if (!password) {
+      return 'password';
+    }
+  }
+
+  return null;
+};
+
+export const resolveLoginApiError = (
+  error: unknown,
+  payload?: Partial<LoginRequest>,
+): ResolveLoginApiErrorResult => {
+  const apiFieldErrors = extractAuthApiFieldErrors(error);
+  const fieldErrors = {
+    login_id: apiFieldErrors.login_id,
+    password: apiFieldErrors.password,
+  } satisfies Partial<Record<keyof LoginRequest, string>>;
+  const focusField = getFirstLoginErrorField(fieldErrors, payload);
+
+  if (!(error instanceof AxiosError)) {
+    return {
+      statusCode: null,
+      fieldErrors,
+      message: extractAuthApiErrorMessage(error),
+      focusField,
+    };
+  }
+
+  const statusCode = error.response?.status ?? null;
+
+  if (statusCode === 400) {
+    return {
+      statusCode,
+      fieldErrors,
+      message:
+        fieldErrors.login_id || fieldErrors.password
+          ? ''
+          : LOGIN_400_ERROR_MESSAGE,
+      focusField,
+    };
+  }
+
+  if (statusCode === 403) {
+    return {
+      statusCode,
+      fieldErrors,
+      message: LOGIN_403_ERROR_MESSAGE,
+      focusField,
+    };
+  }
+
+  if (statusCode === 401) {
+    const apiMessage = extractAuthApiErrorMessage(error);
+
+    return {
+      statusCode,
+      fieldErrors,
+      message:
+        apiMessage === DEFAULT_API_ERROR_MESSAGE
+          ? LOGIN_401_ERROR_MESSAGE
+          : apiMessage,
+      focusField: focusField ?? 'password',
+    };
+  }
+
+  return {
+    statusCode: null,
+    fieldErrors,
+    message: extractAuthApiErrorMessage(error),
+    focusField,
+  };
 };
 
 export const extractSuspendedAccountInfo = (error: unknown) => {
