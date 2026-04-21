@@ -3,6 +3,7 @@ import { AxiosError } from 'axios';
 import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ToastMessage from '../../../components/mypage/ToastMessage';
+import type { LikedGamesResponse } from '../../auth/types/auth';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
 import type { GameDetail, GameListItem } from '../types';
@@ -96,6 +97,32 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
               }
             : currentDetail,
       );
+
+      queryClient.setQueriesData<LikedGamesResponse>(
+        { queryKey: ['auth', 'me', 'game-like'] },
+        (current) => {
+          if (!current || response.isLiked) {
+            return current;
+          }
+
+          const nextResults = current.results.filter(
+            (likedGame) => likedGame.game_id !== response.gameId,
+          );
+
+          if (nextResults.length === current.results.length) {
+            return current;
+          }
+
+          return {
+            ...current,
+            count: Math.max(0, current.count - 1),
+            results: nextResults,
+          };
+        },
+      );
+      void queryClient.invalidateQueries({
+        queryKey: ['auth', 'me', 'game-like'],
+      });
     },
     onError: (error) => {
       setToast({
