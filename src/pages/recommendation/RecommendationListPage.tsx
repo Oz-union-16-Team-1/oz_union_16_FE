@@ -1,16 +1,32 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
+import {
+  getGameDetail,
+  likeGame,
+  unlikeGame,
+} from '../../features/games/gameApi';
+import type { GameDetail } from '../../features/games/types';
 import type { GameListItem } from '../../features/games/types';
 import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
-import type { MatchResultItem } from '../../features/matching/types';
+import type {
+  MatchResultItem,
+  MatchResultResponse,
+} from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
-import type { SurveyResultItem } from '../../features/survey/types/survey';
+import type {
+  SurveyResultItem,
+  SurveyResultResponse,
+} from '../../features/survey/types/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 import { getAccessToken } from '../../utils/auth';
 
@@ -52,6 +68,17 @@ type RecommendationDisplayItem = {
   is_liked: boolean;
 };
 
+type RecommendationLikeMutationVariables = {
+  gameId: number;
+  nextIsLiked: boolean;
+  item: RecommendationDisplayItem;
+};
+
+const LIKE_ERROR_MESSAGE =
+  '좋아요 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+const LIKE_LOGIN_REQUIRED_MESSAGE = '로그인 후 좋아요를 사용할 수 있어요.';
+const FEEDBACK_MESSAGE_DURATION_MS = 3000;
+
 const normalizeResultItem = (
   item: SurveyResultItem | MatchResultItem,
 ): RecommendationDisplayItem => ({
@@ -71,6 +98,9 @@ const toGameListItem = (item: RecommendationDisplayItem): GameListItem => ({
   rating: item.rating,
   isLiked: item.is_liked,
 });
+
+const formatRecommendationRating = (rating: number | null) =>
+  typeof rating === 'number' ? `${rating.toFixed(1)}점` : 'N/A';
 
 const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
   const genreCounts = new Map<string, number>();
@@ -98,9 +128,16 @@ const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
 type RecommendationRowProps = {
   item: RecommendationDisplayItem;
   onOpenDetail: (item: RecommendationDisplayItem) => void;
+  onToggleLike: (item: RecommendationDisplayItem) => void;
+  isLikePending: boolean;
 };
 
-function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
+function RecommendationRow({
+  item,
+  onOpenDetail,
+  onToggleLike,
+  isLikePending,
+}: RecommendationRowProps) {
   return (
     <article className="group grid gap-4 px-4 py-5 transition-colors duration-200 hover:bg-white/[0.025] sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
       <button
@@ -130,7 +167,7 @@ function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
 
           <div className="inline-flex items-center gap-1.5 rounded-full border border-[#702525]/40 bg-[#190a0a]/55 px-2.5 py-1 text-[12px] font-semibold text-white/88">
             <Star size={12} className="fill-[#d85858] text-[#d85858]" />
-            {item.rating?.toFixed(1) ?? 'N/A'}
+            {formatRecommendationRating(item.rating)}
           </div>
         </div>
 
@@ -142,12 +179,14 @@ function RecommendationRow({ item, onOpenDetail }: RecommendationRowProps) {
       <div className="flex items-center justify-end gap-3 lg:min-w-[96px]">
         <button
           type="button"
+          onClick={() => onToggleLike(item)}
+          disabled={isLikePending}
           className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
             item.is_liked
               ? 'border-[#6f2525] bg-[#170b0b] text-[#f07373]'
               : 'border-white/10 bg-white/[0.02] text-white/60 hover:border-white/18 hover:text-white/86'
-          }`}
-          aria-label="좋아요 상태"
+          } ${isLikePending ? 'cursor-not-allowed opacity-55' : ''}`}
+          aria-label={item.is_liked ? '좋아요 해제' : '좋아요 추가'}
         >
           <Heart size={16} fill={item.is_liked ? 'currentColor' : 'none'} />
         </button>
@@ -209,6 +248,13 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 function RecommendationListPage() {
   const [searchParams] = useSearchParams();
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
+  const [pendingLikeGameId, setPendingLikeGameId] = useState<number | null>(
+    null,
+  );
+  const [likeFeedbackMessage, setLikeFeedbackMessage] = useState<string | null>(
+    null,
+  );
+  const queryClient = useQueryClient();
   const source = searchParams.get('source');
   const legacySessionId = searchParams.get('session_id');
   const isMatchSource = source === 'match';
@@ -259,6 +305,198 @@ function RecommendationListPage() {
     );
   const handleOpenDetail = (item: RecommendationDisplayItem) => {
     setSelectedGame(toGameListItem(item));
+  };
+
+  useEffect(() => {
+    if (!likeFeedbackMessage) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setLikeFeedbackMessage(null);
+    }, FEEDBACK_MESSAGE_DURATION_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [likeFeedbackMessage]);
+
+  const updateRecommendationResultsCache = (
+    gameId: number,
+    nextIsLiked: boolean,
+  ) => {
+    const updatePages = <
+      TPage extends { results: Array<{ game_id: number; is_liked: boolean }> },
+    >(
+      data: InfiniteData<TPage> | undefined,
+    ) =>
+      data
+        ? {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              results: page.results.map((result) =>
+                result.game_id === gameId
+                  ? { ...result, is_liked: nextIsLiked }
+                  : result,
+              ),
+            })),
+          }
+        : data;
+
+    queryClient.setQueryData<InfiniteData<SurveyResultResponse>>(
+      ['survey-results'],
+      updatePages,
+    );
+    queryClient.setQueryData<InfiniteData<MatchResultResponse>>(
+      ['match-results'],
+      updatePages,
+    );
+  };
+
+  const updateLikedGamesCache = (
+    item: RecommendationDisplayItem,
+    nextIsLiked: boolean,
+  ) => {
+    queryClient.setQueriesData<LikedGamesResponse>(
+      { queryKey: ['auth', 'me', 'game-like'] },
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        if (nextIsLiked) {
+          const alreadyExists = current.results.some(
+            (likedGame) => likedGame.game_id === item.game_id,
+          );
+
+          if (alreadyExists) {
+            return current;
+          }
+
+          return {
+            ...current,
+            count: current.count + 1,
+            results: [
+              {
+                game_id: item.game_id,
+                game_title: item.title,
+                thumbnail_url: item.thumbnail_url,
+                genres: item.genres,
+                liked_at: new Date().toISOString(),
+              },
+              ...current.results,
+            ],
+          };
+        }
+
+        const nextResults = current.results.filter(
+          (likedGame) => likedGame.game_id !== item.game_id,
+        );
+
+        if (nextResults.length === current.results.length) {
+          return current;
+        }
+
+        return {
+          ...current,
+          count: Math.max(0, current.count - 1),
+          results: nextResults,
+        };
+      },
+    );
+  };
+
+  const likeMutation = useMutation({
+    mutationFn: ({
+      gameId,
+      nextIsLiked,
+    }: RecommendationLikeMutationVariables) =>
+      nextIsLiked ? likeGame(gameId) : unlikeGame(gameId),
+    onMutate: ({ gameId }) => {
+      setPendingLikeGameId(gameId);
+      setLikeFeedbackMessage(null);
+    },
+    onSuccess: async (response, variables) => {
+      updateRecommendationResultsCache(response.gameId, response.isLiked);
+      updateLikedGamesCache(variables.item, response.isLiked);
+      setSelectedGame((current) =>
+        current?.gameId === response.gameId
+          ? { ...current, isLiked: response.isLiked }
+          : current,
+      );
+
+      queryClient.setQueryData<GameDetail>(
+        ['games', 'detail', response.gameId],
+        (currentDetail) =>
+          currentDetail
+            ? {
+                ...currentDetail,
+                isLiked: response.isLiked,
+                likeCount: response.likeCount,
+              }
+            : currentDetail,
+      );
+
+      try {
+        const detail = await queryClient.fetchQuery({
+          queryKey: ['games', 'detail', response.gameId],
+          queryFn: () => getGameDetail(response.gameId),
+          staleTime: 60_000,
+        });
+
+        queryClient.setQueriesData<LikedGamesResponse>(
+          { queryKey: ['auth', 'me', 'game-like'] },
+          (current) => {
+            if (!current || !response.isLiked) {
+              return current;
+            }
+
+            return {
+              ...current,
+              results: current.results.map((likedGame) =>
+                likedGame.game_id === response.gameId
+                  ? {
+                      ...likedGame,
+                      game_title: detail.title.trim() || likedGame.game_title,
+                      thumbnail_url:
+                        detail.coverImageUrl ?? likedGame.thumbnail_url,
+                      genres: detail.genres.length
+                        ? detail.genres
+                        : likedGame.genres,
+                    }
+                  : likedGame,
+              ),
+            };
+          },
+        );
+      } catch {
+        // 상세 조회 실패는 좋아요 토글 결과를 되돌릴 이유가 아니므로 무시합니다.
+      }
+
+      void queryClient.invalidateQueries({
+        queryKey: ['auth', 'me', 'game-like'],
+      });
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        setLikeFeedbackMessage(LIKE_LOGIN_REQUIRED_MESSAGE);
+        return;
+      }
+
+      setLikeFeedbackMessage(LIKE_ERROR_MESSAGE);
+    },
+    onSettled: () => {
+      setPendingLikeGameId(null);
+    },
+  });
+
+  const handleToggleLike = (item: RecommendationDisplayItem) => {
+    likeMutation.mutate({
+      gameId: item.game_id,
+      nextIsLiked: !item.is_liked,
+      item,
+    });
   };
 
   return (
@@ -371,6 +609,11 @@ function RecommendationListPage() {
                       : '추천 결과를 정리하고 있어요'}
                   </div>
                 </div>
+                {likeFeedbackMessage ? (
+                  <p className="mt-4 text-sm leading-6 break-keep text-[#ffc2c2]">
+                    {likeFeedbackMessage}
+                  </p>
+                ) : null}
               </div>
 
               {isLoading ? (
@@ -396,6 +639,8 @@ function RecommendationListPage() {
                           key={item.game_id}
                           item={item}
                           onOpenDetail={handleOpenDetail}
+                          onToggleLike={handleToggleLike}
+                          isLikePending={pendingLikeGameId === item.game_id}
                         />
                       ))}
                     </div>
