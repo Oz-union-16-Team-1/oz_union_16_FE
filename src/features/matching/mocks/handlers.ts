@@ -19,16 +19,38 @@ type StoredMatchResult = {
   rating: number;
   is_liked: boolean;
   created_at_order: number;
+  mock_rank_score: number;
 };
 
 const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
 
 let storedMatchResults: StoredMatchResult[] = [];
 
+const calculateMockRankScore = ({
+  gameId,
+  rating,
+  isLiked,
+  createdAtOrder,
+  totalCount,
+}: {
+  gameId: number;
+  rating: number;
+  isLiked: boolean;
+  createdAtOrder: number;
+  totalCount: number;
+}) => {
+  const likedWeight = isLiked ? 35 : 0;
+  const ratingWeight = rating * 4;
+  const orderWeight = Math.max(totalCount - createdAtOrder, 0) * 2;
+  const tieBreakerWeight = gameId % 7;
+
+  return likedWeight + ratingWeight + orderWeight + tieBreakerWeight;
+};
+
 const getRankedMatchResults = () =>
   [...storedMatchResults].sort((a, b) => {
-    if (b.rating !== a.rating) {
-      return b.rating - a.rating;
+    if (b.mock_rank_score !== a.mock_rank_score) {
+      return b.mock_rank_score - a.mock_rank_score;
     }
 
     return a.created_at_order - b.created_at_order;
@@ -120,11 +142,18 @@ export const matchingHandlers = [
       }
     }
 
-    storedMatchResults = body.match_result.map((result, index) => ({
+    storedMatchResults = body.match_result.map((result, index, allResults) => ({
       game_id: result.game_id!,
       rating: result.rating!,
       is_liked: Boolean(result.is_liked),
       created_at_order: index,
+      mock_rank_score: calculateMockRankScore({
+        gameId: result.game_id!,
+        rating: result.rating!,
+        isLiked: Boolean(result.is_liked),
+        createdAtOrder: index,
+        totalCount: allResults.length,
+      }),
     }));
 
     await delay(500);
