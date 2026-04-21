@@ -9,6 +9,7 @@ import type {
 const MIN_STEPS = 3;
 const DEFAULT_STEPS = 4;
 const MAX_STEPS = 5;
+const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
 
 const surveyQuestions = [
   '스토리 중심의 몰입감을 더 중요하게 보시나요, 아니면 손맛과 시스템 완성도를 더 중요하게 보시나요?',
@@ -248,7 +249,9 @@ export const surveyHandlers = [
   http.get('/api/v1/survey/result', async ({ request }) => {
     const url = new URL(request.url);
     const cursor = Number(url.searchParams.get('cursor') ?? '0');
-    const pageSize = Number(url.searchParams.get('page_size') ?? '5');
+    const pageSize = Number(
+      url.searchParams.get('page_size') ?? DEFAULT_RECOMMENDATION_PAGE_SIZE,
+    );
 
     if (!latestCompletedSurveySessionId) {
       return getErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
