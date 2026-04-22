@@ -20,16 +20,12 @@ export interface LogoutResponse {
 }
 
 export interface ChangePasswordRequest {
-  current_password: string;
+  old_password: string;
   new_password: string;
-  new_password_confirm: string;
+  new_password_check: string;
 }
 
 export interface ChangePasswordResponse {
-  detail: string;
-}
-
-export interface DeleteAccountResponse {
   detail: string;
 }
 
@@ -68,6 +64,11 @@ export interface CurrentUserProfileResponse {
   profile_img_url?: string | null;
 }
 
+export interface UpdateUserInfoRequest {
+  nickname?: string;
+  profile_img_url?: string;
+}
+
 export interface ProfileImagePresignedUrlRequest {
   file_name: string;
   content_type: string;
@@ -75,7 +76,17 @@ export interface ProfileImagePresignedUrlRequest {
 
 export interface ProfileImagePresignedUrlResponse {
   presigned_url: string;
-  file_url: string;
+  img_url: string;
+  key: string;
+}
+
+export interface ConfirmProfileImageRequest {
+  profile_img_url: string;
+}
+
+export interface ConfirmProfileImageResponse {
+  detail?: string;
+  profile_img_url?: string;
 }
 
 export interface UploadFileToS3Request {

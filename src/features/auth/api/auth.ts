@@ -8,9 +8,10 @@ import type {
   CheckNicknameDuplicateRequest,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  ConfirmProfileImageRequest,
+  ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
   DeleteAccountRequest,
-  DeleteAccountResponse,
   DeleteLikedGameResponse,
   DuplicateCheckResponse,
   ErrorResponseBody,
@@ -24,6 +25,7 @@ import type {
   RefreshAccessTokenResponse,
   SignupRequest,
   SignupResponse,
+  UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
 
@@ -93,6 +95,15 @@ export const getCurrentUserProfile = async () => {
   return response.data;
 };
 
+export const updateUserInfo = async (payload: UpdateUserInfoRequest) => {
+  const response = await api.patch<CurrentUserProfileResponse>(
+    `${AUTH_BASE_PATH}/me`,
+    payload,
+  );
+
+  return response.data;
+};
+
 export const getLikedGames = async (payload: LikedGamesRequest = {}) => {
   const response = await api.get<LikedGamesResponse>(
     `${AUTH_BASE_PATH}/me/game-like`,
@@ -140,6 +151,17 @@ export const uploadFileToS3 = async ({
   });
 };
 
+export const confirmProfileImage = async (
+  payload: ConfirmProfileImageRequest,
+) => {
+  const response = await api.patch<ConfirmProfileImageResponse>(
+    `${AUTH_BASE_PATH}/me/profile-image`,
+    payload,
+  );
+
+  return response.data;
+};
+
 export const changePassword = async (payload: ChangePasswordRequest) => {
   const response = await api.post<ChangePasswordResponse>(
     `${AUTH_BASE_PATH}/me/change-password`,
@@ -150,14 +172,9 @@ export const changePassword = async (payload: ChangePasswordRequest) => {
 };
 
 export const deleteAccount = async (payload: DeleteAccountRequest) => {
-  const response = await api.delete<DeleteAccountResponse>(
-    `${AUTH_BASE_PATH}/me`,
-    {
-      data: payload,
-    },
-  );
-
-  return response.data;
+  await api.delete(`${AUTH_BASE_PATH}/me`, {
+    data: payload,
+  });
 };
 
 export const signup = async (payload: SignupRequest) => {
