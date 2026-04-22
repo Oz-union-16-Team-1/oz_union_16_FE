@@ -1,7 +1,43 @@
-import { Outlet } from 'react-router';
+import { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router';
+
+import { ROUTES } from './constants/routes';
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
+  type AuthSessionExpiredDetail,
+} from './features/auth/constants/session';
 import SupportChatWidget from './components/support-chat/SupportChatWidget';
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleSessionExpired = (event: Event) => {
+      const customEvent = event as CustomEvent<AuthSessionExpiredDetail>;
+      const noticeMessage =
+        customEvent.detail?.noticeMessage ||
+        AUTH_SESSION_EXPIRED_NOTICE_MESSAGE;
+      const loginPath = `/${ROUTES.LOGIN}`;
+      const shouldReplace = location.pathname === loginPath;
+
+      navigate(loginPath, {
+        replace: shouldReplace,
+        state: { noticeMessage },
+      });
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+
+    return () => {
+      window.removeEventListener(
+        AUTH_SESSION_EXPIRED_EVENT,
+        handleSessionExpired,
+      );
+    };
+  }, [location.pathname, navigate]);
+
   return (
     <>
       <Outlet />

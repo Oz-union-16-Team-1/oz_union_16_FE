@@ -1,12 +1,12 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
 
 /**
- * [Refactor] 인증 아키텍처 업데이트 (#94)
- * - Access Token: 보안 강화를 위해 클라이언트 메모리(State)에서만 관리 (XSS 방어)
+ * [Auth] 새로고침 로그인 유지 업데이트
+ * - Access Token: 로컬 개발/테스트 흐름에 맞춰 localStorage 기반으로 유지합니다.
  * - Refresh Token: 브라우저 HttpOnly Cookie 기반 관리 (백엔드 주도)
- * - persist 미들웨어를 제거하여 새로고침 시 세션 만료를 의도하거나,
- *   Axios Interceptor를 통한 Silent Refresh로 세션을 유지합니다.
+ * - 로그아웃/세션 만료 시 localStorage 인증 데이터를 즉시 제거합니다.
  */
 
 interface AuthState {
@@ -19,37 +19,50 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
-  account: null,
-  isAuthenticated: false,
-
-  setAccessToken: (token) =>
-    set({
-      accessToken: token,
-      isAuthenticated: !!token,
-    }),
-
-  setAccount: (account) => set({ account }),
-
-  setAuth: (token, account) =>
-    set({
-      accessToken: token,
-      account: account,
-      isAuthenticated: true,
-    }),
-
-  clearAuth: () => {
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
       accessToken: null,
       account: null,
       isAuthenticated: false,
-    });
 
-    // 기존 localStorage 기반 레거시 데이터 완전 삭제
-    clearLegacyAuthStorage();
-  },
-}));
+      setAccessToken: (token) =>
+        set({
+          accessToken: token,
+          isAuthenticated: !!token,
+        }),
+
+      setAccount: (account) => set({ account }),
+
+      setAuth: (token, account) =>
+        set({
+          accessToken: token,
+          account: account,
+          isAuthenticated: true,
+        }),
+
+      clearAuth: () => {
+        set({
+          accessToken: null,
+          account: null,
+          isAuthenticated: false,
+        });
+
+        // 기존 localStorage 기반 레거시 데이터 완전 삭제
+        clearLegacyAuthStorage();
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => window.localStorage),
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        account: state.account,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);
 
 /**
  * 기존 localStorage에 저장되던 모든 인증 관련 레거시 키를 삭제합니다.

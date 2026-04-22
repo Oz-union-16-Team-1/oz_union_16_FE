@@ -1,6 +1,15 @@
-import axios from 'axios';
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 
+import { logAxiosError } from './logApiError';
 import { refreshAccessToken } from '../features/auth/api/auth';
+import {
+  AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
+  createAuthSessionExpiredEvent,
+} from '../features/auth/constants/session';
 import { apiBaseUrl } from '../lib/env';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -21,6 +30,62 @@ const AUTH_EXCLUDED_PATHS = [
 const shouldResetAuthSession = (requestUrl?: string) => {
   if (!requestUrl) return true;
   return !AUTH_EXCLUDED_PATHS.some((path) => requestUrl.includes(path));
+};
+
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+let refreshAccessTokenPromise: Promise<string> | null = null;
+
+const clearAuthAndNotifySessionExpired = () => {
+  useAuthStore.getState().clearAuth();
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      createAuthSessionExpiredEvent({
+        noticeMessage: AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
+        source: 'refresh',
+      }),
+    );
+  }
+};
+
+const getRefreshedAccessToken = async () => {
+  if (!refreshAccessTokenPromise) {
+    refreshAccessTokenPromise = refreshAccessToken()
+      .then(({ access_token }) => {
+        useAuthStore.getState().setAccessToken(access_token);
+        return access_token;
+      })
+      .catch((refreshError) => {
+        clearAuthAndNotifySessionExpired();
+
+        if (refreshError instanceof AxiosError) {
+          logAxiosError(refreshError, 'auth-refresh');
+        } else {
+          console.error('[auth-refresh] unexpected error');
+        }
+
+        throw refreshError;
+      })
+      .finally(() => {
+        refreshAccessTokenPromise = null;
+      });
+  }
+
+  return refreshAccessTokenPromise;
+};
+
+const setAuthorizationHeader = (
+  config: RetriableRequestConfig,
+  accessToken: string,
+) => {
+  if (!config.headers) {
+    config.headers = new AxiosHeaders();
+  }
+
+  config.headers.Authorization = `Bearer ${accessToken}`;
 };
 
 export const api = axios.create({
@@ -50,10 +115,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    if (!(error instanceof AxiosError)) {
+      return Promise.reject(error);
+    }
+
+    const originalRequest = error.config as RetriableRequestConfig | undefined;
 
     // 401 에러이고, 재시도한 적이 없으며, 인증 제외 경로가 아닐 때
     if (
+      originalRequest &&
       error.response?.status === 401 &&
       !originalRequest._retry &&
       shouldResetAuthSession(originalRequest.url)
@@ -61,28 +131,17 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const { access_token } = await refreshAccessToken();
-
-        // 새 토큰 저장
-        useAuthStore.getState().setAccessToken(access_token);
+        const accessToken = await getRefreshedAccessToken();
 
         // 원래 요청 재시도
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        setAuthorizationHeader(originalRequest, accessToken);
         return api(originalRequest);
       } catch (refreshError) {
-        // 리프레시 실패 시 (세션 만료) 로그아웃 처리
-        useAuthStore.getState().clearAuth();
-
-        // 브라우저 환경에서만 리다이렉트
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login?expired=true';
-        }
-
         return Promise.reject(refreshError);
       }
     }
 
-    console.error('API 에러 발생:', error.response?.data || error.message);
+    logAxiosError(error, 'axios-response');
     return Promise.reject(error);
   },
 );
