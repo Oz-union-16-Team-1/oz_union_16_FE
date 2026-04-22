@@ -517,7 +517,7 @@ function RecommendationListPage() {
               </h1>
               <p className="mt-4 max-w-[620px] text-sm leading-7 break-keep text-white/58 sm:text-base">
                 {isMatchSource
-                  ? '매칭 평가에서 남긴 별점과 좋아요를 바탕으로, 바로 확인해볼 만한 결과를 정리했어요.'
+                  ? '장르별 매칭에서 남긴 별점과 좋아요를 바탕으로 정리된 추천 결과예요. 마음에 드는 게임은 좋아요로 표시해 두고 마이페이지에서도 다시 확인할 수 있어요.'
                   : '설문에서 드러난 취향을 바탕으로, 지금 바로 플레이하고 싶어질 만한 게임들을 차분하게 정리해뒀어요.'}
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5">
@@ -578,8 +578,8 @@ function RecommendationListPage() {
                 먼저 매칭 평가를 완료해 주세요.
               </h2>
               <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                장르별 매칭 평가를 제출하면 추천 결과를 이 페이지에서 바로
-                확인할 수 있어요.
+                좋아하는 장르를 고르고 최대 5개 게임의 트레일러를 보며 별점을
+                남기면 추천 결과가 바로 준비돼요.
               </p>
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
@@ -598,7 +598,7 @@ function RecommendationListPage() {
                     </p>
                     <p className="mt-3 text-sm leading-6 break-keep text-white/56">
                       {isMatchSource
-                        ? '평가를 바탕으로 정리된 결과를 비교해보고 마음에 드는 게임을 골라보세요.'
+                        ? '장르별 매칭에서 수집한 선호도 평가를 바탕으로 정리된 결과예요.'
                         : '마음에 드는 게임을 비교해보고, 더보기로 결과를 이어서 확인해보세요.'}
                     </p>
                   </div>

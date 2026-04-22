@@ -1,11 +1,12 @@
 import { ChevronRight } from 'lucide-react';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
 import { MATCHING_GENRES } from '../../features/matching/genres';
+import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 import { getAccessToken } from '../../utils/auth';
 
@@ -13,6 +14,7 @@ function MatchingListPage() {
   const hasAccessToken = Boolean(getAccessToken());
   const isMockMode = isMockServiceWorkerEnabled();
   const canFetchGenreImages = isMockMode || hasAccessToken;
+  const resetFlow = useMatchingStore((state) => state.resetFlow);
   const genreImageQueries = useMatchingGenreImageQueries(
     MATCHING_GENRES.map((genre) => genre.genreId),
     canFetchGenreImages,
@@ -27,6 +29,10 @@ function MatchingListPage() {
       ),
     [genreImageQueries],
   );
+
+  useLayoutEffect(() => {
+    resetFlow();
+  }, [resetFlow]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -43,7 +49,8 @@ function MatchingListPage() {
               장르별 게임 매칭
             </h1>
             <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
-              다양한 카테고리의 게임을 만나보세요!
+              좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에 맞는
+              게임을 빠르게 추천해드려요.
             </p>
           </div>
 

@@ -1,9 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import {
   useMatchCandidatesQuery,
   useSubmitMatchResponsesMutation,
@@ -23,6 +25,7 @@ import { getAccessToken } from '../../utils/auth';
 function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hasAccessToken = Boolean(getAccessToken());
   const isMockMode = isMockServiceWorkerEnabled();
   const canAccessPage = isMockMode || hasAccessToken;
@@ -48,20 +51,32 @@ function MatchingGenreDetailPage() {
   const evaluationsByGameId = useMatchingStore(
     (state) => state.evaluationsByGameId,
   );
-  const initializeFlow = useMatchingStore((state) => state.initializeFlow);
+  const restartFlow = useMatchingStore((state) => state.restartFlow);
   const setRating = useMatchingStore((state) => state.setRating);
   const toggleLiked = useMatchingStore((state) => state.toggleLiked);
   const goNext = useMatchingStore((state) => state.goNext);
   const goPrevious = useMatchingStore((state) => state.goPrevious);
+  const resetFlow = useMatchingStore((state) => state.resetFlow);
+  const hasInitializedFlowRef = useRef(false);
+
+  useLayoutEffect(() => {
+    resetFlow();
+    resetSubmitMatchResponsesMutation();
+  }, [resetFlow, resetSubmitMatchResponsesMutation]);
 
   useEffect(() => {
-    if (!genre || candidates.length === 0) {
+    hasInitializedFlowRef.current = false;
+  }, [genre?.slug]);
+
+  useEffect(() => {
+    if (!genre || candidates.length === 0 || hasInitializedFlowRef.current) {
       return;
     }
 
-    initializeFlow(genre, candidates);
+    restartFlow(genre, candidates);
+    hasInitializedFlowRef.current = true;
     resetSubmitMatchResponsesMutation();
-  }, [genre, candidates, initializeFlow, resetSubmitMatchResponsesMutation]);
+  }, [genre, candidates, restartFlow, resetSubmitMatchResponsesMutation]);
 
   const displayCandidates =
     selectedGenreSlug === genre?.slug &&
@@ -92,6 +107,59 @@ function MatchingGenreDetailPage() {
     ? extractApiErrorMessage(submitMatchResponsesMutation.error)
     : null;
 
+  const syncLikedGamesCache = () => {
+    queryClient.setQueriesData<LikedGamesResponse>(
+      { queryKey: ['auth', 'me', 'game-like'] },
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        const likedAt = new Date().toISOString();
+        const nextLikedGamesById = new Map(
+          current.results.map((likedGame) => [likedGame.game_id, likedGame]),
+        );
+
+        displayCandidates.forEach((candidate) => {
+          const evaluation = evaluationsByGameId[candidate.game_id];
+
+          if (!evaluation) {
+            return;
+          }
+
+          if (evaluation.isLiked) {
+            const existingLikedGame = nextLikedGamesById.get(candidate.game_id);
+
+            nextLikedGamesById.set(candidate.game_id, {
+              game_id: candidate.game_id,
+              game_title: candidate.title,
+              thumbnail_url: candidate.thumbnail_url,
+              genres: candidate.genres,
+              liked_at: existingLikedGame?.liked_at ?? likedAt,
+            });
+            return;
+          }
+
+          nextLikedGamesById.delete(candidate.game_id);
+        });
+
+        const nextResults = [...nextLikedGamesById.values()].sort(
+          (a, b) => Date.parse(b.liked_at) - Date.parse(a.liked_at),
+        );
+
+        return {
+          ...current,
+          count: nextResults.length,
+          results: nextResults,
+        };
+      },
+    );
+
+    void queryClient.invalidateQueries({
+      queryKey: ['auth', 'me', 'game-like'],
+    });
+  };
+
   const handleSubmit = async () => {
     if (!allCandidatesRated || displayCandidates.length === 0) {
       return;
@@ -105,6 +173,7 @@ function MatchingGenreDetailPage() {
           is_liked: evaluationsByGameId[candidate.game_id]!.isLiked,
         })),
       });
+      syncLikedGamesCache();
       navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=match`);
     } catch {
       return;
@@ -208,8 +277,9 @@ function MatchingGenreDetailPage() {
                 매칭 과정을 따라가세요
               </h1>
               <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
-                {totalGamesLabel}을 차례대로 평가하고, 마음에 드는 게임은 하트로
-                표시해둘 수 있어요.
+                트레일러와 분위기를 보며 {totalGamesLabel}에 별점을 남겨보세요.
+                좋아요는 마음에 든 게임을 표시해 두고 마이페이지에서도 다시
+                확인할 수 있게 함께 저장돼요.
               </p>
             </div>
 
@@ -272,10 +342,10 @@ function MatchingGenreDetailPage() {
 
                   <div className="mt-6">
                     <p className="text-sm font-semibold text-white">
-                      이 게임은 얼마나 끌리나요?
+                      이 게임이 내 취향에 얼마나 가까운가요?
                     </p>
                     <p className="mt-1.5 text-sm leading-6 break-keep text-white/55">
-                      별점을 남기면 다음 카드로 넘어갈 수 있어요.
+                      별점은 추천을 더 정교하게 만드는 선호도 평가로 반영돼요.
                     </p>
                     <div className="mt-4">
                       <MatchingRatingStars
@@ -291,11 +361,11 @@ function MatchingGenreDetailPage() {
                     <p className="text-sm leading-7 break-keep text-white/64">
                       {isLastCard
                         ? currentEvaluation.rating === null
-                          ? '마지막 후보예요. 별점을 선택하면 지금까지 남긴 평가를 한 번에 제출할 수 있어요.'
-                          : '모든 평가가 준비됐어요. 제출하면 추천 결과를 바로 확인할 수 있어요.'
+                          ? '마지막 후보예요. 별점을 남기면 지금까지의 선호도 평가를 제출하고 추천 결과로 바로 이어갈 수 있어요.'
+                          : '모든 선호도 평가가 준비됐어요. 제출하면 취향에 맞는 추천 결과를 바로 확인할 수 있어요.'
                         : currentEvaluation.rating === null
-                          ? '현재 카드의 별점을 먼저 선택해 주세요.'
-                          : '별점과 좋아요는 바로 저장되고, 이전 카드로 돌아가 수정할 수도 있어요.'}
+                          ? '트레일러와 분위기를 보고 지금 카드의 별점을 남겨 주세요.'
+                          : '별점은 취향 분석에 반영되고, 좋아요는 마이페이지에서 다시 볼 게임을 표시해 두는 용도로 저장돼요.'}
                     </p>
                   </div>
 
@@ -308,8 +378,8 @@ function MatchingGenreDetailPage() {
                   {isLastCard ? (
                     <div className="mt-auto pt-6">
                       <p className="mx-auto mb-3 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
-                        {totalSteps}개 게임의 평가가 모두 준비되면 제출할 수
-                        있어요.
+                        {totalSteps}개 게임의 선호도 평가가 모두 준비되면 제출할
+                        수 있어요.
                       </p>
 
                       <div className="flex flex-wrap items-end justify-between gap-3">
