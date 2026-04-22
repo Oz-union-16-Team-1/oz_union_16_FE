@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import { Heart, ShieldAlert } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -204,6 +204,8 @@ function MyPage() {
     useState<FavoriteGamePreview | null>(null);
   const [selectedDetailGame, setSelectedDetailGame] =
     useState<GameListItem | null>(null);
+  const favoriteGamesScrollRef = useRef<HTMLDivElement | null>(null);
+  const favoriteGamesLoadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const localFieldErrors = useMemo(
     () => getPasswordFieldErrors(passwordValues, touchedState),
@@ -232,6 +234,11 @@ function MyPage() {
 
     return [...deduplicatedGames.values()].map(toFavoriteGamePreview);
   }, [likedGameResults]);
+  const hasFavoriteGamesNextPage = Boolean(likedGamesQuery.hasNextPage);
+  const isFavoriteGamesFetchNextPageError =
+    likedGamesQuery.isFetchNextPageError;
+  const isFavoriteGamesFetchingNextPage = likedGamesQuery.isFetchingNextPage;
+  const fetchNextFavoriteGamesPage = likedGamesQuery.fetchNextPage;
 
   useEffect(() => {
     if (!toast) {
@@ -271,6 +278,48 @@ function MyPage() {
     };
   }, [isPasswordPanelOpen, passwordPanelMessage]);
 
+  useEffect(() => {
+    if (isFavoriteGamesFetchNextPageError || !hasFavoriteGamesNextPage) {
+      return undefined;
+    }
+
+    const rootElement = favoriteGamesScrollRef.current;
+    const targetElement = favoriteGamesLoadMoreRef.current;
+
+    if (!rootElement || !targetElement) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+
+        if (!entry?.isIntersecting || isFavoriteGamesFetchingNextPage) {
+          return;
+        }
+
+        void fetchNextFavoriteGamesPage();
+      },
+      {
+        root: rootElement,
+        rootMargin: '0px 0px 160px 0px',
+        threshold: 0.1,
+      },
+    );
+
+    observer.observe(targetElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    favoriteGames.length,
+    fetchNextFavoriteGamesPage,
+    hasFavoriteGamesNextPage,
+    isFavoriteGamesFetchNextPageError,
+    isFavoriteGamesFetchingNextPage,
+  ]);
+
   if (!hasAccessToken) {
     return (
       <Navigate
@@ -288,7 +337,6 @@ function MyPage() {
   const isFavoriteGamesLoading =
     likedGamesQuery.isLoading && !favoriteGames.length;
   const isFavoriteGamesError = likedGamesQuery.isError && !favoriteGames.length;
-  const hasFavoriteGamesNextPage = Boolean(likedGamesQuery.hasNextPage);
   const profileName = resolvedProfile?.name || 'N/A';
   const profileEmail = resolvedProfile?.email || null;
   const profileGenderLabel = toGenderLabel(resolvedProfile?.gender);
@@ -649,7 +697,10 @@ function MyPage() {
             </p>
           </div>
 
-          <div className="mypage-scrollbar mt-5 max-h-[760px] overflow-y-auto pr-1">
+          <div
+            ref={favoriteGamesScrollRef}
+            className="mypage-scrollbar mt-5 max-h-[760px] overflow-y-auto pr-1"
+          >
             {isFavoriteGamesLoading ? (
               <FavoriteGameCardSkeleton />
             ) : favoriteCount > 0 ? (
@@ -664,33 +715,39 @@ function MyPage() {
                     />
                   ))}
                 </div>
-                {hasFavoriteGamesNextPage ||
-                likedGamesQuery.isFetchingNextPage ||
-                likedGamesQuery.isFetchNextPageError ? (
-                  <div className="mt-5 flex flex-col items-center gap-2">
-                    {likedGamesQuery.isFetchNextPageError ? (
+                <div className="mt-5 flex flex-col items-center gap-2">
+                  <div
+                    ref={favoriteGamesLoadMoreRef}
+                    aria-hidden="true"
+                    className="h-0.5 w-full"
+                  />
+                  {likedGamesQuery.isFetchNextPageError ? (
+                    <>
                       <p className="text-sm text-red-300">
                         추가 찜 목록을 불러오지 못했습니다.
                       </p>
-                    ) : null}
-                    <AuthButton
-                      type="button"
-                      variant="secondary"
-                      className="w-full max-w-40"
-                      onClick={() => void likedGamesQuery.fetchNextPage()}
-                      disabled={
-                        likedGamesQuery.isFetchingNextPage ||
-                        !hasFavoriteGamesNextPage
-                      }
-                    >
-                      {likedGamesQuery.isFetchingNextPage
-                        ? '더 불러오는 중...'
-                        : hasFavoriteGamesNextPage
-                          ? '찜 목록 더보기'
-                          : '모두 불러왔어요'}
-                    </AuthButton>
-                  </div>
-                ) : null}
+                      <AuthButton
+                        type="button"
+                        variant="secondary"
+                        className="w-full max-w-40"
+                        onClick={() => void likedGamesQuery.fetchNextPage()}
+                        disabled={likedGamesQuery.isFetchingNextPage}
+                      >
+                        {likedGamesQuery.isFetchingNextPage
+                          ? '다시 불러오는 중...'
+                          : '다시 시도'}
+                      </AuthButton>
+                    </>
+                  ) : likedGamesQuery.isFetchingNextPage ? (
+                    <p className="text-mypage-muted text-sm">
+                      찜 목록을 더 불러오는 중입니다...
+                    </p>
+                  ) : hasFavoriteGamesNextPage ? (
+                    <p className="text-mypage-muted text-sm">
+                      아래로 스크롤하면 찜 목록을 더 볼 수 있어요.
+                    </p>
+                  ) : null}
+                </div>
               </div>
             ) : isFavoriteGamesError ? (
               <div
