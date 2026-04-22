@@ -91,9 +91,9 @@ const MainPage = () => {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <Header fixed />
-      <main className="min-h-screen pt-24 pb-10 text-white sm:pt-28 sm:pb-14 lg:pt-32">
-        <section className="w-full">
-          <div className="flex flex-col gap-4 px-[clamp(1rem,5vw,20rem)] sm:flex-row sm:items-center sm:justify-between">
+      <main className="min-h-screen pt-24 pb-10 text-white sm:pt-28 sm:pb-14 lg:h-screen lg:overflow-hidden lg:pt-24 lg:pb-4 xl:pt-26 xl:pb-5">
+        <section className="w-full lg:flex lg:h-full lg:flex-col">
+          <div className="flex flex-col gap-4 px-[clamp(1rem,5vw,20rem)] sm:flex-row sm:items-center sm:justify-between lg:gap-3">
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 lg:flex-nowrap">
               <h2 className="min-w-0 text-xl leading-tight font-bold wrap-break-word text-white sm:text-2xl lg:text-[28px]">
                 {sectionTitle}
@@ -120,7 +120,7 @@ const MainPage = () => {
             </label>
           </div>
 
-          <div className="mt-4 sm:mt-5">
+          <div className="mt-4 sm:mt-5 lg:mt-4">
             {gamesQuery.isLoading ? (
               <GameCardSkeletonList />
             ) : games.length > 0 ? (
@@ -137,7 +137,7 @@ const MainPage = () => {
             )}
           </div>
 
-          <section className="mt-14 grid gap-6 px-[clamp(1rem,5vw,20rem)] lg:grid-cols-2">
+          <section className="mt-14 grid gap-6 px-[clamp(1rem,5vw,20rem)] lg:mt-6 lg:grid-cols-2 lg:gap-4 xl:mt-7">
             <RecommendationCta
               icon={ClipboardCheck}
               iconLabel="설문 작성"
@@ -500,7 +500,7 @@ const RecommendationCta = ({
     'hover:bg-header-accent-hover mt-7 inline-flex h-11 cursor-pointer items-center justify-center rounded-md bg-[#d20b12] px-7 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]';
 
   return (
-    <article className="flex min-h-65 flex-col items-center justify-center rounded-lg border border-[#3a0b0d] bg-[#050505] px-6 py-9 text-center sm:min-h-70">
+    <article className="flex min-h-65 flex-col items-center justify-center rounded-lg border border-[#3a0b0d] bg-[#050505] px-6 py-9 text-center sm:min-h-70 lg:min-h-56 lg:px-5 lg:py-7">
       <div
         role="img"
         aria-label={iconLabel}
@@ -508,14 +508,14 @@ const RecommendationCta = ({
       >
         <Icon aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" />
       </div>
-      <h3 className="mt-7 text-2xl leading-tight font-bold sm:text-3xl">
+      <h3 className="mt-7 text-2xl leading-tight font-bold sm:text-3xl lg:mt-5 lg:text-[28px]">
         {title}
       </h3>
-      <p className="mt-5 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
+      <p className="mt-5 max-w-xl text-sm leading-6 text-white/70 sm:text-base lg:mt-3 lg:text-[15px] lg:leading-6">
         {description}
       </p>
       {to ? (
-        <Link to={to} className={actionClassName}>
+        <Link to={to} className={`${actionClassName} lg:mt-5`}>
           {buttonLabel}
         </Link>
       ) : (
@@ -523,7 +523,7 @@ const RecommendationCta = ({
           type="button"
           onClick={showPendingMessage}
           title="준비 중입니다."
-          className={actionClassName}
+          className={`${actionClassName} lg:mt-5`}
         >
           {buttonLabel}
         </button>
