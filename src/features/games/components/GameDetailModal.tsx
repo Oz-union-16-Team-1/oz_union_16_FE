@@ -34,6 +34,7 @@ const LIKE_ERROR_MESSAGE =
 const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
 const TOAST_DURATION_MS = 3000;
+const DETAIL_REFRESH_INTERVAL_MS = 10_000;
 
 const getLikeErrorMessage = (error: unknown) => {
   if (error instanceof AxiosError) {
@@ -68,7 +69,10 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   const detailQuery = useQuery({
     queryKey: ['games', 'detail', game.gameId],
     queryFn: () => getGameDetail(game.gameId),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchInterval: (query) =>
+      query.state.status === 'error' ? false : DETAIL_REFRESH_INTERVAL_MS,
     retry: false,
   });
 
@@ -146,6 +150,9 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       );
       void queryClient.invalidateQueries({
         queryKey: ['auth', 'me', 'game-like'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['games', 'detail', game.gameId],
       });
     },
     onError: (error) => {
