@@ -504,11 +504,11 @@ const RecommendationCta = ({
       <div
         role="img"
         aria-label={iconLabel}
-        className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#5a1115]/70 bg-[#1f0809] text-[#ff4b55] shadow-[inset_0_0_22px_rgba(255,75,85,0.12),0_12px_28px_rgba(0,0,0,0.24)] sm:h-14 sm:w-14"
+        className="flex h-16 w-16 items-center justify-center text-[#d20b12] sm:h-18 sm:w-18"
       >
-        <Icon aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" />
+        <Icon aria-hidden="true" className="h-8 w-8 sm:h-9 sm:w-9" />
       </div>
-      <h3 className="mt-7 text-2xl leading-tight font-bold sm:text-3xl lg:mt-5 lg:text-[28px]">
+      <h3 className="mt-4 text-2xl leading-tight font-bold sm:text-3xl lg:mt-3 lg:text-[28px]">
         {title}
       </h3>
       <p className="mt-5 max-w-xl text-sm leading-6 text-white/70 sm:text-base lg:mt-3 lg:text-[15px] lg:leading-6">
