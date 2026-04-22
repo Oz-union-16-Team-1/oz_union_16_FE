@@ -43,38 +43,50 @@ function MyPageProfileSection({
       </h1>
 
       <div className="mt-8 flex justify-center">
-        <div className="border-mypage-panel bg-mypage-card relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border">
-          {hasProfileImage ? (
-            <img
-              src={profileImageUrl!}
-              alt={`${nickname} 프로필 이미지`}
-              className="h-full w-full object-cover"
+        <div className="relative h-32 w-32 sm:h-36 sm:w-36">
+          <div className="border-mypage-panel bg-mypage-card relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border shadow-[0_24px_50px_rgba(0,0,0,0.46),0_0_0_1px_rgba(255,255,255,0.03)]">
+            {hasProfileImage ? (
+              <img
+                src={profileImageUrl!}
+                alt={`${nickname} 프로필 이미지`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <CircleUserRound size={48} className="text-white/85" />
+            )}
+          </div>
+          <label className="border-mypage-panel bg-mypage-card text-mypage-muted focus-within:ring-mypage-panel absolute -right-1 -bottom-1 inline-flex cursor-pointer items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-[#050505] hover:text-white">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={isProfileLoading || isProfileImageUploading}
+              onChange={(event) => {
+                onProfileImageSelect?.(event.target.files?.[0] ?? null);
+                event.currentTarget.value = '';
+              }}
             />
-          ) : (
-            <CircleUserRound size={42} className="text-white/85" />
-          )}
+            {isProfileImageUploading ? '업로드 중...' : '프로필 변경'}
+          </label>
         </div>
-      </div>
-      <div className="mt-3 flex justify-center">
-        <label className="border-mypage-panel bg-mypage-card text-mypage-muted focus-within:ring-mypage-panel relative inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-[#050505] hover:text-white">
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            disabled={isProfileLoading || isProfileImageUploading}
-            onChange={(event) => {
-              onProfileImageSelect?.(event.target.files?.[0] ?? null);
-              event.currentTarget.value = '';
-            }}
-          />
-          {isProfileImageUploading ? '업로드 중...' : '프로필 변경'}
-        </label>
       </div>
 
       {isProfileLoading ? (
-        <div className="mt-5 flex flex-col items-center gap-3">
-          <div className="h-8 w-32 animate-pulse rounded-full bg-white/8" />
-          <div className="h-4 w-full max-w-sm animate-pulse rounded-full bg-white/6" />
+        <div
+          className="mt-5 flex flex-col items-center gap-3"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="h-8 w-36 animate-pulse rounded-full bg-white/10" />
+          <div className="h-4 w-full max-w-sm animate-pulse rounded-full bg-white/8" />
+          <div className="border-mypage-panel bg-mypage-card mt-1 grid w-full max-w-[640px] gap-3 rounded-2xl border px-4 py-4 sm:grid-cols-3 sm:gap-4 sm:px-5">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="h-3 w-10 animate-pulse rounded-full bg-white/8" />
+                <div className="h-5 w-full animate-pulse rounded-full bg-white/10" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <>

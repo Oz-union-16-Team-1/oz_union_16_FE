@@ -24,7 +24,8 @@ function ToastMessage({
   className = '',
 }: ToastMessageProps) {
   const Icon = tone === 'success' ? CheckCircle2 : AlertCircle;
-  let positioningClass = 'fixed top-20 right-[clamp(1rem,5vw,20rem)]';
+  let positioningClass =
+    'fixed top-20 right-4 sm:right-6 lg:right-10 xl:right-14';
 
   if (variant === 'absoluteCenter') {
     positioningClass =
