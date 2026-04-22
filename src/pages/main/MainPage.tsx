@@ -143,15 +143,15 @@ const MainPage = () => {
               iconLabel="설문 작성"
               title="설문 조사"
               description="설문에 참여하고 나에게 꼭 맞는 게임을 찾아보세요!"
-              buttonLabel="설문 조사 하러가기"
+              buttonLabel="설문 시작"
               to={`/${ROUTES.SURVEY}`}
             />
             <RecommendationCta
               icon={Search}
               iconLabel="게임 찾기"
-              title="매칭 시작"
+              title="장르별 매칭"
               description="어떤 게임을 할지 고민? 당신의 취향에 맞는 게임을 추천해드립니다!"
-              buttonLabel="장르별 매칭"
+              buttonLabel="매칭 시작"
               to={`/${ROUTES.MATCHING_LIST}`}
             />
           </section>
