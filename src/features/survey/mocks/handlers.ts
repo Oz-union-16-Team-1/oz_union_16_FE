@@ -26,7 +26,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['RPG', '어드벤처'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
-    rating: 4.8,
+    rating: 95.8,
     is_liked: false,
   },
   {
@@ -35,7 +35,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['액션', 'RPG'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
-    rating: 4.6,
+    rating: 91.6,
     is_liked: true,
   },
   {
@@ -44,7 +44,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['전략', '시뮬레이션'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=800&q=80',
-    rating: 4.4,
+    rating: 88.4,
     is_liked: false,
   },
   {
@@ -53,7 +53,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['슈팅', '로그라이트'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=800&q=80',
-    rating: 4.3,
+    rating: 86.9,
     is_liked: false,
   },
   {
@@ -62,7 +62,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['비주얼 노벨', '퍼즐'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80',
-    rating: 4.7,
+    rating: 93.7,
     is_liked: true,
   },
   {
@@ -71,7 +71,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['레이싱', '스포츠'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1486572788966-cfd3df1f5b42?auto=format&fit=crop&w=800&q=80',
-    rating: 4.1,
+    rating: 82.4,
     is_liked: false,
   },
   {
@@ -80,7 +80,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['어드벤처', '스토리'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=800&q=80',
-    rating: 4.5,
+    rating: 89.8,
     is_liked: false,
   },
   {
@@ -89,7 +89,7 @@ const recommendations: SurveyApiResultItem[] = [
     genres: ['FPS', '협동'],
     thumbnail_url:
       'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
-    rating: 4.2,
+    rating: 84.6,
     is_liked: true,
   },
 ];

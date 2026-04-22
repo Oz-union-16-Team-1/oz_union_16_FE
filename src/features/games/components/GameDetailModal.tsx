@@ -23,7 +23,7 @@ const EXTERNAL_LINK_LABELS: Array<{
 ];
 
 const formatDetailRating = (rating: number | null) =>
-  typeof rating === 'number' ? rating.toFixed(1) : 'N/A';
+  typeof rating === 'number' ? `${rating.toFixed(1)}점` : 'N/A';
 
 const formatNullableText = (value: string | null | undefined) =>
   value?.trim() ? value : 'N/A';
@@ -355,7 +355,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                 </div>
                 <p className="mt-3 text-sm text-white/65">{genreLabel}</p>
                 <p className="mt-2 text-sm text-white/70">
-                  평점{' '}
+                  평점 기준{' '}
                   <span className="font-semibold text-[#ff4b55]">
                     {formatDetailRating(game.rating)}
                   </span>

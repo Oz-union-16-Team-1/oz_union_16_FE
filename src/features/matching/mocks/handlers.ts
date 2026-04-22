@@ -56,6 +56,11 @@ const getRankedMatchResults = () =>
     return a.created_at_order - b.created_at_order;
   });
 
+const toMockRecommendationRating = (candidateRating: number | null) =>
+  typeof candidateRating === 'number'
+    ? Number((candidateRating * 20).toFixed(1))
+    : null;
+
 export const matchingHandlers = [
   http.get('/api/v1/match/genres/image-url', async ({ request }) => {
     const url = new URL(request.url);
@@ -186,7 +191,7 @@ export const matchingHandlers = [
         title: candidate.title,
         genres: candidate.genres,
         thumbnail_url: candidate.thumbnail_url,
-        rating: result.rating,
+        rating: toMockRecommendationRating(candidate.rating),
         is_liked: result.is_liked,
       };
     });
