@@ -1,5 +1,5 @@
 import { CircleUserRound } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import AuthButton from '../auth/AuthButton';
 
@@ -11,10 +11,12 @@ type MyPageProfileSectionProps = {
   profileImageUrl?: string | null;
   isProfileLoading?: boolean;
   isProfileImageUploading?: boolean;
+  isProfileUpdating?: boolean;
   isLoggingOut: boolean;
   isPasswordPanelOpen: boolean;
   onPasswordToggle: () => void;
   onLogout: () => void;
+  onNicknameSave?: (nickname: string) => Promise<boolean>;
   onProfileImageSelect?: (file: File | null) => void;
   children?: ReactNode;
 };
@@ -27,14 +29,47 @@ function MyPageProfileSection({
   profileImageUrl = null,
   isProfileLoading = false,
   isProfileImageUploading = false,
+  isProfileUpdating = false,
   isLoggingOut,
   isPasswordPanelOpen,
   onPasswordToggle,
   onLogout,
+  onNicknameSave,
   onProfileImageSelect,
   children,
 }: MyPageProfileSectionProps) {
   const hasProfileImage = Boolean(profileImageUrl?.trim());
+  const [isNicknameEditMode, setIsNicknameEditMode] = useState(false);
+  const [nextNickname, setNextNickname] = useState(nickname);
+  const [nicknameFieldError, setNicknameFieldError] = useState('');
+
+  const handleNicknameSave = async () => {
+    const trimmedNickname = nextNickname.trim();
+
+    if (!trimmedNickname) {
+      setNicknameFieldError('닉네임을 입력해주세요.');
+      return;
+    }
+
+    if (trimmedNickname === nickname.trim()) {
+      setIsNicknameEditMode(false);
+      setNicknameFieldError('');
+      return;
+    }
+
+    if (!onNicknameSave) {
+      setIsNicknameEditMode(false);
+      setNicknameFieldError('');
+      return;
+    }
+
+    const isSuccess = await onNicknameSave(trimmedNickname);
+
+    if (isSuccess) {
+      setIsNicknameEditMode(false);
+      setNicknameFieldError('');
+    }
+  };
 
   return (
     <section className="border-mypage-panel bg-mypage-panel shadow-mypage-float rounded-[28px] border px-5 py-8 text-center backdrop-blur-xl sm:px-8 sm:py-10">
@@ -43,7 +78,7 @@ function MyPageProfileSection({
       </h1>
 
       <div className="mt-8 flex justify-center">
-        <div className="relative h-32 w-32 sm:h-36 sm:w-36">
+        <div className="h-32 w-32 sm:h-36 sm:w-36">
           <div className="border-mypage-panel bg-mypage-card relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border shadow-[0_24px_50px_rgba(0,0,0,0.46),0_0_0_1px_rgba(255,255,255,0.03)]">
             {hasProfileImage ? (
               <img
@@ -55,20 +90,22 @@ function MyPageProfileSection({
               <CircleUserRound size={48} className="text-white/85" />
             )}
           </div>
-          <label className="border-mypage-panel bg-mypage-card text-mypage-muted focus-within:ring-mypage-panel absolute -right-1 -bottom-1 inline-flex cursor-pointer items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-[#050505] hover:text-white">
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              disabled={isProfileLoading || isProfileImageUploading}
-              onChange={(event) => {
-                onProfileImageSelect?.(event.target.files?.[0] ?? null);
-                event.currentTarget.value = '';
-              }}
-            />
-            {isProfileImageUploading ? '업로드 중...' : '프로필 변경'}
-          </label>
         </div>
+      </div>
+      <div className="mt-3 flex justify-center">
+        <label className="border-mypage-panel bg-mypage-card text-mypage-muted focus-within:ring-mypage-panel inline-flex h-9 cursor-pointer items-center justify-center rounded-full border px-3 py-1.5 text-xs leading-none font-semibold whitespace-nowrap transition focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-[#050505] hover:text-white">
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={isProfileLoading || isProfileImageUploading}
+            onChange={(event) => {
+              onProfileImageSelect?.(event.target.files?.[0] ?? null);
+              event.currentTarget.value = '';
+            }}
+          />
+          {isProfileImageUploading ? '업로드 중...' : '프로필 변경'}
+        </label>
       </div>
 
       {isProfileLoading ? (
@@ -90,7 +127,75 @@ function MyPageProfileSection({
         </div>
       ) : (
         <>
-          <p className="mt-5 text-2xl font-semibold text-white">{nickname}</p>
+          <div className="mt-5 flex justify-center">
+            {isNicknameEditMode ? (
+              <div className="w-full max-w-sm space-y-2">
+                <label htmlFor="profile-nickname" className="sr-only">
+                  닉네임
+                </label>
+                <input
+                  id="profile-nickname"
+                  type="text"
+                  value={nextNickname}
+                  onChange={(event) => {
+                    setNextNickname(event.target.value);
+
+                    if (nicknameFieldError) {
+                      setNicknameFieldError('');
+                    }
+                  }}
+                  maxLength={20}
+                  disabled={isProfileUpdating}
+                  className="auth-input-autofill placeholder-login-muted bg-login-field border-login-field h-12 w-full rounded-xl border px-4 text-base text-white transition outline-none hover:border-white/15 focus-visible:ring-2 focus-visible:ring-white/20"
+                  placeholder="닉네임을 입력하세요"
+                />
+                {nicknameFieldError ? (
+                  <p className="pl-1 text-left text-sm/5 font-medium text-red-400">
+                    {nicknameFieldError}
+                  </p>
+                ) : null}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="border-mypage-panel bg-mypage-card text-mypage-muted rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      setIsNicknameEditMode(false);
+                      setNextNickname(nickname);
+                      setNicknameFieldError('');
+                    }}
+                    disabled={isProfileUpdating}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-login-primary rounded-full px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#dd0d14] disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      void handleNicknameSave();
+                    }}
+                    disabled={isProfileUpdating}
+                  >
+                    {isProfileUpdating ? '저장 중...' : '저장'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-2xl font-semibold text-white">{nickname}</p>
+                <button
+                  type="button"
+                  className="border-mypage-panel bg-mypage-card text-mypage-muted rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:text-white"
+                  onClick={() => {
+                    setIsNicknameEditMode(true);
+                    setNextNickname(nickname);
+                    setNicknameFieldError('');
+                  }}
+                >
+                  닉네임 변경
+                </button>
+              </div>
+            )}
+          </div>
           <p className="text-mypage-muted mt-2 text-sm/6">
             계정 정보와 찜한 게임 목록을 한곳에서 관리할 수 있습니다.
           </p>

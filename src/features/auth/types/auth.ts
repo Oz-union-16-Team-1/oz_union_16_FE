@@ -64,6 +64,11 @@ export interface CurrentUserProfileResponse {
   profile_img_url?: string | null;
 }
 
+export interface UpdateUserInfoRequest {
+  nickname?: string;
+  profile_img_url?: string;
+}
+
 export interface ProfileImagePresignedUrlRequest {
   file_name: string;
   content_type: string;

@@ -22,6 +22,7 @@ import type {
   ProfileImagePresignedUrlResponse,
   SocialAuthProvider,
   SignupRequest,
+  UpdateUserInfoRequest,
 } from '../types/auth';
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
 
@@ -91,6 +92,14 @@ const getUnauthorizedError = (message: string) =>
 
 const findUserByNickname = (nickname: string) =>
   [...mockUsers.values()].find((user) => user.nickname === nickname);
+
+const findUserByNicknameExcludingLoginId = (
+  nickname: string,
+  loginId: string,
+) =>
+  [...mockUsers.values()].find(
+    (user) => user.nickname === nickname && user.loginId !== loginId,
+  );
 
 const getDevLoginAccounts = () =>
   [...mockUsers.values()]
@@ -504,6 +513,78 @@ const accountHandlers = [
     };
 
     return HttpResponse.json(responseBody);
+  }),
+
+  http.patch(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    const body = (await request
+      .json()
+      .catch(() => null)) as UpdateUserInfoRequest | null;
+    const hasNickname = typeof body?.nickname === 'string';
+    const hasProfileImage = typeof body?.profile_img_url === 'string';
+
+    if (!hasNickname && !hasProfileImage) {
+      return HttpResponse.json(
+        {
+          error_detail: '수정할 정보를 전달해주세요.',
+        },
+        { status: 400 },
+      );
+    }
+
+    if (hasNickname) {
+      const nickname = body!.nickname!.trim();
+
+      if (!nickname) {
+        return getFieldValidationError(
+          'nickname',
+          '"nickname"이 필드는 필수 항목입니다.',
+        );
+      }
+
+      if (nickname.length < 2 || nickname.length > 20) {
+        return getFieldValidationError(
+          'nickname',
+          '닉네임은 2자 이상 20자 이하로 입력해주세요.',
+        );
+      }
+
+      if (findUserByNicknameExcludingLoginId(nickname, user.loginId)) {
+        return getDuplicateError('이미 사용 중인 닉네임입니다.');
+      }
+
+      user.nickname = nickname;
+    }
+
+    if (hasProfileImage) {
+      const profileImageUrl = body!.profile_img_url!.trim();
+
+      if (!profileImageUrl) {
+        return getFieldValidationError(
+          'profile_img_url',
+          '"profile_img_url"이 필드는 필수 항목입니다.',
+        );
+      }
+
+      user.profileImageUrl = profileImageUrl;
+    }
+
+    await delay(180);
+
+    return HttpResponse.json({
+      login_id: user.loginId,
+      name: user.name,
+      nickname: user.nickname,
+      gender: user.gender,
+      email: user.email,
+      profile_img_url: user.profileImageUrl,
+    } satisfies CurrentUserProfileResponse);
   }),
 
   http.post(

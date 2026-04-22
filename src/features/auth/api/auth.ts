@@ -25,6 +25,7 @@ import type {
   RefreshAccessTokenResponse,
   SignupRequest,
   SignupResponse,
+  UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
 
@@ -89,6 +90,15 @@ export const refreshAccessToken = async () => {
 export const getCurrentUserProfile = async () => {
   const response = await api.get<CurrentUserProfileResponse>(
     `${AUTH_BASE_PATH}/me`,
+  );
+
+  return response.data;
+};
+
+export const updateUserInfo = async (payload: UpdateUserInfoRequest) => {
+  const response = await api.patch<CurrentUserProfileResponse>(
+    `${AUTH_BASE_PATH}/me`,
+    payload,
   );
 
   return response.data;

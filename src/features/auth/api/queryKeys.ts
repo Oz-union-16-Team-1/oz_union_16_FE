@@ -15,6 +15,7 @@ export const authKeys = {
   signup: () => [...authRootKey, 'signup'] as const,
   logout: () => [...authRootKey, 'logout'] as const,
   me: () => authMeKey,
+  updateUserInfo: () => [...authMeKey, 'update'] as const,
   likedGames: () => authLikedGamesKey,
   likedGamesList: (payload: LikedGamesRequest = {}) =>
     [

@@ -18,6 +18,7 @@ import {
   logout,
   signup,
   unlikeLikedGame,
+  updateUserInfo,
   uploadFileToS3,
 } from './auth';
 import { authKeys } from './queryKeys';
@@ -26,8 +27,10 @@ import type {
   LikedGamesResponse,
   LikedGamesRequest,
   ProfileImagePresignedUrlRequest,
+  UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
+import { setAuthAccount } from '../../../utils/auth';
 
 export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
 
@@ -170,6 +173,19 @@ export const useDeleteAccountMutation = () =>
     mutationKey: authKeys.deleteAccount(),
     mutationFn: deleteAccount,
   });
+
+export const useUpdateUserInfoMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: authKeys.updateUserInfo(),
+    mutationFn: (payload: UpdateUserInfoRequest) => updateUserInfo(payload),
+    onSuccess: (data) => {
+      queryClient.setQueryData(authKeys.me(), data);
+      setAuthAccount(data);
+    },
+  });
+};
 
 export const useCheckIdDuplicateMutation = () =>
   useMutation({

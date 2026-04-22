@@ -29,6 +29,7 @@ import {
   useDeleteAccountMutation,
   useLikedGamesInfiniteQuery,
   useProfileImagePresignedUrlMutation,
+  useUpdateUserInfoMutation,
   useUnlikeLikedGameMutation,
   useUploadFileToS3Mutation,
 } from '../../features/auth/api/useAuthApi';
@@ -173,6 +174,7 @@ function MyPage() {
   const { logout, isPending: isLogoutPending } = useLogoutAction();
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
+  const updateUserInfoMutation = useUpdateUserInfoMutation();
   const unlikeLikedGameMutation = useUnlikeLikedGameMutation();
   const profileImagePresignedUrlMutation =
     useProfileImagePresignedUrlMutation();
@@ -532,6 +534,31 @@ function MyPage() {
     }
   };
 
+  const handleNicknameSave = async (nextNickname: string) => {
+    try {
+      await updateUserInfoMutation.mutateAsync({
+        nickname: nextNickname,
+      });
+      setToast({
+        tone: 'success',
+        message: '프로필이 변경되었습니다.',
+      });
+
+      return true;
+    } catch (error) {
+      const fieldErrors = extractAuthApiFieldErrors(error);
+      const nicknameErrorMessage =
+        fieldErrors.nickname || extractAuthApiErrorMessage(error);
+
+      setToast({
+        tone: 'error',
+        message: nicknameErrorMessage,
+      });
+
+      return false;
+    }
+  };
+
   const handleFavoriteGameCardClick = (game: FavoriteGamePreview) => {
     setSelectedDetailGame(toFavoriteGameListItem(game));
   };
@@ -573,12 +600,14 @@ function MyPage() {
           profileImageUrl={profileImageUrl}
           isProfileLoading={isProfileLoading}
           isProfileImageUploading={isProfileImageUploading}
+          isProfileUpdating={updateUserInfoMutation.isPending}
           isLoggingOut={isLogoutPending}
           isPasswordPanelOpen={isPasswordPanelOpen}
           onPasswordToggle={() => setIsPasswordPanelOpen((current) => !current)}
           onLogout={() => {
             void logout();
           }}
+          onNicknameSave={handleNicknameSave}
           onProfileImageSelect={(file) => {
             void handleProfileImageSelect(file);
           }}
