@@ -503,6 +503,30 @@
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .support-chat-panel,
+    .support-chat-fab,
+    .support-chat-fab *,
+    .support-chat-icon-btn,
+    .support-chat-quick-action,
+    .support-chat-input,
+    .support-chat-send-btn {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+    }
+
+    .support-chat-quick-action:hover,
+    .support-chat-send-btn:hover {
+      transform: none;
+    }
+
+    .support-chat-dot {
+      animation: none;
+      opacity: 0.72;
+    }
+  }
+
   .auth-input-autofill:-webkit-autofill,
   .auth-input-autofill:-webkit-autofill:hover,
   .auth-input-autofill:-webkit-autofill:focus,

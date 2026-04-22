@@ -39,6 +39,8 @@ type SupportChatStoreState = {
   removeMessage: (messageId: string) => void;
 };
 
+const SUPPORT_CHAT_MESSAGE_CAP = 100;
+
 const createMessage = (
   role: SupportChatMessage['role'],
   content: string,
@@ -56,25 +58,32 @@ const createInitialMessages = () => [
   createMessage('assistant', SUPPORT_CHAT_WELCOME_MESSAGE),
 ];
 
+const capMessages = (messages: SupportChatMessage[]) =>
+  messages.length > SUPPORT_CHAT_MESSAGE_CAP
+    ? messages.slice(-SUPPORT_CHAT_MESSAGE_CAP)
+    : messages;
+
 const initialState = {
   sessionId: null as number | null,
   messages: createInitialMessages(),
   quickActions: SUPPORT_CHAT_QUICK_ACTIONS,
   showQuickActions: true,
-  hasBootstrapped: true,
+  hasBootstrapped: false,
   isOpen: false,
   isSubmitting: false,
   error: null as string | null,
   routeContext: createDefaultRouteContext(),
 };
 
+// 고객센터 챗봇 대화는 화면 한정 임시 상태로만 유지한다.
+// 보안 정책상 persist/sessionStorage/localStorage를 사용하지 않는다.
 export const useSupportChatStore = create<SupportChatStoreState>()(
   (set, get) => ({
     ...initialState,
     bootstrapConversation: (routeContext = get().routeContext) => {
       const state = get();
 
-      if (state.hasBootstrapped && state.messages.length > 0) {
+      if (state.hasBootstrapped) {
         if (routeContext.pathname !== state.routeContext.pathname) {
           set({ routeContext });
         }
@@ -84,12 +93,14 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
 
       set({
         ...initialState,
+        hasBootstrapped: true,
         routeContext,
       });
     },
     resetConversation: (routeContext = get().routeContext) =>
       set({
         ...initialState,
+        hasBootstrapped: true,
         isOpen: true,
         routeContext,
       }),
@@ -104,14 +115,17 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
     hideQuickActions: () => set({ showQuickActions: false }),
     appendUserMessage: (content) =>
       set((state) => ({
-        messages: [...state.messages, createMessage('user', content)],
+        messages: capMessages([
+          ...state.messages,
+          createMessage('user', content),
+        ]),
       })),
     beginAssistantMessage: (messageId) =>
       set((state) => ({
-        messages: [
+        messages: capMessages([
           ...state.messages,
           createMessage('assistant', '', 'streaming', messageId),
-        ],
+        ]),
       })),
     appendAssistantChunk: (messageId, chunk) =>
       set((state) => ({
