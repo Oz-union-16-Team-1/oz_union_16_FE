@@ -22,6 +22,16 @@ import { extractApiErrorMessage } from '../../features/survey/api/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 import { getAccessToken } from '../../utils/auth';
 
+const formatMatchingCandidateRating = (rating: number | null) => {
+  if (typeof rating !== 'number') {
+    return 'N/A';
+  }
+
+  const normalizedRating = rating <= 5 ? rating * 20 : rating;
+
+  return `${normalizedRating.toFixed(1)}점`;
+};
+
 function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
   const navigate = useNavigate();
@@ -185,7 +195,7 @@ function MatchingGenreDetailPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.12),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <Header fixed />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.5rem] pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-[6.25rem] md:pb-14">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.25rem] pb-8 sm:px-6 sm:pt-[5.6rem] sm:pb-10 md:px-8 md:pt-[5.9rem] md:pb-12">
         {!genre || !isValidGenreSlug ? (
           <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
@@ -269,25 +279,35 @@ function MatchingGenreDetailPage() {
           </section>
         ) : (
           <section className="mx-auto max-w-[960px]">
+            <div className="mb-4 flex justify-start sm:mb-5">
+              <Link
+                to={`/${ROUTES.MATCHING_LIST}`}
+                className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] sm:mt-3"
+              >
+                <ChevronLeft size={16} />
+                다른 장르 보기
+              </Link>
+            </div>
+
             <div className="text-center">
               <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                 {safeIndex + 1} / {totalSteps} 단계
               </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[40px]">
+              <h1 className="mt-2.5 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[40px]">
                 매칭 과정을 따라가세요
               </h1>
-              <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
+              <p className="mt-2.5 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
                 트레일러와 분위기를 보며 {totalGamesLabel}에 별점을 남겨보세요.
                 좋아요는 마음에 든 게임을 표시해 두고 마이페이지에서도 다시
                 확인할 수 있게 함께 저장돼요.
               </p>
             </div>
 
-            <div className="mt-7">
+            <div className="mt-5">
               <MatchingGuideCards />
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
               {currentCandidate ? (
                 <MatchingMediaPanel
                   candidate={currentCandidate}
@@ -297,13 +317,13 @@ function MatchingGenreDetailPage() {
               ) : null}
 
               {currentCandidate && currentEvaluation ? (
-                <article className="survey-panel flex flex-col px-5 py-6 sm:px-6">
+                <article className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
                         Candidate {safeIndex + 1}
                       </p>
-                      <h2 className="mt-2.5 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[28px]">
+                      <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[28px]">
                         {currentCandidate.title}
                       </h2>
                     </div>
@@ -331,23 +351,24 @@ function MatchingGenreDetailPage() {
                     </button>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-white/46">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-white/46">
                     <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                       장르 {currentCandidate.genres.join(' · ')}
                     </span>
                     <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
-                      평균 평점 {currentCandidate.rating?.toFixed(1) ?? 'N/A'}
+                      평균 평점{' '}
+                      {formatMatchingCandidateRating(currentCandidate.rating)}
                     </span>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-5">
                     <p className="text-sm font-semibold text-white">
                       이 게임이 내 취향에 얼마나 가까운가요?
                     </p>
-                    <p className="mt-1.5 text-sm leading-6 break-keep text-white/55">
+                    <p className="mt-1 text-sm leading-6 break-keep text-white/55">
                       별점은 추천을 더 정교하게 만드는 선호도 평가로 반영돼요.
                     </p>
-                    <div className="mt-4">
+                    <div className="mt-3.5">
                       <MatchingRatingStars
                         value={currentEvaluation.rating}
                         onRate={(rating) =>
@@ -357,7 +378,7 @@ function MatchingGenreDetailPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-4">
+                  <div className="mt-5 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3.5">
                     <p className="text-sm leading-7 break-keep text-white/64">
                       {isLastCard
                         ? currentEvaluation.rating === null
@@ -370,14 +391,14 @@ function MatchingGenreDetailPage() {
                   </div>
 
                   {submitErrorMessage ? (
-                    <p className="mt-3 text-sm leading-6 break-keep text-[#ffc2c2]">
+                    <p className="mt-2.5 text-sm leading-6 break-keep text-[#ffc2c2]">
                       {submitErrorMessage}
                     </p>
                   ) : null}
 
                   {isLastCard ? (
-                    <div className="mt-auto pt-6">
-                      <p className="mx-auto mb-3 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
+                    <div className="mt-auto pt-5">
+                      <p className="mx-auto mb-2.5 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
                         {totalSteps}개 게임의 선호도 평가가 모두 준비되면 제출할
                         수 있어요.
                       </p>
@@ -412,7 +433,7 @@ function MatchingGenreDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-6">
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-5">
                       <button
                         type="button"
                         onClick={goPrevious}
@@ -436,16 +457,6 @@ function MatchingGenreDetailPage() {
                   )}
                 </article>
               ) : null}
-            </div>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link
-                to={`/${ROUTES.MATCHING_LIST}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
-              >
-                <ChevronLeft size={16} />
-                다른 장르 보기
-              </Link>
             </div>
           </section>
         )}
