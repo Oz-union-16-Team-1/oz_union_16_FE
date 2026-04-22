@@ -36,6 +36,18 @@ const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없�
 const TOAST_DURATION_MS = 3000;
 const DETAIL_REFRESH_INTERVAL_MS = 10_000;
 
+const toYouTubeEmbedUrl = (url: string): string | null => {
+  const match = url.match(
+    /(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+};
+
+const resolveEmbedUrl = (
+  embedUrl: string | null,
+  videoUrl: string | null,
+): string | null => embedUrl ?? (videoUrl ? toYouTubeEmbedUrl(videoUrl) : null);
+
 const getLikeErrorMessage = (error: unknown) => {
   if (error instanceof AxiosError) {
     if (error.response?.status === 401) {
@@ -185,6 +197,11 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   );
   const imageUrl =
     imageCandidates.find((url) => !failedImageUrls.includes(url)) ?? null;
+  const promoVideoUrl = detail?.promoVideoUrl?.trim() || null;
+  const promoEmbedUrl = resolveEmbedUrl(
+    detail?.promoEmbedUrl?.trim() || null,
+    promoVideoUrl,
+  );
   const detailRows = [
     { label: '게임 출시일', value: formatNullableText(detail?.releaseDate) },
     { label: '게임 개발사', value: formatNullableText(detail?.developer) },
@@ -382,18 +399,47 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
 
             <div className="px-5 pb-6 sm:px-7 sm:pb-7">
               <div className="flex aspect-video min-h-44 items-center justify-center overflow-hidden rounded-lg border border-[#5a1115]/70 bg-[#2a1711] shadow-[inset_0_0_42px_rgba(255,75,85,0.08)] sm:min-h-72">
-                <div className="px-4 text-center">
-                  <PlayCircle
-                    aria-hidden="true"
-                    className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                {promoEmbedUrl ? (
+                  <iframe
+                    title={`${title} 프로모션 영상`}
+                    src={promoEmbedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
                   />
-                  <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
-                    프로모션 동영상 영역
-                  </p>
-                  <p className="mt-2 text-xs text-white/45 sm:text-sm">
-                    영상 URL 정책이 확정되면 이 영역에 iframe을 연결합니다.
-                  </p>
-                </div>
+                ) : promoVideoUrl ? (
+                  <a
+                    href={promoVideoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex h-full w-full flex-col items-center justify-center px-4 text-center transition hover:bg-black/10"
+                  >
+                    <PlayCircle
+                      aria-hidden="true"
+                      className="h-12 w-12 text-white/65 transition group-hover:scale-105 group-hover:text-white sm:h-16 sm:w-16"
+                    />
+                    <p className="mt-4 text-sm font-semibold text-white/80 sm:text-base">
+                      프로모션 영상을 새 창에서 보기
+                    </p>
+                    <p className="mt-2 text-xs text-white/50 sm:text-sm">
+                      {title} 관련 영상 페이지로 이동합니다.
+                    </p>
+                  </a>
+                ) : (
+                  <div className="px-4 text-center">
+                    <PlayCircle
+                      aria-hidden="true"
+                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                    />
+                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
+                      프로모션 영상 N/A
+                    </p>
+                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                      제공된 영상 정보가 없습니다.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <dl className="mt-6 divide-y divide-white/10 border-y border-white/10">

@@ -68,6 +68,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '황금률이 무너진 틈새의 땅을 배경으로, 플레이어는 빛바랜 자가 되어 엘든 링의 힘을 되찾기 위한 여정을 떠납니다. 방대한 오픈 월드와 던전, 강력한 보스전, 자유도 높은 빌드 구성이 핵심입니다.',
     likeCount: 0,
     officialSite: 'https://www.eldenring.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/qqiC88f9ogU',
   }),
   2358720: createMockGameDetail({
     gameId: 2358720,
@@ -80,6 +81,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '서유기에서 영감을 받은 액션 RPG입니다. 천명자는 신화 속 존재와 맞서며 잊힌 진실을 좇고, 빠른 전투와 변신 능력, 보스 공략을 중심으로 모험을 진행합니다.',
     likeCount: 0,
     officialSite: 'https://www.heishenhua.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/0Zw-mo0EFt0',
   }),
   2679460: createMockGameDetail({
     gameId: 2679460,
@@ -92,6 +94,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '왕의 죽음 이후 혼란에 빠진 판타지 세계에서 주인공 일행이 새로운 왕을 정하는 선거에 뛰어듭니다. 턴제 전투, 아키타입 성장, 동료와의 유대가 결합된 RPG입니다.',
     likeCount: 0,
     officialSite: 'https://metaphor.atlus.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/yQPk4cVrU_w',
   }),
   1845910: createMockGameDetail({
     gameId: 1845910,
@@ -105,6 +108,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     likeCount: 0,
     officialSite:
       'https://www.ea.com/games/dragon-age/dragon-age-the-veilguard',
+    promoEmbedUrl: 'https://www.youtube.com/embed/NdtmtuzICOI',
   }),
   1086940: createMockGameDetail({
     gameId: 1086940,
@@ -117,6 +121,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '던전 앤 드래곤 5판 규칙을 기반으로 한 파티 RPG입니다. 플레이어의 선택과 주사위 판정이 전투, 대화, 탐험 결과를 크게 바꾸며 다양한 방식으로 이야기를 풀어갈 수 있습니다.',
     likeCount: 0,
     officialSite: 'https://baldursgate3.game/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/1T22wNvoNiU',
   }),
   292030: createMockGameDetail({
     gameId: 292030,
@@ -129,6 +134,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '괴물 사냥꾼 게롤트가 시리를 찾아 전쟁과 음모가 뒤섞인 대륙을 누비는 오픈 월드 RPG입니다. 선택에 따라 달라지는 퀘스트와 풍부한 서사가 강점입니다.',
     likeCount: 0,
     officialSite: 'https://www.thewitcher.com/witcher3',
+    promoEmbedUrl: 'https://www.youtube.com/embed/XHrskkHf958',
   }),
   1091500: createMockGameDetail({
     gameId: 1091500,
@@ -141,6 +147,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '거대 기업과 갱단이 지배하는 나이트 시티에서 용병 V가 생존과 자유를 위해 싸우는 오픈 월드 RPG입니다. 사이버웨어, 총격전, 해킹, 선택형 서사가 결합되어 있습니다.',
     likeCount: 0,
     officialSite: 'https://www.cyberpunk.net/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/UnA7tepsc7s',
   }),
   582010: createMockGameDetail({
     gameId: 582010,
@@ -153,6 +160,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '신대륙을 조사하는 헌터가 거대한 몬스터를 추적하고 사냥하는 액션 게임입니다. 장비 제작, 협동 플레이, 몬스터별 패턴 공략이 핵심 재미입니다.',
     likeCount: 0,
     officialSite: 'https://www.monsterhunter.com/world/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/KsmAreIFel0',
   }),
   814380: createMockGameDetail({
     gameId: 814380,
@@ -165,6 +173,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '전국 시대풍 세계에서 외팔이 늑대가 주군을 구하기 위해 싸우는 액션 어드벤처입니다. 자세를 무너뜨리는 검극, 잠입, 의수 도구 활용이 전투의 중심입니다.',
     likeCount: 0,
     officialSite: 'https://www.sekirothegame.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/aUnEezrBFoA',
   }),
   2050650: createMockGameDetail({
     gameId: 2050650,
@@ -177,6 +186,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '요원 레온 S. 케네디가 납치된 대통령의 딸을 구하기 위해 폐쇄적인 마을로 향하는 서바이벌 호러 액션입니다. 원작의 긴장감을 현대적인 조작과 연출로 재구성했습니다.',
     likeCount: 0,
     officialSite: 'https://www.residentevil.com/re4/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/isN_Y9ULtXY',
   }),
   553850: createMockGameDetail({
     gameId: 553850,
@@ -189,6 +199,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '슈퍼 지구를 위해 외계 세력과 싸우는 협동 슈팅 게임입니다. 분대 전술, 스트라타젬 호출, 아군 오사까지 포함한 혼란스러운 전장이 특징입니다.',
     likeCount: 0,
     officialSite: 'https://www.playstation.com/games/helldivers-2/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/Ahx35iVJn10',
   }),
   1623730: createMockGameDetail({
     gameId: 1623730,
@@ -201,6 +212,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '팰을 수집하고 함께 전투, 건축, 생산을 이어가는 오픈 월드 생존 게임입니다. 기지 운영과 탐험, 협동 플레이가 결합되어 있습니다.',
     likeCount: 0,
     officialSite: 'https://www.pocketpair.jp/palworld',
+    promoEmbedUrl: 'https://www.youtube.com/embed/ZPu9yAOEYkQ',
   }),
   1145350: createMockGameDetail({
     gameId: 1145350,
@@ -213,6 +225,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '저승의 공주 멜리노에가 시간의 티탄 크로노스에 맞서는 로그라이크 액션 게임입니다. 반복 도전 속에서 무기, 은혜, 주문을 조합해 새로운 빌드를 완성합니다.',
     likeCount: 0,
     officialSite: 'https://www.supergiantgames.com/games/hades-ii/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/txQKYcbIAHU',
   }),
   367520: createMockGameDetail({
     gameId: 367520,
@@ -225,6 +238,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '몰락한 왕국 할로우네스트를 탐험하는 메트로배니아 액션 게임입니다. 정교한 플랫폼, 보스전, 탐험을 통해 세계의 비밀을 천천히 밝혀갑니다.',
     likeCount: 0,
     officialSite: 'https://www.hollowknight.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/UAO2urG23S4',
   }),
   1627720: createMockGameDetail({
     gameId: 1627720,
@@ -237,6 +251,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
       '피노키오를 어둡게 재해석한 소울라이크 액션 RPG입니다. 기계 인형이 폭주한 크라트에서 진실과 거짓을 오가며 전투와 선택을 이어갑니다.',
     likeCount: 0,
     officialSite: 'https://www.liesofp.com/',
+    promoEmbedUrl: 'https://www.youtube.com/embed/kXZoKdr-xeo',
   }),
   1868140: createMockGameDetail({
     gameId: 1868140,
