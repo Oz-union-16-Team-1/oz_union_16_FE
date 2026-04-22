@@ -22,19 +22,19 @@ const guideCards = [
 
 function MatchingGuideCards() {
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid gap-2.5 md:grid-cols-3">
       {guideCards.map(({ title, description, icon: Icon }) => (
         <article
           key={title}
-          className="rounded-[22px] border border-white/8 bg-white/[0.025] px-4 py-5 shadow-[0_18px_34px_rgba(0,0,0,0.16)]"
+          className="rounded-[22px] border border-white/8 bg-white/[0.025] px-4 py-4 shadow-[0_18px_34px_rgba(0,0,0,0.16)]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9c1b1b]/35 bg-[#150909] text-[#e34141]">
             <Icon size={18} />
           </div>
-          <h2 className="mt-4 text-base font-semibold tracking-[-0.02em] text-white">
+          <h2 className="mt-3 text-base font-semibold tracking-[-0.02em] text-white">
             {title}
           </h2>
-          <p className="mt-2 text-[13px] leading-5 break-keep text-white/58">
+          <p className="mt-1.5 text-[13px] leading-5 break-keep text-white/58">
             {description}
           </p>
         </article>

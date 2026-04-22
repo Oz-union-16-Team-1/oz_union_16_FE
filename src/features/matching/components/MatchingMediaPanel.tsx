@@ -6,6 +6,16 @@ type MatchingMediaPanelProps = {
   stepLabel: string;
 };
 
+const formatMatchingCandidateRating = (rating: number | null) => {
+  if (typeof rating !== 'number') {
+    return 'N/A';
+  }
+
+  const normalizedRating = rating <= 5 ? rating * 20 : rating;
+
+  return `${normalizedRating.toFixed(1)}점`;
+};
+
 const getYoutubeEmbedUrl = (trailerUrl: string | null) => {
   if (!trailerUrl) {
     return null;
@@ -52,7 +62,7 @@ function MatchingMediaPanel({
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[26px] border border-white/8 bg-[#0d0d0f] shadow-[0_24px_48px_rgba(0,0,0,0.28)]">
-      <div className="relative aspect-[16/8.6] shrink-0">
+      <div className="relative aspect-[16/8.1] shrink-0">
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -73,7 +83,7 @@ function MatchingMediaPanel({
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col border-t border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.94),rgba(11,11,12,0.98))] px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex flex-1 flex-col border-t border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.94),rgba(11,11,12,0.98))] px-5 py-4.5 sm:px-6 sm:py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
             이 카드에서 볼 포인트
@@ -83,28 +93,28 @@ function MatchingMediaPanel({
           </span>
         </div>
 
-        <p className="mt-3 text-sm leading-6 break-keep text-white/62">
+        <p className="mt-2.5 text-sm leading-6 break-keep text-white/62">
           {candidateSummary}
         </p>
 
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3.5">
+        <div className="mt-3.5 grid gap-2.5 sm:grid-cols-3">
+          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               평균 평점
             </p>
             <p className="mt-1.5 text-lg font-semibold text-white">
-              {candidate.rating?.toFixed(1) ?? 'N/A'}
+              {formatMatchingCandidateRating(candidate.rating)}
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3.5">
+          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               미디어
             </p>
             <p className="mt-1.5 text-sm font-medium text-white/78">
-              {candidate.trailer_url ? '트레일러 제공' : '이미지 미리보기'}
+              {candidate.trailer_url ? '유튜브 트레일러' : '이미지 미리보기'}
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3.5">
+          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               장르 감각
             </p>
