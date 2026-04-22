@@ -17,6 +17,7 @@ type SupportChatStoreState = {
   quickActions: SupportChatQuickAction[];
   showQuickActions: boolean;
   hasBootstrapped: boolean;
+  isPinnedToBottom: boolean;
   isOpen: boolean;
   isSubmitting: boolean;
   error: string | null;
@@ -28,6 +29,7 @@ type SupportChatStoreState = {
   togglePanel: () => void;
   setRouteContext: (routeContext: SupportChatRouteContext) => void;
   setSessionId: (sessionId: number | null) => void;
+  setPinnedToBottom: (isPinnedToBottom: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -69,6 +71,7 @@ const initialState = {
   quickActions: SUPPORT_CHAT_QUICK_ACTIONS,
   showQuickActions: true,
   hasBootstrapped: false,
+  isPinnedToBottom: true,
   isOpen: false,
   isSubmitting: false,
   error: null as string | null,
@@ -109,6 +112,7 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
     togglePanel: () => set((state) => ({ isOpen: !state.isOpen })),
     setRouteContext: (routeContext) => set({ routeContext }),
     setSessionId: (sessionId) => set({ sessionId }),
+    setPinnedToBottom: (isPinnedToBottom) => set({ isPinnedToBottom }),
     setSubmitting: (isSubmitting) => set({ isSubmitting }),
     setError: (error) => set({ error }),
     clearError: () => set({ error: null }),

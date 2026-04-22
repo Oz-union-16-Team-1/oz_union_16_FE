@@ -19,7 +19,7 @@ type SupportChatPanelProps = {
   quickActions: SupportChatQuickAction[];
   showQuickActions: boolean;
   isSubmitting: boolean;
-  isViewportNearBottom: boolean;
+  isPinnedToBottom: boolean;
   showJumpToLatestButton: boolean;
   liveStatusMessage: string | null;
   error: string | null;
@@ -41,7 +41,7 @@ function SupportChatPanel({
   quickActions,
   showQuickActions,
   isSubmitting,
-  isViewportNearBottom,
+  isPinnedToBottom,
   showJumpToLatestButton,
   liveStatusMessage,
   error,
@@ -75,7 +75,7 @@ function SupportChatPanel({
         ref={viewportRef}
         className="support-chat-scrollbar flex-1 overflow-y-auto px-4 py-4"
         role="log"
-        aria-live={isViewportNearBottom ? 'polite' : 'off'}
+        aria-live={isPinnedToBottom ? 'polite' : 'off'}
         aria-relevant="additions text"
         aria-label="고객센터 챗봇 대화 내역"
       >
