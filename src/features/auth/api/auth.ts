@@ -33,7 +33,29 @@ const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
 const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
 const DEFAULT_API_ERROR_MESSAGE =
   '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
-const LOGIN_ERROR_POLICIES = {
+
+type LoginFieldName = keyof LoginRequest;
+
+export type LoginErrorStatusCode = 400 | 401 | 403;
+
+export type LoginErrorPolicy = {
+  fallbackMessage: string;
+  defaultFocusField: LoginFieldName | null;
+  hideFormMessageWhenFieldError: boolean;
+  preferApiMessage: boolean;
+};
+
+export type ResolveLoginApiErrorResult = {
+  statusCode: LoginErrorStatusCode | null;
+  fieldErrors: Partial<Record<LoginFieldName, string>>;
+  message: string;
+  focusField: LoginFieldName | null;
+};
+
+export const LOGIN_ERROR_POLICIES: Record<
+  LoginErrorStatusCode,
+  LoginErrorPolicy
+> = {
   400: {
     fallbackMessage: '아이디 또는 비밀번호를 입력해주세요.',
     defaultFocusField: null,
@@ -53,7 +75,7 @@ const LOGIN_ERROR_POLICIES = {
     hideFormMessageWhenFieldError: false,
     preferApiMessage: true,
   },
-} as const;
+};
 
 export const login = async (payload: LoginRequest) => {
   const response = await api.post<LoginResponse>(
@@ -285,23 +307,6 @@ export const extractAuthApiErrorMessage = (error: unknown) => {
   }
 
   return DEFAULT_API_ERROR_MESSAGE;
-};
-
-type LoginErrorStatusCode = 400 | 401 | 403;
-type LoginFieldName = keyof LoginRequest;
-
-type LoginErrorPolicy = {
-  fallbackMessage: string;
-  defaultFocusField: LoginFieldName | null;
-  hideFormMessageWhenFieldError: boolean;
-  preferApiMessage: boolean;
-};
-
-type ResolveLoginApiErrorResult = {
-  statusCode: LoginErrorStatusCode | null;
-  fieldErrors: Partial<Record<LoginFieldName, string>>;
-  message: string;
-  focusField: LoginFieldName | null;
 };
 
 const getFirstLoginErrorField = (

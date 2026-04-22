@@ -2,6 +2,7 @@ import { CircleUserRound } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 import AuthButton from '../auth/AuthButton';
+import InputControl from '../common/InputControl';
 
 type MyPageProfileSectionProps = {
   nickname: string;
@@ -133,7 +134,7 @@ function MyPageProfileSection({
                 <label htmlFor="profile-nickname" className="sr-only">
                   닉네임
                 </label>
-                <input
+                <InputControl
                   id="profile-nickname"
                   type="text"
                   value={nextNickname}
@@ -146,7 +147,8 @@ function MyPageProfileSection({
                   }}
                   maxLength={20}
                   disabled={isProfileUpdating}
-                  className="auth-input-autofill placeholder-login-muted bg-login-field border-login-field h-12 w-full rounded-xl border px-4 text-base text-white transition outline-none hover:border-white/15 focus-visible:ring-2 focus-visible:ring-white/20"
+                  hasError={Boolean(nicknameFieldError)}
+                  className="h-12"
                   placeholder="닉네임을 입력하세요"
                 />
                 {nicknameFieldError ? (

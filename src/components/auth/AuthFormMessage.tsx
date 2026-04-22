@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import StatusMessage from '../common/StatusMessage';
 
 type AuthFormMessageTone = 'error' | 'success';
 
@@ -8,23 +9,15 @@ type AuthFormMessageProps = {
   className?: string;
 };
 
-const toneClassNames: Record<AuthFormMessageTone, string> = {
-  error: 'border-red-500/20 bg-red-500/10 text-red-300',
-  success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
-};
-
 function AuthFormMessage({
   children,
   tone = 'error',
   className = '',
 }: AuthFormMessageProps) {
   return (
-    <div
-      role={tone === 'error' ? 'alert' : 'status'}
-      className={`rounded-xl border px-4 py-3 text-sm/5 font-medium ${toneClassNames[tone]} ${className}`}
-    >
+    <StatusMessage tone={tone} variant="surface" className={className}>
       {children}
-    </div>
+    </StatusMessage>
   );
 }
 

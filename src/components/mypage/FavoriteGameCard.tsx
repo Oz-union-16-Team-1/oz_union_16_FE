@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react';
 
 import type { FavoriteGamePreview } from '../../features/mypage/types';
+import ActionButton from '../common/ActionButton';
 
 type FavoriteGameCardProps = {
   game: FavoriteGamePreview;
@@ -36,14 +37,15 @@ function FavoriteGameCard({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
         </button>
         <div className="absolute top-3 right-3">
-          <button
+          <ActionButton
             type="button"
+            variant="icon"
             aria-label={`${game.title} 찜 삭제`}
             onClick={() => onFavoriteClick?.(game)}
-            className="bg-login-primary inline-flex h-9 w-9 items-center justify-center rounded-full text-white shadow-[0_12px_28px_rgba(242,15,23,0.25)] transition hover:scale-105"
+            className="bg-login-primary hover:bg-login-primary-hover border-transparent text-white shadow-[0_12px_28px_rgba(242,15,23,0.25)] hover:text-white focus-visible:ring-red-500/35"
           >
             <Heart size={15} fill="currentColor" />
-          </button>
+          </ActionButton>
         </div>
       </div>
 

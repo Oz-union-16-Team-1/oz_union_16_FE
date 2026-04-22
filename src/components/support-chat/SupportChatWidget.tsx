@@ -64,7 +64,6 @@ const AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX = 72;
 function SupportChatWidget() {
   const location = useLocation();
   const [inputValue, setInputValue] = useState('');
-  const [isViewportNearBottom, setIsViewportNearBottom] = useState(true);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -82,6 +81,7 @@ function SupportChatWidget() {
     quickActions,
     showQuickActions,
     hasBootstrapped,
+    isPinnedToBottom,
     isOpen,
     isSubmitting,
     error,
@@ -91,6 +91,7 @@ function SupportChatWidget() {
     togglePanel,
     setRouteContext,
     setSessionId,
+    setPinnedToBottom,
     setSubmitting,
     setError,
     clearError,
@@ -133,20 +134,23 @@ function SupportChatWidget() {
     return distanceFromBottom <= AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX;
   }, []);
 
-  const scrollViewportToBottom = useCallback((behavior: ScrollBehavior) => {
-    const viewport = viewportRef.current;
+  const scrollViewportToBottom = useCallback(
+    (behavior: ScrollBehavior) => {
+      const viewport = viewportRef.current;
 
-    if (!viewport) {
-      return;
-    }
+      if (!viewport) {
+        return;
+      }
 
-    viewport.scrollTo({
-      top: viewport.scrollHeight,
-      behavior,
-    });
-    setIsViewportNearBottom(true);
-    setHasUnreadMessages(false);
-  }, []);
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior,
+      });
+      setPinnedToBottom(true);
+      setHasUnreadMessages(false);
+    },
+    [setPinnedToBottom],
+  );
 
   const handleClosePanel = useCallback(() => {
     abortStreamingResponse(true);
@@ -215,7 +219,7 @@ function SupportChatWidget() {
       }
 
       setHasUnreadMessages(false);
-      setIsViewportNearBottom(true);
+      setPinnedToBottom(true);
       return;
     }
 
@@ -226,7 +230,12 @@ function SupportChatWidget() {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [abortStreamingResponse, isOpen, scrollViewportToBottom]);
+  }, [
+    abortStreamingResponse,
+    isOpen,
+    scrollViewportToBottom,
+    setPinnedToBottom,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -241,7 +250,7 @@ function SupportChatWidget() {
 
     const handleViewportScroll = () => {
       const nearBottom = isNearBottom(viewport);
-      setIsViewportNearBottom(nearBottom);
+      setPinnedToBottom(nearBottom);
 
       if (nearBottom) {
         setHasUnreadMessages(false);
@@ -256,7 +265,7 @@ function SupportChatWidget() {
     return () => {
       viewport.removeEventListener('scroll', handleViewportScroll);
     };
-  }, [isNearBottom, isOpen]);
+  }, [isNearBottom, isOpen, setPinnedToBottom]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -272,7 +281,7 @@ function SupportChatWidget() {
       return;
     }
 
-    if (isViewportNearBottom) {
+    if (isPinnedToBottom) {
       const frameId = window.requestAnimationFrame(() => {
         scrollViewportToBottom('auto');
       });
@@ -283,18 +292,13 @@ function SupportChatWidget() {
     }
 
     setHasUnreadMessages(true);
-  }, [
-    isOpen,
-    isViewportNearBottom,
-    messageUpdateCursor,
-    scrollViewportToBottom,
-  ]);
+  }, [isOpen, isPinnedToBottom, messageUpdateCursor, scrollViewportToBottom]);
 
   const handleReset = () => {
     abortStreamingResponse(true);
     setInputValue('');
     setHasUnreadMessages(false);
-    setIsViewportNearBottom(true);
+    setPinnedToBottom(true);
     resetConversation(routeContext);
   };
 
@@ -386,7 +390,7 @@ function SupportChatWidget() {
   };
 
   const showJumpToLatestButton =
-    isOpen && hasUnreadMessages && !isViewportNearBottom;
+    isOpen && hasUnreadMessages && !isPinnedToBottom;
   const liveStatusMessage = showJumpToLatestButton
     ? '새 메시지가 도착했습니다. 새 메시지 확인 버튼을 누르면 최신 메시지로 이동합니다.'
     : isSubmitting
@@ -406,7 +410,7 @@ function SupportChatWidget() {
         }
         showQuickActions={showQuickActions}
         isSubmitting={isSubmitting}
-        isViewportNearBottom={isViewportNearBottom}
+        isPinnedToBottom={isPinnedToBottom}
         showJumpToLatestButton={showJumpToLatestButton}
         liveStatusMessage={liveStatusMessage}
         error={error}
