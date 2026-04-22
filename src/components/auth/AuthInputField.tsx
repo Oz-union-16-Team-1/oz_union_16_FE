@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, ReactNode } from 'react';
+import InputControl from '../common/InputControl';
 
 type AuthInputFieldMessageTone = 'success' | 'muted';
 
@@ -43,15 +44,11 @@ function AuthInputField({
         {label}
       </label>
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
-        <input
+        <InputControl
           id={id}
           {...inputProps}
-          aria-invalid={Boolean(errorMessage)}
-          className={`auth-input-autofill placeholder-login-muted bg-login-field h-14 min-w-0 flex-1 rounded-xl border px-4 text-base text-white transition outline-none focus-visible:ring-2 ${className} ${
-            errorMessage
-              ? 'border-red-500 hover:border-red-400 focus-visible:border-red-400 focus-visible:ring-red-500/25'
-              : 'border-login-field hover:border-white/20 focus-visible:border-white/35 focus-visible:ring-white/25'
-          }`}
+          hasError={Boolean(errorMessage)}
+          className={`flex-1 ${className}`}
         />
         {action}
         {toast}

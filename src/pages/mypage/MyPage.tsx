@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import AuthButton from '../../components/auth/AuthButton';
 import Header from '../../components/common/Header';
+import InputControl from '../../components/common/InputControl';
 import ConfirmModal from '../../components/mypage/ConfirmModal';
 import FavoriteGameCard from '../../components/mypage/FavoriteGameCard';
 import FavoriteGameCardSkeleton from '../../components/mypage/FavoriteGameCardSkeleton';
@@ -827,7 +828,7 @@ function MyPage() {
               >
                 현재 비밀번호
               </label>
-              <input
+              <InputControl
                 id="delete-account-password"
                 type="password"
                 autoComplete="current-password"
@@ -839,7 +840,8 @@ function MyPage() {
                     setDeletePasswordError('');
                   }
                 }}
-                className="auth-input-autofill placeholder-login-muted bg-login-field border-login-field h-12 w-full rounded-xl border px-4 text-base text-white transition outline-none hover:border-white/15 focus-visible:ring-2 focus-visible:ring-white/20"
+                hasError={Boolean(deletePasswordError)}
+                className="h-12"
                 placeholder="현재 비밀번호를 입력하세요"
               />
               {deletePasswordError ? (

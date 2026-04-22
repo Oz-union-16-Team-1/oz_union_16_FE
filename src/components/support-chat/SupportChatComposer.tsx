@@ -1,5 +1,6 @@
 import type { FormEvent, KeyboardEvent } from 'react';
 import { SendHorizontal } from 'lucide-react';
+import StatusMessage from '../common/StatusMessage';
 
 type SupportChatComposerProps = {
   value: string;
@@ -54,14 +55,13 @@ function SupportChatComposer({
         </button>
       </form>
       {error ? (
-        <p
+        <StatusMessage
+          tone="error"
+          variant="inline"
           className="mt-1 text-xs text-[#ff8b84]"
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
         >
           {error}
-        </p>
+        </StatusMessage>
       ) : null}
     </div>
   );

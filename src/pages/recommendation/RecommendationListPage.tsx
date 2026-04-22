@@ -5,6 +5,7 @@ import { ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
+import ActionButton from '../../components/common/ActionButton';
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
@@ -186,11 +187,12 @@ function RecommendationRow({
       </div>
 
       <div className="flex items-center justify-end gap-3 lg:min-w-[96px]">
-        <button
+        <ActionButton
           type="button"
+          variant="icon"
           onClick={() => onToggleLike(item)}
           disabled={isLikePending}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+          className={`${
             item.is_liked
               ? 'border-[#6f2525] bg-[#170b0b] text-[#f07373]'
               : 'border-white/10 bg-white/[0.02] text-white/60 hover:border-white/18 hover:text-white/86'
@@ -198,16 +200,17 @@ function RecommendationRow({
           aria-label={item.is_liked ? '좋아요 해제' : '좋아요 추가'}
         >
           <Heart size={16} fill={item.is_liked ? 'currentColor' : 'none'} />
-        </button>
+        </ActionButton>
 
-        <button
+        <ActionButton
           type="button"
+          variant="icon"
           onClick={() => onOpenDetail(item)}
           aria-label={`${item.title} 상세 보기`}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent text-white/42 transition group-hover:border-white/8 group-hover:bg-white/[0.03] group-hover:text-white/82"
+          className="border-transparent text-white/42 group-hover:border-white/8 group-hover:bg-white/[0.03] group-hover:text-white/82"
         >
           <ChevronRight size={18} />
-        </button>
+        </ActionButton>
       </div>
     </article>
   );
