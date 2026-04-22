@@ -84,8 +84,14 @@ export type GetTopGamesParams = {
 
 export type SearchGamesParams = {
   search: string;
+  fuzzy?: boolean;
   genre?: GameGenreFilter;
   page?: number;
   pageSize?: number;
   sort?: 'rating_desc' | 'like_desc' | 'created_at';
+};
+
+export type SearchGamesResult = {
+  count: number;
+  results: GameListItem[];
 };

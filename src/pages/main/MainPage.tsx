@@ -7,7 +7,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper';
@@ -23,11 +23,13 @@ import {
 import { getTopGames, searchGames } from '../../features/games/gameApi';
 import { GAME_GENRE_FILTERS } from '../../features/games/genres';
 import { useDebouncedValue } from '../../features/games/hooks/useDebouncedValue';
+import { normalizeSearchText } from '../../features/games/search';
 import type { GameListItem } from '../../features/games/types';
 import type { GameGenreFilter } from '../../features/games/genres';
 import 'swiper/swiper.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_RESULT_PAGE_SIZE = 20;
 const GENRE_FILTER_MENU_ID = 'game-genre-filter-menu';
 const CTA_PENDING_MESSAGE = '준비 중입니다.';
 const GAME_CARD_SWIPER_BREAKPOINTS = {
@@ -64,26 +66,62 @@ const MainPage = () => {
   const [selectedGenre, setSelectedGenre] = useState<GameGenreFilter>('전체');
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const debouncedSearchText = useDebouncedValue(
-    searchText.trim(),
+    normalizeSearchText(searchText),
     SEARCH_DEBOUNCE_MS,
   );
   const isSearchMode = debouncedSearchText.length > 0;
 
-  const gamesQuery = useQuery({
-    queryKey: [
-      'games',
-      isSearchMode ? 'search' : 'top100',
-      debouncedSearchText,
-      selectedGenre,
-    ],
-    queryFn: () =>
-      isSearchMode
-        ? searchGames({ search: debouncedSearchText, genre: selectedGenre })
-        : getTopGames({ genre: selectedGenre }),
+  const topGamesQuery = useQuery({
+    queryKey: ['games', 'top100', selectedGenre],
+    enabled: !isSearchMode,
+    queryFn: () => getTopGames({ genre: selectedGenre }),
     staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
-  const games = gamesQuery.data ?? [];
+  const searchGamesQuery = useInfiniteQuery({
+    queryKey: ['games', 'search', debouncedSearchText, selectedGenre],
+    enabled: isSearchMode,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      searchGames({
+        search: debouncedSearchText,
+        genre: selectedGenre,
+        page: pageParam,
+        pageSize: SEARCH_RESULT_PAGE_SIZE,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (count, page) => count + page.results.length,
+        0,
+      );
+
+      if (loadedCount >= lastPage.count) {
+        return undefined;
+      }
+
+      return allPages.length + 1;
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const games = isSearchMode
+    ? (searchGamesQuery.data?.pages.flatMap((page) => page.results) ?? [])
+    : (topGamesQuery.data ?? []);
+  const isGamesLoading = isSearchMode
+    ? searchGamesQuery.isLoading
+    : topGamesQuery.isLoading;
+  const isGamesUpdating = isSearchMode
+    ? searchGamesQuery.isFetching &&
+      !searchGamesQuery.isLoading &&
+      !searchGamesQuery.isFetchingNextPage
+    : topGamesQuery.isFetching;
+  const hasMoreSearchResults = isSearchMode
+    ? Boolean(
+        searchGamesQuery.hasNextPage || searchGamesQuery.isFetchingNextPage,
+      )
+    : false;
   const sectionTitle = isSearchMode
     ? `"${debouncedSearchText}" 검색 결과`
     : '인기 TOP 100 🔥';
@@ -121,15 +159,23 @@ const MainPage = () => {
           </div>
 
           <div className="mt-4 sm:mt-5 lg:mt-4">
-            {gamesQuery.isLoading ? (
+            {isGamesLoading ? (
               <GameCardSkeletonList />
             ) : games.length > 0 ? (
-              <GameCarousel
-                key={`${debouncedSearchText}-${selectedGenre}`}
-                games={games}
-                onSelectGame={setSelectedGame}
-                showUpdatingOverlay={gamesQuery.isFetching}
-              />
+              <>
+                <GameCarousel
+                  key={`${debouncedSearchText}-${selectedGenre}`}
+                  games={games}
+                  onSelectGame={setSelectedGame}
+                  showUpdatingOverlay={isGamesUpdating}
+                />
+                {hasMoreSearchResults ? (
+                  <SearchResultMoreAction
+                    isLoading={searchGamesQuery.isFetchingNextPage}
+                    onClick={() => void searchGamesQuery.fetchNextPage()}
+                  />
+                ) : null}
+              </>
             ) : (
               <EmptyGameList
                 isFiltered={isSearchMode || selectedGenre !== '전체'}
@@ -168,6 +214,30 @@ const MainPage = () => {
     </div>
   );
 };
+
+type SearchResultMoreActionProps = {
+  isLoading: boolean;
+  onClick: () => void;
+};
+
+const SearchResultMoreAction = ({
+  isLoading,
+  onClick,
+}: SearchResultMoreActionProps) => (
+  <div className="mt-4 flex justify-end px-[clamp(1rem,5vw,20rem)]">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isLoading}
+      className="inline-flex min-w-30 cursor-pointer items-center justify-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white/82 transition hover:border-[#6f2525] hover:bg-[#160b0b] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+    >
+      {isLoading ? '불러오는 중...' : '더보기'}
+      {!isLoading ? (
+        <ChevronRight aria-hidden="true" className="h-4 w-4" />
+      ) : null}
+    </button>
+  </div>
+);
 
 type GenreFilterProps = {
   selectedGenre: GameGenreFilter;
