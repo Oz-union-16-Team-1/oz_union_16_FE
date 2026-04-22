@@ -116,7 +116,7 @@ function MatchingGenreDetailPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.12),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <Header fixed />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1180px] px-4 pt-24 pb-14 sm:px-6 sm:pt-28 md:px-8 md:pt-32 md:pb-18">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.5rem] pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-[6.25rem] md:pb-14">
         {!genre || !isValidGenreSlug ? (
           <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
@@ -199,25 +199,25 @@ function MatchingGenreDetailPage() {
             </Link>
           </section>
         ) : (
-          <section className="mx-auto max-w-[980px]">
+          <section className="mx-auto max-w-[960px]">
             <div className="text-center">
               <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                 {safeIndex + 1} / {totalSteps} 단계
               </p>
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[44px]">
+              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[40px]">
                 매칭 과정을 따라가세요
               </h1>
-              <p className="mt-4 text-sm leading-7 break-keep text-white/58 sm:text-base">
+              <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
                 {totalGamesLabel}을 차례대로 평가하고, 마음에 드는 게임은 하트로
                 표시해둘 수 있어요.
               </p>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-7">
               <MatchingGuideCards />
             </div>
 
-            <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
               {currentCandidate ? (
                 <MatchingMediaPanel
                   candidate={currentCandidate}
@@ -227,13 +227,13 @@ function MatchingGenreDetailPage() {
               ) : null}
 
               {currentCandidate && currentEvaluation ? (
-                <article className="survey-panel flex flex-col px-6 py-7 sm:px-8 sm:py-8">
+                <article className="survey-panel flex flex-col px-5 py-6 sm:px-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
                         Candidate {safeIndex + 1}
                       </p>
-                      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[30px]">
+                      <h2 className="mt-2.5 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[28px]">
                         {currentCandidate.title}
                       </h2>
                     </div>
@@ -246,7 +246,7 @@ function MatchingGenreDetailPage() {
                           ? '좋아요 해제'
                           : '좋아요 추가'
                       }
-                      className={`mt-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
+                      className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
                         currentEvaluation.isLiked
                           ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
                           : 'border-white/10 bg-white/[0.03] text-white/54 hover:border-white/20 hover:text-white/80'
@@ -261,7 +261,7 @@ function MatchingGenreDetailPage() {
                     </button>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/46">
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-white/46">
                     <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                       장르 {currentCandidate.genres.join(' · ')}
                     </span>
@@ -270,14 +270,14 @@ function MatchingGenreDetailPage() {
                     </span>
                   </div>
 
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <p className="text-sm font-semibold text-white">
                       이 게임은 얼마나 끌리나요?
                     </p>
-                    <p className="mt-2 text-sm leading-6 break-keep text-white/55">
+                    <p className="mt-1.5 text-sm leading-6 break-keep text-white/55">
                       별점을 남기면 다음 카드로 넘어갈 수 있어요.
                     </p>
-                    <div className="mt-5">
+                    <div className="mt-4">
                       <MatchingRatingStars
                         value={currentEvaluation.rating}
                         onRate={(rating) =>
@@ -287,7 +287,7 @@ function MatchingGenreDetailPage() {
                     </div>
                   </div>
 
-                  <div className="mt-8 rounded-[22px] border border-white/8 bg-white/[0.03] px-5 py-5">
+                  <div className="mt-6 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-4">
                     <p className="text-sm leading-7 break-keep text-white/64">
                       {isLastCard
                         ? currentEvaluation.rating === null
@@ -300,13 +300,13 @@ function MatchingGenreDetailPage() {
                   </div>
 
                   {submitErrorMessage ? (
-                    <p className="mt-4 text-sm leading-6 break-keep text-[#ffc2c2]">
+                    <p className="mt-3 text-sm leading-6 break-keep text-[#ffc2c2]">
                       {submitErrorMessage}
                     </p>
                   ) : null}
 
                   {isLastCard ? (
-                    <div className="mt-auto pt-8">
+                    <div className="mt-auto pt-6">
                       <p className="mx-auto mb-3 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
                         {totalSteps}개 게임의 평가가 모두 준비되면 제출할 수
                         있어요.
@@ -342,7 +342,7 @@ function MatchingGenreDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-8">
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-6">
                       <button
                         type="button"
                         onClick={goPrevious}
@@ -368,7 +368,7 @@ function MatchingGenreDetailPage() {
               ) : null}
             </div>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
