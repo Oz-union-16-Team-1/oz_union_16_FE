@@ -66,7 +66,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Bandai Namco Entertainment',
     description:
       '황금률이 무너진 틈새의 땅을 배경으로, 플레이어는 빛바랜 자가 되어 엘든 링의 힘을 되찾기 위한 여정을 떠납니다. 방대한 오픈 월드와 던전, 강력한 보스전, 자유도 높은 빌드 구성이 핵심입니다.',
-    likeCount: 1250,
+    likeCount: 0,
     officialSite: 'https://www.eldenring.com/',
   }),
   2358720: createMockGameDetail({
@@ -78,7 +78,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Game Science',
     description:
       '서유기에서 영감을 받은 액션 RPG입니다. 천명자는 신화 속 존재와 맞서며 잊힌 진실을 좇고, 빠른 전투와 변신 능력, 보스 공략을 중심으로 모험을 진행합니다.',
-    likeCount: 980,
+    likeCount: 0,
     officialSite: 'https://www.heishenhua.com/',
   }),
   2679460: createMockGameDetail({
@@ -90,7 +90,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Atlus',
     description:
       '왕의 죽음 이후 혼란에 빠진 판타지 세계에서 주인공 일행이 새로운 왕을 정하는 선거에 뛰어듭니다. 턴제 전투, 아키타입 성장, 동료와의 유대가 결합된 RPG입니다.',
-    likeCount: 740,
+    likeCount: 0,
     officialSite: 'https://metaphor.atlus.com/',
   }),
   1845910: createMockGameDetail({
@@ -102,7 +102,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Electronic Arts',
     description:
       '테다스 세계를 위협하는 고대의 신들에 맞서 동료를 모으고 베일가드를 이끄는 판타지 RPG입니다. 선택과 관계, 파티 기반 전투가 이야기의 중심을 이룹니다.',
-    likeCount: 510,
+    likeCount: 0,
     officialSite:
       'https://www.ea.com/games/dragon-age/dragon-age-the-veilguard',
   }),
@@ -115,7 +115,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Larian Studios',
     description:
       '던전 앤 드래곤 5판 규칙을 기반으로 한 파티 RPG입니다. 플레이어의 선택과 주사위 판정이 전투, 대화, 탐험 결과를 크게 바꾸며 다양한 방식으로 이야기를 풀어갈 수 있습니다.',
-    likeCount: 1430,
+    likeCount: 0,
     officialSite: 'https://baldursgate3.game/',
   }),
   292030: createMockGameDetail({
@@ -127,7 +127,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'CD Projekt',
     description:
       '괴물 사냥꾼 게롤트가 시리를 찾아 전쟁과 음모가 뒤섞인 대륙을 누비는 오픈 월드 RPG입니다. 선택에 따라 달라지는 퀘스트와 풍부한 서사가 강점입니다.',
-    likeCount: 1320,
+    likeCount: 0,
     officialSite: 'https://www.thewitcher.com/witcher3',
   }),
   1091500: createMockGameDetail({
@@ -139,7 +139,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'CD Projekt',
     description:
       '거대 기업과 갱단이 지배하는 나이트 시티에서 용병 V가 생존과 자유를 위해 싸우는 오픈 월드 RPG입니다. 사이버웨어, 총격전, 해킹, 선택형 서사가 결합되어 있습니다.',
-    likeCount: 1180,
+    likeCount: 0,
     officialSite: 'https://www.cyberpunk.net/',
   }),
   582010: createMockGameDetail({
@@ -151,7 +151,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Capcom',
     description:
       '신대륙을 조사하는 헌터가 거대한 몬스터를 추적하고 사냥하는 액션 게임입니다. 장비 제작, 협동 플레이, 몬스터별 패턴 공략이 핵심 재미입니다.',
-    likeCount: 920,
+    likeCount: 0,
     officialSite: 'https://www.monsterhunter.com/world/',
   }),
   814380: createMockGameDetail({
@@ -163,7 +163,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Activision',
     description:
       '전국 시대풍 세계에서 외팔이 늑대가 주군을 구하기 위해 싸우는 액션 어드벤처입니다. 자세를 무너뜨리는 검극, 잠입, 의수 도구 활용이 전투의 중심입니다.',
-    likeCount: 870,
+    likeCount: 0,
     officialSite: 'https://www.sekirothegame.com/',
   }),
   2050650: createMockGameDetail({
@@ -175,7 +175,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Capcom',
     description:
       '요원 레온 S. 케네디가 납치된 대통령의 딸을 구하기 위해 폐쇄적인 마을로 향하는 서바이벌 호러 액션입니다. 원작의 긴장감을 현대적인 조작과 연출로 재구성했습니다.',
-    likeCount: 690,
+    likeCount: 0,
     officialSite: 'https://www.residentevil.com/re4/',
   }),
   553850: createMockGameDetail({
@@ -187,7 +187,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'PlayStation Publishing',
     description:
       '슈퍼 지구를 위해 외계 세력과 싸우는 협동 슈팅 게임입니다. 분대 전술, 스트라타젬 호출, 아군 오사까지 포함한 혼란스러운 전장이 특징입니다.',
-    likeCount: 830,
+    likeCount: 0,
     officialSite: 'https://www.playstation.com/games/helldivers-2/',
   }),
   1623730: createMockGameDetail({
@@ -199,7 +199,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Pocketpair',
     description:
       '팰을 수집하고 함께 전투, 건축, 생산을 이어가는 오픈 월드 생존 게임입니다. 기지 운영과 탐험, 협동 플레이가 결합되어 있습니다.',
-    likeCount: 760,
+    likeCount: 0,
     officialSite: 'https://www.pocketpair.jp/palworld',
   }),
   1145350: createMockGameDetail({
@@ -211,7 +211,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Supergiant Games',
     description:
       '저승의 공주 멜리노에가 시간의 티탄 크로노스에 맞서는 로그라이크 액션 게임입니다. 반복 도전 속에서 무기, 은혜, 주문을 조합해 새로운 빌드를 완성합니다.',
-    likeCount: 650,
+    likeCount: 0,
     officialSite: 'https://www.supergiantgames.com/games/hades-ii/',
   }),
   367520: createMockGameDetail({
@@ -223,7 +223,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Team Cherry',
     description:
       '몰락한 왕국 할로우네스트를 탐험하는 메트로배니아 액션 게임입니다. 정교한 플랫폼, 보스전, 탐험을 통해 세계의 비밀을 천천히 밝혀갑니다.',
-    likeCount: 1040,
+    likeCount: 0,
     officialSite: 'https://www.hollowknight.com/',
   }),
   1627720: createMockGameDetail({
@@ -235,7 +235,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Neowiz Games',
     description:
       '피노키오를 어둡게 재해석한 소울라이크 액션 RPG입니다. 기계 인형이 폭주한 크라트에서 진실과 거짓을 오가며 전투와 선택을 이어갑니다.',
-    likeCount: 590,
+    likeCount: 0,
     officialSite: 'https://www.liesofp.com/',
   }),
   1868140: createMockGameDetail({
@@ -247,7 +247,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'MINTROCKET',
     description:
       '낮에는 블루홀을 탐험해 해산물을 잡고, 밤에는 초밥집을 운영하는 어드벤처 경영 게임입니다. 탐험, 채집, 매장 운영이 가볍고 유쾌하게 이어집니다.',
-    likeCount: 710,
+    likeCount: 0,
     officialSite: 'https://mintrocketgames.com/en/DaveTheDiver',
   }),
   646570: createMockGameDetail({
@@ -259,7 +259,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Mega Crit',
     description:
       '카드 덱을 구성하며 첨탑을 오르는 로그라이크 덱빌딩 게임입니다. 매 전투와 이벤트에서 얻는 카드, 유물, 선택이 새로운 전략을 만듭니다.',
-    likeCount: 860,
+    likeCount: 0,
     officialSite: 'https://www.megacrit.com/',
   }),
   2379780: createMockGameDetail({
@@ -271,7 +271,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Playstack',
     description:
       '포커 족보를 기반으로 점수를 폭발적으로 키우는 로그라이크 덱빌딩 게임입니다. 조커와 카드 강화 조합을 통해 매 판 다른 점수 엔진을 완성합니다.',
-    likeCount: 790,
+    likeCount: 0,
     officialSite: 'https://www.playbalatro.com/',
   }),
   548430: createMockGameDetail({
@@ -283,7 +283,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Coffee Stain Publishing',
     description:
       '우주 드워프 광부들이 절차적으로 생성되는 동굴에서 자원을 채굴하고 외계 생물과 싸우는 협동 FPS입니다. 직업별 장비와 팀워크가 중요합니다.',
-    likeCount: 680,
+    likeCount: 0,
     officialSite: 'https://www.deeprockgalactic.com/',
   }),
   105600: createMockGameDetail({
@@ -295,7 +295,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Re-Logic',
     description:
       '2D 샌드박스 세계에서 채집, 건축, 탐험, 보스전을 자유롭게 즐기는 어드벤처 게임입니다. 장비 성장과 월드 변화가 긴 플레이 흐름을 만듭니다.',
-    likeCount: 1120,
+    likeCount: 0,
     officialSite: 'https://terraria.org/',
   }),
   2669320: createMockGameDetail({
@@ -307,7 +307,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Electronic Arts',
     description:
       '실제 리그와 클럽을 기반으로 한 축구 게임입니다. 빠른 한 경기 플레이부터 시즌 운영, 온라인 경쟁전까지 폭넓은 스포츠 경험을 제공합니다.',
-    likeCount: 940,
+    likeCount: 0,
     officialSite: 'https://www.ea.com/games/ea-sports-fc/fc-25',
   }),
   2252570: createMockGameDetail({
@@ -319,7 +319,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'SEGA',
     description:
       '감독이 되어 스카우팅, 전술, 라인업, 재정까지 직접 운영하는 축구 시뮬레이션입니다. 경기장 밖 의사결정의 비중이 큰 장르를 좋아하는 유저에게 잘 맞습니다.',
-    likeCount: 860,
+    likeCount: 0,
     officialSite: 'https://www.footballmanager.com/',
   }),
   1551360: createMockGameDetail({
@@ -331,7 +331,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Xbox Game Studios',
     description:
       '멕시코를 배경으로 한 오픈 월드 레이싱 게임입니다. 실차 수집, 드라이빙 감각, 자유로운 탐험이 자연스럽게 이어지는 것이 강점입니다.',
-    likeCount: 1280,
+    likeCount: 0,
     officialSite: 'https://forza.net/horizon',
   }),
   1846380: createMockGameDetail({
@@ -343,7 +343,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Electronic Arts',
     description:
       '거리 레이싱과 경찰 추격전, 화려한 연출이 결합된 아케이드 레이싱 게임입니다. 속도감과 스타일을 함께 중시하는 플레이어에게 어울립니다.',
-    likeCount: 540,
+    likeCount: 0,
     officialSite:
       'https://www.ea.com/games/need-for-speed/need-for-speed-unbound',
   }),
@@ -356,7 +356,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Capcom',
     description:
       '정교한 프레임 싸움과 읽기 싸움이 핵심인 대전 격투 게임입니다. 현대적인 조작 옵션과 풍부한 싱글 콘텐츠로 입문자와 숙련자 모두를 겨냥합니다.',
-    likeCount: 980,
+    likeCount: 0,
     officialSite: 'https://www.streetfighter.com/6/',
   }),
   1778820: createMockGameDetail({
@@ -368,7 +368,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Bandai Namco Entertainment',
     description:
       '공격적인 공방 설계를 강조한 3D 격투 게임입니다. 캐릭터별 손맛과 콤보 감각이 뚜렷해서 대전 / 격투 장르 필터 검증에도 잘 맞는 타이틀입니다.',
-    likeCount: 930,
+    likeCount: 0,
     officialSite: 'https://tekken.com/',
   }),
   1003590: createMockGameDetail({
@@ -380,7 +380,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Enhance',
     description:
       '테트리스 플레이에 음악과 시각 연출이 밀착된 퍼즐 게임입니다. 리듬감 있는 몰입과 짧은 세션 플레이를 좋아하는 유저에게 적합합니다.',
-    likeCount: 610,
+    likeCount: 0,
     officialSite: 'https://www.tetriseffect.game/',
   }),
   620: createMockGameDetail({
@@ -392,7 +392,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Valve',
     description:
       '포털 건을 활용해 공간 퍼즐을 푸는 1인칭 퍼즐 어드벤처입니다. 기발한 퍼즐 구조와 코믹한 서사 덕분에 여전히 장르 대표작으로 평가받습니다.',
-    likeCount: 1330,
+    likeCount: 0,
     officialSite: 'https://www.thinkwithportals.com/',
   }),
   1761390: createMockGameDetail({
@@ -404,7 +404,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'SEGA',
     description:
       '보컬로이드 곡에 맞춰 노트를 처리하는 리듬 게임입니다. 수록곡이 많고, 난이도 폭도 넓어서 음악 / 리듬 장르 검증에 적합합니다.',
-    likeCount: 470,
+    likeCount: 0,
     officialSite: 'https://asia.sega.com/megamixplus/',
   }),
   960170: createMockGameDetail({
@@ -416,7 +416,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'NEOWIZ',
     description:
       '키음을 중심으로 한 하드코어 리듬 게임입니다. 고난도 패턴과 손맛을 선호하는 유저에게 특히 인기가 높습니다.',
-    likeCount: 520,
+    likeCount: 0,
     officialSite: 'https://store.steampowered.com/app/960170/DJMAX_RESPECT_V/',
   }),
   412830: createMockGameDetail({
@@ -428,7 +428,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Spike Chunsoft',
     description:
       '문자 메시지 하나가 세계선을 바꾸는 SF 비주얼 노벨입니다. 텍스트 서사 중심 장르를 확인하기에 좋은 대표작입니다.',
-    likeCount: 780,
+    likeCount: 0,
     officialSite: 'https://www.kirikiribasara.com/steinsgate/',
   }),
   1388880: createMockGameDetail({
@@ -440,7 +440,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Serenity Forge',
     description:
       '겉보기와 다른 전개로 강한 인상을 남기는 심리 호러 비주얼 노벨입니다. 텍스트 중심 게임과 어드벤처 감각이 함께 섞인 사례로 활용할 수 있습니다.',
-    likeCount: 560,
+    likeCount: 0,
     officialSite: 'https://ddlc.plus/',
   }),
   504230: createMockGameDetail({
@@ -452,7 +452,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: 'Matt Makes Games Inc.',
     description:
       '짧고 정교한 조작으로 산을 오르는 고난도 플랫폼 게임입니다. 반복 도전과 서정적인 이야기의 조합이 강점입니다.',
-    likeCount: 890,
+    likeCount: 0,
     officialSite: 'https://www.celestegame.com/',
   }),
   289070: createMockGameDetail({
@@ -464,7 +464,7 @@ export const mockGameDetails: Record<number, GameDetail> = {
     publisher: '2K',
     description:
       '문명을 성장시키고 외교, 과학, 전쟁, 문화 승리를 노리는 턴제 전략 게임입니다. 전략과 시뮬레이션 경계를 함께 확인하기 좋은 대표 타이틀입니다.',
-    likeCount: 970,
+    likeCount: 0,
     officialSite: 'https://civilization.2k.com/civ-vi/',
   }),
 };
