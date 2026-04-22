@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
 import { clearAuthTokens } from '../../../utils/auth';
+import { authKeys } from '../api/queryKeys';
 import { useLogoutMutation } from '../api/useAuthApi';
 
 function useLogoutAction() {
@@ -18,8 +19,8 @@ function useLogoutAction() {
     }
 
     clearAuthTokens();
-    await queryClient.cancelQueries({ queryKey: ['auth'] });
-    queryClient.removeQueries({ queryKey: ['auth'] });
+    await queryClient.cancelQueries({ queryKey: authKeys.all });
+    queryClient.removeQueries({ queryKey: authKeys.all });
     navigate(ROUTES.HOME, { replace: true });
   };
 

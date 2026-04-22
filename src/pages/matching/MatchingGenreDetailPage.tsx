@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import { authKeys } from '../../features/auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import {
   useMatchCandidatesQuery,
@@ -30,6 +31,14 @@ const formatMatchingCandidateRating = (rating: number | null) => {
   const normalizedRating = rating <= 5 ? rating * 20 : rating;
 
   return `${normalizedRating.toFixed(1)}점`;
+};
+
+const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return Array.isArray((value as Partial<LikedGamesResponse>).results);
 };
 
 function MatchingGenreDetailPage() {
@@ -119,15 +128,19 @@ function MatchingGenreDetailPage() {
 
   const syncLikedGamesCache = () => {
     queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: ['auth', 'me', 'game-like'] },
+      { queryKey: authKeys.likedGames() },
       (current) => {
-        if (!current) {
+        if (!isLikedGamesResponse(current)) {
           return current;
         }
 
+        const currentLikedGames = current as LikedGamesResponse;
         const likedAt = new Date().toISOString();
         const nextLikedGamesById = new Map(
-          current.results.map((likedGame) => [likedGame.game_id, likedGame]),
+          currentLikedGames.results.map((likedGame) => [
+            likedGame.game_id,
+            likedGame,
+          ]),
         );
 
         displayCandidates.forEach((candidate) => {
@@ -158,7 +171,7 @@ function MatchingGenreDetailPage() {
         );
 
         return {
-          ...current,
+          ...currentLikedGames,
           count: nextResults.length,
           results: nextResults,
         };
@@ -166,7 +179,7 @@ function MatchingGenreDetailPage() {
     );
 
     void queryClient.invalidateQueries({
-      queryKey: ['auth', 'me', 'game-like'],
+      queryKey: authKeys.likedGames(),
     });
   };
 

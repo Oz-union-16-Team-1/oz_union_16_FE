@@ -3,6 +3,7 @@ import { AxiosError } from 'axios';
 import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ToastMessage from '../../../components/mypage/ToastMessage';
+import { authKeys } from '../../auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../auth/types/auth';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
@@ -47,7 +48,13 @@ const resolveEmbedUrl = (
   embedUrl: string | null,
   videoUrl: string | null,
 ): string | null => embedUrl ?? (videoUrl ? toYouTubeEmbedUrl(videoUrl) : null);
+const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
 
+  return Array.isArray((value as Partial<LikedGamesResponse>).results);
+};
 const getLikeErrorMessage = (error: unknown) => {
   if (error instanceof AxiosError) {
     if (error.response?.status === 401) {
@@ -115,14 +122,16 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       );
 
       queryClient.setQueriesData<LikedGamesResponse>(
-        { queryKey: ['auth', 'me', 'game-like'] },
+        { queryKey: authKeys.likedGames() },
         (current) => {
-          if (!current) {
+          if (!isLikedGamesResponse(current)) {
             return current;
           }
 
+          const currentLikedGames = current as LikedGamesResponse;
+
           if (response.isLiked) {
-            const alreadyExists = current.results.some(
+            const alreadyExists = currentLikedGames.results.some(
               (likedGame) => likedGame.game_id === response.gameId,
             );
 
@@ -139,29 +148,29 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
             };
 
             return {
-              ...current,
-              count: current.count + 1,
-              results: [nextLikedGame, ...current.results],
+              ...currentLikedGames,
+              count: currentLikedGames.count + 1,
+              results: [nextLikedGame, ...currentLikedGames.results],
             };
           }
 
-          const nextResults = current.results.filter(
+          const nextResults = currentLikedGames.results.filter(
             (likedGame) => likedGame.game_id !== response.gameId,
           );
 
-          if (nextResults.length === current.results.length) {
+          if (nextResults.length === currentLikedGames.results.length) {
             return current;
           }
 
           return {
-            ...current,
-            count: Math.max(0, current.count - 1),
+            ...currentLikedGames,
+            count: Math.max(0, currentLikedGames.count - 1),
             results: nextResults,
           };
         },
       );
       void queryClient.invalidateQueries({
-        queryKey: ['auth', 'me', 'game-like'],
+        queryKey: authKeys.likedGames(),
       });
       void queryClient.invalidateQueries({
         queryKey: ['games', 'detail', game.gameId],

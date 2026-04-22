@@ -7,6 +7,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
+import { authKeys } from '../../features/auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import {
@@ -78,6 +79,14 @@ const LIKE_ERROR_MESSAGE =
   '좋아요 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const LIKE_LOGIN_REQUIRED_MESSAGE = '로그인 후 좋아요를 사용할 수 있어요.';
 const FEEDBACK_MESSAGE_DURATION_MS = 3000;
+
+const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return Array.isArray((value as Partial<LikedGamesResponse>).results);
+};
 
 const normalizeResultItem = (
   item: SurveyResultItem | MatchResultItem,
@@ -359,14 +368,16 @@ function RecommendationListPage() {
     nextIsLiked: boolean,
   ) => {
     queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: ['auth', 'me', 'game-like'] },
+      { queryKey: authKeys.likedGames() },
       (current) => {
-        if (!current) {
+        if (!isLikedGamesResponse(current)) {
           return current;
         }
 
+        const currentLikedGames = current as LikedGamesResponse;
+
         if (nextIsLiked) {
-          const alreadyExists = current.results.some(
+          const alreadyExists = currentLikedGames.results.some(
             (likedGame) => likedGame.game_id === item.game_id,
           );
 
@@ -375,8 +386,8 @@ function RecommendationListPage() {
           }
 
           return {
-            ...current,
-            count: current.count + 1,
+            ...currentLikedGames,
+            count: currentLikedGames.count + 1,
             results: [
               {
                 game_id: item.game_id,
@@ -385,22 +396,22 @@ function RecommendationListPage() {
                 genres: item.genres,
                 liked_at: new Date().toISOString(),
               },
-              ...current.results,
+              ...currentLikedGames.results,
             ],
           };
         }
 
-        const nextResults = current.results.filter(
+        const nextResults = currentLikedGames.results.filter(
           (likedGame) => likedGame.game_id !== item.game_id,
         );
 
-        if (nextResults.length === current.results.length) {
+        if (nextResults.length === currentLikedGames.results.length) {
           return current;
         }
 
         return {
-          ...current,
-          count: Math.max(0, current.count - 1),
+          ...currentLikedGames,
+          count: Math.max(0, currentLikedGames.count - 1),
           results: nextResults,
         };
       },
@@ -446,15 +457,17 @@ function RecommendationListPage() {
         });
 
         queryClient.setQueriesData<LikedGamesResponse>(
-          { queryKey: ['auth', 'me', 'game-like'] },
+          { queryKey: authKeys.likedGames() },
           (current) => {
-            if (!current || !response.isLiked) {
+            if (!isLikedGamesResponse(current) || !response.isLiked) {
               return current;
             }
 
+            const currentLikedGames = current as LikedGamesResponse;
+
             return {
-              ...current,
-              results: current.results.map((likedGame) =>
+              ...currentLikedGames,
+              results: currentLikedGames.results.map((likedGame) =>
                 likedGame.game_id === response.gameId
                   ? {
                       ...likedGame,
@@ -475,7 +488,7 @@ function RecommendationListPage() {
       }
 
       void queryClient.invalidateQueries({
-        queryKey: ['auth', 'me', 'game-like'],
+        queryKey: authKeys.likedGames(),
       });
     },
     onError: (error) => {
