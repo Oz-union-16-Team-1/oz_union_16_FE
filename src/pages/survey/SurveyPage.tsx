@@ -13,16 +13,16 @@ function SurveyPage() {
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
       <Header fixed />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
-        <section className="mb-8 flex flex-col gap-5">
-          <div className="inline-flex w-fit items-center rounded-full border border-[#5e1717] bg-[#150707] px-4 py-1.5 text-xs font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-[5.5rem] pb-8 sm:px-4 sm:pt-24 sm:pb-10 md:h-[100dvh] md:max-h-[100dvh] md:overflow-hidden md:px-8 md:pt-[6.5rem] md:pb-8">
+        <section className="mb-5 flex shrink-0 flex-col gap-3 md:mb-4 md:gap-2.5">
+          <div className="inline-flex w-fit items-center rounded-full border border-[#5e1717] bg-[#150707] px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
             개인화 설문
           </div>
           <div className="max-w-3xl">
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-[44px]">
               설문 조사
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/62">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62 sm:text-base md:mt-2.5">
               대화형 AI 설문으로 플레이 스타일을 빠르게 파악하고, 이어지는 추천
               리스트까지 자연스럽게 연결합니다.
             </p>
