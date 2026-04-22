@@ -58,6 +58,7 @@ function SupportChatComposer({
           className="mt-1 text-xs text-[#ff8b84]"
           role="alert"
           aria-live="assertive"
+          aria-atomic="true"
         >
           {error}
         </p>

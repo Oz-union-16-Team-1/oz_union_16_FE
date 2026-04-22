@@ -1,5 +1,6 @@
 import {
   type MutableRefObject,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -58,12 +59,17 @@ const getRouteContext = (pathname: string): SupportChatRouteContext => ({
   pageLabel: getPageLabel(pathname),
 });
 
+const AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX = 72;
+
 function SupportChatWidget() {
   const location = useLocation();
   const [inputValue, setInputValue] = useState('');
+  const [isViewportNearBottom, setIsViewportNearBottom] = useState(true);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
+  const lastHandledMessageCursorRef = useRef<string | null>(null);
 
   const routeContext = useMemo(
     () => getRouteContext(location.pathname),
@@ -95,11 +101,66 @@ function SupportChatWidget() {
     finalizeAssistantMessage,
     removeMessage,
   } = useSupportChatStore();
+  const messageUpdateCursor = useMemo(() => {
+    const latestMessage = messages.at(-1);
+
+    return `${messages.length}:${latestMessage?.id ?? 'none'}:${latestMessage?.content.length ?? 0}:${isSubmitting ? 1 : 0}:${showQuickActions ? 1 : 0}`;
+  }, [isSubmitting, messages, showQuickActions]);
 
   const sendMessageMutation = useSendChatbotMessageMutation();
 
   const isRecoverableSessionError = (message: string) =>
     message.includes('session_id') || message.includes('유효하지 않은');
+
+  const abortStreamingResponse = useCallback(
+    (resetSubmitting = false) => {
+      if (streamAbortRef.current) {
+        streamAbortRef.current.abort();
+        streamAbortRef.current = null;
+      }
+
+      if (resetSubmitting) {
+        setSubmitting(false);
+      }
+    },
+    [setSubmitting],
+  );
+
+  const isNearBottom = useCallback((viewport: HTMLDivElement) => {
+    const distanceFromBottom =
+      viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+
+    return distanceFromBottom <= AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX;
+  }, []);
+
+  const scrollViewportToBottom = useCallback((behavior: ScrollBehavior) => {
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior,
+    });
+    setIsViewportNearBottom(true);
+    setHasUnreadMessages(false);
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    abortStreamingResponse(true);
+    closePanel();
+  }, [abortStreamingResponse, closePanel]);
+
+  const handleTogglePanel = useCallback(() => {
+    if (isOpen) {
+      handleClosePanel();
+      return;
+    }
+
+    togglePanel();
+  }, [handleClosePanel, isOpen, togglePanel]);
 
   useEffect(() => {
     if (!hasBootstrapped) {
@@ -117,7 +178,7 @@ function SupportChatWidget() {
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        closePanel();
+        handleClosePanel();
       }
     };
 
@@ -127,7 +188,7 @@ function SupportChatWidget() {
         !panelRef.current.contains(event.target as Node) &&
         !(event.target as HTMLElement)?.closest('.support-chat-fab')
       ) {
-        closePanel();
+        handleClosePanel();
       }
     };
 
@@ -138,41 +199,102 @@ function SupportChatWidget() {
       window.removeEventListener('keydown', handleEscape);
       window.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [closePanel, isOpen]);
+  }, [handleClosePanel, isOpen]);
 
   useEffect(
     () => () => {
-      streamAbortRef.current?.abort();
+      abortStreamingResponse(true);
     },
-    [],
+    [abortStreamingResponse],
   );
 
   useEffect(() => {
-    if (!isOpen || !viewportRef.current) {
+    if (!isOpen) {
+      if (streamAbortRef.current) {
+        abortStreamingResponse(true);
+      }
+
+      setHasUnreadMessages(false);
+      setIsViewportNearBottom(true);
       return;
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      const viewport = viewportRef.current;
-
-      if (!viewport) {
-        return;
-      }
-
-      viewport.scrollTo({
-        top: viewport.scrollHeight,
-        behavior: 'auto',
-      });
+      scrollViewportToBottom('auto');
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [isOpen, isSubmitting, messages, showQuickActions]);
+  }, [abortStreamingResponse, isOpen, scrollViewportToBottom]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    const handleViewportScroll = () => {
+      const nearBottom = isNearBottom(viewport);
+      setIsViewportNearBottom(nearBottom);
+
+      if (nearBottom) {
+        setHasUnreadMessages(false);
+      }
+    };
+
+    handleViewportScroll();
+    viewport.addEventListener('scroll', handleViewportScroll, {
+      passive: true,
+    });
+
+    return () => {
+      viewport.removeEventListener('scroll', handleViewportScroll);
+    };
+  }, [isNearBottom, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      lastHandledMessageCursorRef.current = messageUpdateCursor;
+      return;
+    }
+
+    const hasNewIncomingUpdate =
+      lastHandledMessageCursorRef.current !== messageUpdateCursor;
+    lastHandledMessageCursorRef.current = messageUpdateCursor;
+
+    if (!hasNewIncomingUpdate) {
+      return;
+    }
+
+    if (isViewportNearBottom) {
+      const frameId = window.requestAnimationFrame(() => {
+        scrollViewportToBottom('auto');
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }
+
+    setHasUnreadMessages(true);
+  }, [
+    isOpen,
+    isViewportNearBottom,
+    messageUpdateCursor,
+    scrollViewportToBottom,
+  ]);
 
   const handleReset = () => {
-    streamAbortRef.current?.abort();
+    abortStreamingResponse(true);
     setInputValue('');
+    setHasUnreadMessages(false);
+    setIsViewportNearBottom(true);
     resetConversation(routeContext);
   };
 
@@ -263,6 +385,14 @@ function SupportChatWidget() {
     await submitMessage(label);
   };
 
+  const showJumpToLatestButton =
+    isOpen && hasUnreadMessages && !isViewportNearBottom;
+  const liveStatusMessage = showJumpToLatestButton
+    ? '새 메시지가 도착했습니다. 새 메시지 확인 버튼을 누르면 최신 메시지로 이동합니다.'
+    : isSubmitting
+      ? '챗봇이 응답을 작성 중입니다.'
+      : null;
+
   return (
     <>
       <SupportChatPanel
@@ -276,10 +406,16 @@ function SupportChatWidget() {
         }
         showQuickActions={showQuickActions}
         isSubmitting={isSubmitting}
+        isViewportNearBottom={isViewportNearBottom}
+        showJumpToLatestButton={showJumpToLatestButton}
+        liveStatusMessage={liveStatusMessage}
         error={error}
         inputValue={inputValue}
         onReset={handleReset}
-        onClose={closePanel}
+        onClose={handleClosePanel}
+        onJumpToLatest={() => {
+          scrollViewportToBottom('smooth');
+        }}
         onQuickActionSelect={handleQuickActionSelect}
         onInputChange={(value) => {
           if (error) {
@@ -290,7 +426,7 @@ function SupportChatWidget() {
         }}
         onSubmit={handleSubmit}
       />
-      <SupportChatLauncherButton isOpen={isOpen} onClick={togglePanel} />
+      <SupportChatLauncherButton isOpen={isOpen} onClick={handleTogglePanel} />
     </>
   );
 }
