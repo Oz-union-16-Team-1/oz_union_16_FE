@@ -12,7 +12,7 @@ type GameCardProps = {
 };
 
 const formatRating = (rating: number | null) =>
-  typeof rating === 'number' ? rating.toFixed(1) : 'N/A';
+  typeof rating === 'number' ? `${rating.toFixed(1)}점` : 'N/A';
 
 const GameCard = ({ game, onSelectGame }: GameCardProps) => {
   const genreLabel = game.genres.length > 0 ? game.genres[0] : 'N/A';
@@ -52,7 +52,7 @@ const GameCard = ({ game, onSelectGame }: GameCardProps) => {
             {genreLabel}
           </p>
         </div>
-        <span className="text-base font-medium text-[#e10d15]">
+        <span className="text-base font-medium whitespace-nowrap text-[#e10d15]">
           {formatRating(game.rating)}
         </span>
       </div>
