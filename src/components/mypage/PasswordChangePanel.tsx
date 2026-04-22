@@ -47,7 +47,7 @@ function PasswordChangePanel({
       <form className="space-y-4" onSubmit={onSubmit}>
         <AuthInputField
           id="current-password"
-          name="current_password"
+          name="old_password"
           type="password"
           label="현재 비밀번호"
           placeholder="현재 비밀번호를 입력하세요"
@@ -75,7 +75,7 @@ function PasswordChangePanel({
 
         <AuthInputField
           id="new-password-confirm"
-          name="new_password_confirm"
+          name="new_password_check"
           type="password"
           label="새 비밀번호 확인"
           placeholder="새 비밀번호를 한번 더 입력하세요"

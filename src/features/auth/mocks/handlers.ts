@@ -9,9 +9,10 @@ import type {
   CheckNicknameDuplicateRequest,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  ConfirmProfileImageRequest,
+  ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
   DeleteAccountRequest,
-  DeleteAccountResponse,
   DeleteLikedGameResponse,
   LikedGameItemResponse,
   LikedGamesResponse,
@@ -534,9 +535,11 @@ const accountHandlers = [
       }
 
       const uploadFileName = `${Date.now()}-${sanitizeFileName(fileName)}`;
+      const fileKey = getProfileImagePathKey(user.loginId, uploadFileName);
       const responseBody: ProfileImagePresignedUrlResponse = {
         presigned_url: `${MOCK_S3_HOST}/upload/${user.loginId}/${uploadFileName}`,
-        file_url: `${MOCK_S3_HOST}/public/${user.loginId}/${uploadFileName}`,
+        img_url: `${MOCK_S3_HOST}/public/${user.loginId}/${uploadFileName}`,
+        key: fileKey,
       };
 
       await delay(100);
@@ -555,8 +558,8 @@ const accountHandlers = [
 
     const requestUrl = new URL(request.url);
     const page = parsePositiveInteger(requestUrl.searchParams.get('page'), 1);
-    const pageSize = parsePositiveInteger(
-      requestUrl.searchParams.get('page_size'),
+    const pageSize = Math.min(
+      parsePositiveInteger(requestUrl.searchParams.get('page_size'), 20),
       20,
     );
     const likedGames = getOrCreateLikedGames(user.loginId);
@@ -589,7 +592,6 @@ const accountHandlers = [
           bytes,
           contentType,
         });
-        user.profileImageUrl = `${MOCK_S3_HOST}/public/${loginId}/${fileName}`;
       }
 
       await delay(120);
@@ -597,6 +599,58 @@ const accountHandlers = [
       return new HttpResponse(null, { status: 200 });
     },
   ),
+
+  http.patch(`${AUTH_BASE_PATH}/me/profile-image`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    const body = (await request.json()) as ConfirmProfileImageRequest;
+    const profileImageUrl = body.profile_img_url.trim();
+
+    if (!profileImageUrl) {
+      return getFieldValidationError(
+        'profile_img_url',
+        '"profile_img_url"이 필드는 필수 항목입니다.',
+      );
+    }
+
+    const urlPrefix = `${MOCK_S3_HOST}/public/${user.loginId}/`;
+
+    if (!profileImageUrl.startsWith(urlPrefix)) {
+      return getFieldValidationError(
+        'profile_img_url',
+        '유효한 프로필 이미지 경로를 전달해주세요.',
+      );
+    }
+
+    const uploadedFileName = profileImageUrl.slice(urlPrefix.length);
+    const uploadedImageKey = getProfileImagePathKey(
+      user.loginId,
+      uploadedFileName,
+    );
+
+    if (!mockUploadedProfileImagesByPath.has(uploadedImageKey)) {
+      return HttpResponse.json(
+        {
+          error_detail: '업로드된 프로필 이미지를 찾을 수 없습니다.',
+        },
+        { status: 404 },
+      );
+    }
+
+    user.profileImageUrl = profileImageUrl;
+
+    await delay(120);
+
+    return HttpResponse.json({
+      detail: '프로필 이미지가 변경되었습니다.',
+      profile_img_url: profileImageUrl,
+    } satisfies ConfirmProfileImageResponse);
+  }),
 
   http.get(`${MOCK_S3_HOST}/public/:loginId/:fileName`, async ({ params }) => {
     const loginId = typeof params.loginId === 'string' ? params.loginId : '';
@@ -671,14 +725,14 @@ const accountHandlers = [
     }
 
     const body = (await request.json()) as ChangePasswordRequest;
-    const currentPassword = body.current_password.trim();
+    const currentPassword = body.old_password.trim();
     const nextPassword = body.new_password.trim();
-    const nextPasswordConfirm = body.new_password_confirm.trim();
+    const nextPasswordConfirm = body.new_password_check.trim();
 
     if (!currentPassword) {
       return getFieldValidationError(
-        'current_password',
-        '"current_password"이 필드는 필수 항목입니다.',
+        'old_password',
+        '"old_password"이 필드는 필수 항목입니다.',
       );
     }
 
@@ -691,8 +745,8 @@ const accountHandlers = [
 
     if (!nextPasswordConfirm) {
       return getFieldValidationError(
-        'new_password_confirm',
-        '"new_password_confirm"이 필드는 필수 항목입니다.',
+        'new_password_check',
+        '"new_password_check"이 필드는 필수 항목입니다.',
       );
     }
 
@@ -714,7 +768,7 @@ const accountHandlers = [
 
     if (nextPassword !== nextPasswordConfirm) {
       return getFieldValidationError(
-        'new_password_confirm',
+        'new_password_check',
         '비밀번호가 일치하지 않습니다.',
       );
     }
@@ -768,9 +822,7 @@ const accountHandlers = [
 
     await delay(220);
 
-    return HttpResponse.json({
-      detail: '회원 탈퇴가 완료되었습니다.',
-    } satisfies DeleteAccountResponse);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
 

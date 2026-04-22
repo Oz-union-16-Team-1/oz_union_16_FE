@@ -8,6 +8,7 @@ import AuthButton from '../../components/auth/AuthButton';
 import Header from '../../components/common/Header';
 import ConfirmModal from '../../components/mypage/ConfirmModal';
 import FavoriteGameCard from '../../components/mypage/FavoriteGameCard';
+import FavoriteGameCardSkeleton from '../../components/mypage/FavoriteGameCardSkeleton';
 import FavoriteGamesEmptyState from '../../components/mypage/FavoriteGamesEmptyState';
 import MyPageProfileSection from '../../components/mypage/MyPageProfileSection';
 import PasswordChangePanel, {
@@ -21,14 +22,17 @@ import {
   extractAuthApiFieldErrors,
 } from '../../features/auth/api/auth';
 import {
+  DEFAULT_LIKED_GAMES_PAGE_SIZE,
   useChangePasswordMutation,
+  useConfirmProfileImageMutation,
   useCurrentUserProfileQuery,
   useDeleteAccountMutation,
-  useLikedGamesQuery,
+  useLikedGamesInfiniteQuery,
   useProfileImagePresignedUrlMutation,
   useUnlikeLikedGameMutation,
   useUploadFileToS3Mutation,
 } from '../../features/auth/api/useAuthApi';
+import { authKeys } from '../../features/auth/api/queryKeys';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import type {
   AuthGender,
@@ -104,9 +108,9 @@ const getPasswordFieldErrors = (
 const mapPasswordApiFieldErrors = (
   fieldErrors: Record<string, string>,
 ): PasswordFieldErrors => ({
-  currentPassword: fieldErrors.current_password,
+  currentPassword: fieldErrors.old_password,
   newPassword: fieldErrors.new_password,
-  newPasswordConfirm: fieldErrors.new_password_confirm,
+  newPasswordConfirm: fieldErrors.new_password_check,
 });
 
 const formatLikedAt = (likedAt: string) => {
@@ -173,11 +177,12 @@ function MyPage() {
   const profileImagePresignedUrlMutation =
     useProfileImagePresignedUrlMutation();
   const uploadFileToS3Mutation = useUploadFileToS3Mutation();
+  const confirmProfileImageMutation = useConfirmProfileImageMutation();
   const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
-  const likedGamesQuery = useLikedGamesQuery(hasAccessToken, {
-    page: 1,
-    page_size: 100,
-  });
+  const likedGamesQuery = useLikedGamesInfiniteQuery(
+    hasAccessToken,
+    DEFAULT_LIKED_GAMES_PAGE_SIZE,
+  );
   const storedAccount = useAuthStore((state) => state.account);
 
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
@@ -210,9 +215,21 @@ function MyPage() {
     newPasswordConfirm:
       apiFieldErrors.newPasswordConfirm ?? localFieldErrors.newPasswordConfirm,
   };
-  const favoriteGames = useMemo(() => {
-    return (likedGamesQuery.data?.results ?? []).map(toFavoriteGamePreview);
+  const likedGameResults = useMemo(() => {
+    const pages = likedGamesQuery.data?.pages ?? [];
+
+    return pages.flatMap((page) => page.results);
   }, [likedGamesQuery.data]);
+
+  const favoriteGames = useMemo(() => {
+    const deduplicatedGames = new Map<number, LikedGameItemResponse>();
+
+    likedGameResults.forEach((game) => {
+      deduplicatedGames.set(game.game_id, game);
+    });
+
+    return [...deduplicatedGames.values()].map(toFavoriteGamePreview);
+  }, [likedGameResults]);
 
   useEffect(() => {
     if (!toast) {
@@ -262,18 +279,22 @@ function MyPage() {
     );
   }
 
-  const favoriteCount = favoriteGames.length;
+  const favoriteCount =
+    likedGamesQuery.data?.pages?.[0]?.count ?? favoriteGames.length;
   const resolvedProfile = profileQuery.data ?? storedAccount;
   const isProfileLoading = profileQuery.isLoading && !resolvedProfile;
-  const isFavoriteGamesLoading = likedGamesQuery.isLoading && !favoriteCount;
-  const isFavoriteGamesError = likedGamesQuery.isError && !favoriteCount;
+  const isFavoriteGamesLoading =
+    likedGamesQuery.isLoading && !favoriteGames.length;
+  const isFavoriteGamesError = likedGamesQuery.isError && !favoriteGames.length;
+  const hasFavoriteGamesNextPage = Boolean(likedGamesQuery.hasNextPage);
   const profileName = resolvedProfile?.name || 'N/A';
   const profileEmail = resolvedProfile?.email || null;
   const profileGenderLabel = toGenderLabel(resolvedProfile?.gender);
   const profileImageUrl = resolvedProfile?.profile_img_url ?? null;
   const isProfileImageUploading =
     profileImagePresignedUrlMutation.isPending ||
-    uploadFileToS3Mutation.isPending;
+    uploadFileToS3Mutation.isPending ||
+    confirmProfileImageMutation.isPending;
 
   const resetPasswordPanel = () => {
     setPasswordValues(initialPasswordValues);
@@ -342,9 +363,9 @@ function MyPage() {
 
     try {
       const response = await changePasswordMutation.mutateAsync({
-        current_password: passwordValues.currentPassword.trim(),
+        old_password: passwordValues.currentPassword.trim(),
         new_password: passwordValues.newPassword.trim(),
-        new_password_confirm: passwordValues.newPasswordConfirm.trim(),
+        new_password_check: passwordValues.newPasswordConfirm.trim(),
       });
 
       setPasswordValues(initialPasswordValues);
@@ -380,7 +401,7 @@ function MyPage() {
     }
 
     try {
-      const response = await deleteAccountMutation.mutateAsync({
+      await deleteAccountMutation.mutateAsync({
         password: trimmedPassword,
       });
 
@@ -388,7 +409,7 @@ function MyPage() {
       navigate(`/${ROUTES.LOGIN}`, {
         replace: true,
         state: {
-          noticeMessage: response.detail,
+          noticeMessage: '회원 탈퇴가 완료되었습니다.',
         },
       });
     } catch (error) {
@@ -426,6 +447,12 @@ function MyPage() {
       return;
     }
 
+    const previousProfile =
+      queryClient.getQueryData<CurrentUserProfileResponse>(authKeys.me()) ??
+      resolvedProfile ??
+      null;
+    let hasOptimisticProfileUpdate = false;
+
     try {
       const presignedResponse =
         await profileImagePresignedUrlMutation.mutateAsync({
@@ -440,29 +467,64 @@ function MyPage() {
       });
 
       queryClient.setQueryData<CurrentUserProfileResponse>(
-        ['auth', 'me'],
+        authKeys.me(),
         (currentProfile) =>
           currentProfile
             ? {
                 ...currentProfile,
-                profile_img_url: presignedResponse.file_url,
+                profile_img_url: presignedResponse.img_url,
               }
             : currentProfile,
       );
 
-      if (resolvedProfile) {
+      if (previousProfile) {
         setAuthAccount({
-          ...resolvedProfile,
-          profile_img_url: presignedResponse.file_url,
+          ...previousProfile,
+          profile_img_url: presignedResponse.img_url,
         });
       }
 
-      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      hasOptimisticProfileUpdate = true;
+
+      const confirmResponse = await confirmProfileImageMutation.mutateAsync({
+        profile_img_url: presignedResponse.img_url,
+      });
+      const confirmedProfileImageUrl =
+        confirmResponse.profile_img_url ?? presignedResponse.img_url;
+
+      queryClient.setQueryData<CurrentUserProfileResponse>(
+        authKeys.me(),
+        (currentProfile) =>
+          currentProfile
+            ? {
+                ...currentProfile,
+                profile_img_url: confirmedProfileImageUrl,
+              }
+            : currentProfile,
+      );
+
+      if (previousProfile) {
+        setAuthAccount({
+          ...previousProfile,
+          profile_img_url: confirmedProfileImageUrl,
+        });
+      }
+
+      void queryClient.invalidateQueries({ queryKey: authKeys.me() });
       setToast({
         tone: 'success',
         message: '프로필이 변경되었습니다.',
       });
     } catch (error) {
+      if (hasOptimisticProfileUpdate && previousProfile) {
+        queryClient.setQueryData<CurrentUserProfileResponse>(
+          authKeys.me(),
+          previousProfile,
+        );
+        setAuthAccount(previousProfile);
+        void queryClient.invalidateQueries({ queryKey: authKeys.me() });
+      }
+
       setToast({
         tone: 'error',
         message: extractAuthApiErrorMessage(error),
@@ -502,7 +564,7 @@ function MyPage() {
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
       <Header fixed />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-[clamp(1rem,5vw,20rem)] pt-24 pb-14 sm:pt-28 sm:pb-16 lg:pt-32">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 pt-24 pb-14 sm:px-6 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32 xl:px-14">
         <MyPageProfileSection
           nickname={resolvedProfile?.nickname ?? '회원'}
           name={profileName}
@@ -558,34 +620,74 @@ function MyPage() {
             </p>
           </div>
 
-          <div className="mypage-scrollbar mt-5 max-h-[720px] overflow-y-auto pr-1">
+          <div className="mypage-scrollbar mt-5 max-h-[760px] overflow-y-auto pr-1">
             {isFavoriteGamesLoading ? (
-              <p
-                role="status"
-                aria-live="polite"
-                className="text-mypage-muted py-8 text-center text-sm"
-              >
-                찜 목록을 불러오는 중입니다...
-              </p>
+              <FavoriteGameCardSkeleton />
             ) : favoriteCount > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {favoriteGames.map((game) => (
-                  <FavoriteGameCard
-                    key={game.gameId}
-                    game={game}
-                    onClick={handleFavoriteGameCardClick}
-                    onFavoriteClick={setSelectedFavoriteGame}
-                  />
-                ))}
+              <div>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                  {favoriteGames.map((game) => (
+                    <FavoriteGameCard
+                      key={game.gameId}
+                      game={game}
+                      onClick={handleFavoriteGameCardClick}
+                      onFavoriteClick={setSelectedFavoriteGame}
+                    />
+                  ))}
+                </div>
+                {hasFavoriteGamesNextPage ||
+                likedGamesQuery.isFetchingNextPage ||
+                likedGamesQuery.isFetchNextPageError ? (
+                  <div className="mt-5 flex flex-col items-center gap-2">
+                    {likedGamesQuery.isFetchNextPageError ? (
+                      <p className="text-sm text-red-300">
+                        추가 찜 목록을 불러오지 못했습니다.
+                      </p>
+                    ) : null}
+                    <AuthButton
+                      type="button"
+                      variant="secondary"
+                      className="w-full max-w-40"
+                      onClick={() => void likedGamesQuery.fetchNextPage()}
+                      disabled={
+                        likedGamesQuery.isFetchingNextPage ||
+                        !hasFavoriteGamesNextPage
+                      }
+                    >
+                      {likedGamesQuery.isFetchingNextPage
+                        ? '더 불러오는 중...'
+                        : hasFavoriteGamesNextPage
+                          ? '찜 목록 더보기'
+                          : '모두 불러왔어요'}
+                    </AuthButton>
+                  </div>
+                ) : null}
               </div>
             ) : isFavoriteGamesError ? (
-              <p
+              <div
                 role="status"
                 aria-live="polite"
-                className="py-8 text-center text-sm text-red-300"
+                className="border-mypage-divider bg-mypage-card flex min-h-56 flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed px-6 py-10 text-center"
               >
-                찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
-              </p>
+                <p className="text-sm text-red-300">
+                  찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+                </p>
+                <AuthButton
+                  type="button"
+                  variant="secondary"
+                  className="w-full max-w-36"
+                  onClick={() => void likedGamesQuery.refetch()}
+                  disabled={
+                    likedGamesQuery.isFetching ||
+                    likedGamesQuery.isFetchingNextPage
+                  }
+                >
+                  {likedGamesQuery.isFetching ||
+                  likedGamesQuery.isFetchingNextPage
+                    ? '다시 불러오는 중...'
+                    : '다시 시도'}
+                </AuthButton>
+              </div>
             ) : (
               <FavoriteGamesEmptyState />
             )}

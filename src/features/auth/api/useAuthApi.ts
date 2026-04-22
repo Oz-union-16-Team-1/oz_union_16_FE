@@ -1,9 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import {
   checkIdDuplicate,
   checkNicknameDuplicate,
   changePassword,
+  confirmProfileImage,
   deleteAccount,
   getProfileImagePresignedUrl,
   getCurrentUserProfile,
@@ -14,34 +20,38 @@ import {
   unlikeLikedGame,
   uploadFileToS3,
 } from './auth';
+import { authKeys } from './queryKeys';
 import type {
+  ConfirmProfileImageRequest,
   LikedGamesResponse,
   LikedGamesRequest,
   ProfileImagePresignedUrlRequest,
   UploadFileToS3Request,
 } from '../types/auth';
 
+export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
+
 export const useLoginMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'login'],
+    mutationKey: authKeys.login(),
     mutationFn: login,
   });
 
 export const useSignupMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'signup'],
+    mutationKey: authKeys.signup(),
     mutationFn: signup,
   });
 
 export const useLogoutMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'logout'],
+    mutationKey: authKeys.logout(),
     mutationFn: logout,
   });
 
 export const useCurrentUserProfileQuery = (enabled = true) =>
   useQuery({
-    queryKey: ['auth', 'me'],
+    queryKey: authKeys.me(),
     queryFn: getCurrentUserProfile,
     enabled,
     staleTime: 60_000,
@@ -52,43 +62,75 @@ export const useLikedGamesQuery = (
   payload: LikedGamesRequest = {},
 ) =>
   useQuery({
-    queryKey: ['auth', 'me', 'game-like', payload.page ?? 1, payload.page_size],
+    queryKey: authKeys.likedGamesList(payload),
     queryFn: () => getLikedGames(payload),
     enabled,
     staleTime: 60_000,
+  });
+
+export const useLikedGamesInfiniteQuery = (
+  enabled = true,
+  pageSize = DEFAULT_LIKED_GAMES_PAGE_SIZE,
+) =>
+  useInfiniteQuery({
+    queryKey: authKeys.likedGamesInfinite({ page_size: pageSize }),
+    queryFn: ({ pageParam }) =>
+      getLikedGames({
+        page: pageParam,
+        page_size: pageSize,
+      }),
+    enabled,
+    staleTime: 60_000,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedGameCount = allPages.reduce(
+        (count, page) => count + page.results.length,
+        0,
+      );
+
+      if (loadedGameCount >= lastPage.count) {
+        return undefined;
+      }
+
+      return allPages.length + 1;
+    },
   });
 
 export const useUnlikeLikedGameMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: ['auth', 'me', 'game-like', 'unlike'],
+    mutationKey: authKeys.unlikeLikedGame(),
     mutationFn: unlikeLikedGame,
     onSuccess: (_, gameId) => {
       queryClient.setQueriesData<LikedGamesResponse>(
-        { queryKey: ['auth', 'me', 'game-like'] },
+        { queryKey: authKeys.likedGames() },
         (current) => {
-          if (!current) {
+          if (
+            !current ||
+            !Array.isArray((current as Partial<LikedGamesResponse>).results)
+          ) {
             return current;
           }
 
-          const nextResults = current.results.filter(
+          const currentLikedGames = current as LikedGamesResponse;
+          const nextResults = currentLikedGames.results.filter(
             (likedGame) => likedGame.game_id !== gameId,
           );
 
-          if (nextResults.length === current.results.length) {
+          if (nextResults.length === currentLikedGames.results.length) {
             return current;
           }
 
           return {
-            ...current,
-            count: Math.max(0, current.count - 1),
+            ...currentLikedGames,
+            count: Math.max(0, currentLikedGames.count - 1),
             results: nextResults,
           };
         },
       );
       void queryClient.invalidateQueries({
-        queryKey: ['auth', 'me', 'game-like'],
+        queryKey: authKeys.likedGames(),
       });
       void queryClient.invalidateQueries({
         queryKey: ['games', 'detail', gameId],
@@ -99,37 +141,44 @@ export const useUnlikeLikedGameMutation = () => {
 
 export const useProfileImagePresignedUrlMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'me', 'profile-image', 'presigned-url'],
+    mutationKey: authKeys.profileImagePresignedUrl(),
     mutationFn: (payload: ProfileImagePresignedUrlRequest) =>
       getProfileImagePresignedUrl(payload),
   });
 
 export const useUploadFileToS3Mutation = () =>
   useMutation({
-    mutationKey: ['auth', 'me', 'profile-image', 'upload'],
+    mutationKey: authKeys.profileImageUpload(),
     mutationFn: (payload: UploadFileToS3Request) => uploadFileToS3(payload),
+  });
+
+export const useConfirmProfileImageMutation = () =>
+  useMutation({
+    mutationKey: authKeys.profileImageConfirm(),
+    mutationFn: (payload: ConfirmProfileImageRequest) =>
+      confirmProfileImage(payload),
   });
 
 export const useChangePasswordMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'change-password'],
+    mutationKey: authKeys.changePassword(),
     mutationFn: changePassword,
   });
 
 export const useDeleteAccountMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'delete-account'],
+    mutationKey: authKeys.deleteAccount(),
     mutationFn: deleteAccount,
   });
 
 export const useCheckIdDuplicateMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'check-id-duplicate'],
+    mutationKey: authKeys.checkIdDuplicate(),
     mutationFn: checkIdDuplicate,
   });
 
 export const useCheckNicknameDuplicateMutation = () =>
   useMutation({
-    mutationKey: ['auth', 'check-nickname-duplicate'],
+    mutationKey: authKeys.checkNicknameDuplicate(),
     mutationFn: checkNicknameDuplicate,
   });
