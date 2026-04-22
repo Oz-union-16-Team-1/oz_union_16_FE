@@ -1,5 +1,8 @@
+import { useLayoutEffect } from 'react';
+
 import Header from '../../components/common/Header';
 import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
+import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 import { getAccessToken } from '../../utils/auth';
 
@@ -7,6 +10,11 @@ function SurveyPage() {
   const hasAccessToken = Boolean(getAccessToken());
   const isMockMode = isMockServiceWorkerEnabled();
   const canAccessSurvey = isMockMode || hasAccessToken;
+  const resetSurveyState = useSurveyStore((state) => state.resetSurveyState);
+
+  useLayoutEffect(() => {
+    resetSurveyState();
+  }, [resetSurveyState]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">

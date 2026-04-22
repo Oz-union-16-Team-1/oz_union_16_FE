@@ -180,6 +180,60 @@ const createLikedGameItem = (gameId: number): LikedGameItemResponse => {
   };
 };
 
+export const syncMockLikedGamesForAuthorization = (
+  authorization: string | null,
+  updates: Array<{
+    game_id: number;
+    game_title: string;
+    thumbnail_url: string | null;
+    genres: string[];
+    is_liked: boolean;
+  }>,
+) => {
+  const user = getAuthorizedUser(authorization);
+
+  if (!user || updates.length === 0) {
+    return;
+  }
+
+  const likedGamesById = new Map(
+    getOrCreateLikedGames(user.loginId).map((likedGame) => [
+      likedGame.game_id,
+      likedGame,
+    ]),
+  );
+
+  updates.forEach((update) => {
+    if (update.is_liked) {
+      const existingLikedGame = likedGamesById.get(update.game_id);
+
+      likedGamesById.set(update.game_id, {
+        game_id: update.game_id,
+        game_title:
+          update.game_title.trim() ||
+          existingLikedGame?.game_title ||
+          `게임 ${update.game_id}`,
+        thumbnail_url:
+          update.thumbnail_url ?? existingLikedGame?.thumbnail_url ?? null,
+        genres: update.genres.length
+          ? update.genres
+          : (existingLikedGame?.genres ?? []),
+        liked_at: existingLikedGame?.liked_at ?? new Date().toISOString(),
+      });
+
+      return;
+    }
+
+    likedGamesById.delete(update.game_id);
+  });
+
+  const nextLikedGames = [...likedGamesById.values()].sort(
+    (a, b) => Date.parse(b.liked_at) - Date.parse(a.liked_at),
+  );
+
+  mockLikedGamesByLoginId.set(user.loginId, nextLikedGames);
+};
+
 const loginHandlers = [
   http.get(`${AUTH_BASE_PATH}/dev-login-accounts`, async () => {
     await delay(120);

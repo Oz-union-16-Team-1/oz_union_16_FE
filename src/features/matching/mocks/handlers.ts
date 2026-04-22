@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { syncMockLikedGamesForAuthorization } from '../../auth/mocks/handlers';
 import { getMatchingGenreById } from '../genres';
 import {
   matchingMockCandidateMapById,
@@ -160,6 +161,21 @@ export const matchingHandlers = [
         totalCount: allResults.length,
       }),
     }));
+
+    syncMockLikedGamesForAuthorization(
+      request.headers.get('Authorization'),
+      body.match_result.map((result) => {
+        const candidate = matchingMockCandidateMapById.get(result.game_id!)!;
+
+        return {
+          game_id: candidate.game_id,
+          game_title: candidate.title,
+          thumbnail_url: candidate.thumbnail_url,
+          genres: candidate.genres,
+          is_liked: Boolean(result.is_liked),
+        };
+      }),
+    );
 
     await delay(500);
 
