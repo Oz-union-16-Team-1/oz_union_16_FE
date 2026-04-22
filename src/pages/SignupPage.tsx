@@ -28,6 +28,11 @@ import {
   useSignupMutation,
 } from '../features/auth/api/useAuthApi';
 import type { AuthGender, SignupRequest } from '../features/auth/types/auth';
+import { resolveAuthFeedbackVisibility } from '../features/auth/utils/feedbackPriority';
+import {
+  focusFieldByName,
+  getFirstErrorFieldName,
+} from '../features/auth/utils/focusField';
 import { setAccessToken, setAuthAccount } from '../utils/auth';
 
 type SignupFormValues = Omit<SignupRequest, 'gender'> & {
@@ -64,6 +69,24 @@ const initialDuplicateCheckState: DuplicateCheckState = {
   verifiedValue: null,
   message: '',
   tone: null,
+};
+
+const SIGNUP_FIELD_ORDER = [
+  'name',
+  'login_id',
+  'nickname',
+  'password',
+  'password_check',
+  'gender',
+] as const satisfies readonly SignupFieldName[];
+
+const SIGNUP_FIELD_ELEMENT_IDS: Record<SignupFieldName, string> = {
+  name: 'signup-name',
+  login_id: 'signup-id',
+  nickname: 'signup-nickname',
+  password: 'signup-password',
+  password_check: 'signup-password-confirm',
+  gender: 'signup-gender-M',
 };
 
 const getSignupFieldErrors = (
@@ -180,6 +203,11 @@ function SignupPage() {
       apiFieldErrors.password_check ?? localFieldErrors.password_check,
     gender: apiFieldErrors.gender ?? localFieldErrors.gender,
   };
+  const feedbackVisibility = resolveAuthFeedbackVisibility({
+    fieldErrors: resolvedFieldErrors,
+    formMessage,
+    hasToast: Boolean(duplicateCheckToast),
+  });
 
   const isSubmitting = signupMutation.isPending || loginMutation.isPending;
 
@@ -265,6 +293,7 @@ function SignupPage() {
     setFormMessage('');
 
     if (!trimmedLoginId) {
+      focusFieldByName('login_id', SIGNUP_FIELD_ELEMENT_IDS);
       return;
     }
 
@@ -309,6 +338,7 @@ function SignupPage() {
     setFormMessage('');
 
     if (!trimmedNickname) {
+      focusFieldByName('nickname', SIGNUP_FIELD_ELEMENT_IDS);
       return;
     }
 
@@ -370,6 +400,12 @@ function SignupPage() {
     const hasLocalError = Object.values(nextFieldErrors).some(Boolean);
 
     if (hasLocalError || !formValues.gender) {
+      const firstInvalidField = getFirstErrorFieldName(
+        nextFieldErrors,
+        SIGNUP_FIELD_ORDER,
+      );
+
+      focusFieldByName(firstInvalidField, SIGNUP_FIELD_ELEMENT_IDS);
       return;
     }
 
@@ -387,6 +423,10 @@ function SignupPage() {
     } catch (error) {
       const nextApiFieldErrors = extractAuthApiFieldErrors(error);
       const nextMessage = extractAuthApiErrorMessage(error);
+      let focusTargetField = getFirstErrorFieldName(
+        nextApiFieldErrors as Partial<Record<SignupFieldName, string>>,
+        SIGNUP_FIELD_ORDER,
+      );
 
       if (Object.keys(nextApiFieldErrors).length > 0) {
         setApiFieldErrors(nextApiFieldErrors);
@@ -395,6 +435,7 @@ function SignupPage() {
           ...previous,
           nickname: nextMessage,
         }));
+        focusTargetField = 'nickname';
       } else if (
         nextMessage.includes('아이디') ||
         nextMessage.includes('회원가입')
@@ -403,9 +444,12 @@ function SignupPage() {
           ...previous,
           login_id: nextMessage,
         }));
+        focusTargetField = 'login_id';
       } else {
         setFormMessage(nextMessage);
       }
+
+      focusFieldByName(focusTargetField, SIGNUP_FIELD_ELEMENT_IDS);
 
       return;
     }
@@ -534,6 +578,7 @@ function SignupPage() {
             </AuthInputActionButton>
           }
           toast={
+            feedbackVisibility.showToast &&
             duplicateCheckToast?.anchor === 'login_id' ? (
               <ToastMessage
                 message={duplicateCheckToast.message}
@@ -590,6 +635,7 @@ function SignupPage() {
             </AuthInputActionButton>
           }
           toast={
+            feedbackVisibility.showToast &&
             duplicateCheckToast?.anchor === 'nickname' ? (
               <ToastMessage
                 message={duplicateCheckToast.message}
@@ -648,6 +694,7 @@ function SignupPage() {
         <AuthRadioGroup
           label="성별"
           name="gender"
+          idPrefix="signup-gender"
           value={formValues.gender}
           options={signupGenderOptions}
           onChange={(event) =>
@@ -658,7 +705,7 @@ function SignupPage() {
           reserveMessageSpace
         />
 
-        {formMessage ? (
+        {feedbackVisibility.showFormMessage ? (
           <AuthFormMessage
             className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
           >

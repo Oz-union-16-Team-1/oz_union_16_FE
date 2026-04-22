@@ -31,10 +31,27 @@ const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
 const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
 const DEFAULT_API_ERROR_MESSAGE =
   '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
-const LOGIN_400_ERROR_MESSAGE = '아이디 또는 비밀번호를 입력해주세요.';
-const LOGIN_401_ERROR_MESSAGE = '아이디 또는 비밀번호가 올바르지 않습니다.';
-const LOGIN_403_ERROR_MESSAGE =
-  '접근 권한이 없거나 이용이 제한된 계정입니다. 고객센터에 문의하세요.';
+const LOGIN_ERROR_POLICIES = {
+  400: {
+    fallbackMessage: '아이디 또는 비밀번호를 입력해주세요.',
+    defaultFocusField: null,
+    hideFormMessageWhenFieldError: true,
+    preferApiMessage: false,
+  },
+  401: {
+    fallbackMessage: '아이디 또는 비밀번호가 올바르지 않습니다.',
+    defaultFocusField: 'password',
+    hideFormMessageWhenFieldError: false,
+    preferApiMessage: true,
+  },
+  403: {
+    fallbackMessage:
+      '접근 권한이 없거나 이용이 제한된 계정입니다. 고객센터에 문의하세요.',
+    defaultFocusField: null,
+    hideFormMessageWhenFieldError: false,
+    preferApiMessage: true,
+  },
+} as const;
 
 export const login = async (payload: LoginRequest) => {
   const response = await api.post<LoginResponse>(
@@ -52,6 +69,8 @@ export const logout = async () => {
 };
 
 export const refreshAccessToken = async () => {
+  // 실서버 기준으로 refresh token은 HttpOnly 쿠키 기반으로 관리합니다.
+  // API 명세의 body 예시는 추후 문서 동기화 대상으로 두고, 현재는 빈 body 요청으로 고정합니다.
   const response = await axios.post<RefreshAccessTokenResponse>(
     `${authApiUrl}/token/refresh`,
     {},
@@ -252,16 +271,24 @@ export const extractAuthApiErrorMessage = (error: unknown) => {
 };
 
 type LoginErrorStatusCode = 400 | 401 | 403;
+type LoginFieldName = keyof LoginRequest;
+
+type LoginErrorPolicy = {
+  fallbackMessage: string;
+  defaultFocusField: LoginFieldName | null;
+  hideFormMessageWhenFieldError: boolean;
+  preferApiMessage: boolean;
+};
 
 type ResolveLoginApiErrorResult = {
   statusCode: LoginErrorStatusCode | null;
-  fieldErrors: Partial<Record<keyof LoginRequest, string>>;
+  fieldErrors: Partial<Record<LoginFieldName, string>>;
   message: string;
-  focusField: keyof LoginRequest | null;
+  focusField: LoginFieldName | null;
 };
 
 const getFirstLoginErrorField = (
-  fieldErrors: Partial<Record<keyof LoginRequest, string>>,
+  fieldErrors: Partial<Record<LoginFieldName, string>>,
   payload?: Partial<LoginRequest>,
 ) => {
   if (fieldErrors.login_id) {
@@ -288,6 +315,29 @@ const getFirstLoginErrorField = (
   return null;
 };
 
+const resolveLoginMessageByPolicy = ({
+  policy,
+  fieldErrors,
+  apiMessage,
+}: {
+  policy: LoginErrorPolicy;
+  fieldErrors: Partial<Record<LoginFieldName, string>>;
+  apiMessage: string;
+}) => {
+  if (
+    policy.hideFormMessageWhenFieldError &&
+    getFirstLoginErrorField(fieldErrors)
+  ) {
+    return '';
+  }
+
+  if (policy.preferApiMessage && apiMessage !== DEFAULT_API_ERROR_MESSAGE) {
+    return apiMessage;
+  }
+
+  return policy.fallbackMessage;
+};
+
 export const resolveLoginApiError = (
   error: unknown,
   payload?: Partial<LoginRequest>,
@@ -296,7 +346,7 @@ export const resolveLoginApiError = (
   const fieldErrors = {
     login_id: apiFieldErrors.login_id,
     password: apiFieldErrors.password,
-  } satisfies Partial<Record<keyof LoginRequest, string>>;
+  } satisfies Partial<Record<LoginFieldName, string>>;
   const focusField = getFirstLoginErrorField(fieldErrors, payload);
 
   if (!(error instanceof AxiosError)) {
@@ -309,39 +359,20 @@ export const resolveLoginApiError = (
   }
 
   const statusCode = error.response?.status ?? null;
+  const apiMessage = extractAuthApiErrorMessage(error);
 
-  if (statusCode === 400) {
-    return {
-      statusCode,
-      fieldErrors,
-      message:
-        fieldErrors.login_id || fieldErrors.password
-          ? ''
-          : LOGIN_400_ERROR_MESSAGE,
-      focusField,
-    };
-  }
-
-  if (statusCode === 403) {
-    return {
-      statusCode,
-      fieldErrors,
-      message: LOGIN_403_ERROR_MESSAGE,
-      focusField,
-    };
-  }
-
-  if (statusCode === 401) {
-    const apiMessage = extractAuthApiErrorMessage(error);
+  if (statusCode === 400 || statusCode === 401 || statusCode === 403) {
+    const policy = LOGIN_ERROR_POLICIES[statusCode];
 
     return {
       statusCode,
       fieldErrors,
-      message:
-        apiMessage === DEFAULT_API_ERROR_MESSAGE
-          ? LOGIN_401_ERROR_MESSAGE
-          : apiMessage,
-      focusField: focusField ?? 'password',
+      message: resolveLoginMessageByPolicy({
+        policy,
+        fieldErrors,
+        apiMessage,
+      }),
+      focusField: focusField ?? policy.defaultFocusField,
     };
   }
 

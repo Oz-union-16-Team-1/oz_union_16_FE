@@ -20,8 +20,11 @@ import {
   getCurrentUserProfile,
   resolveLoginApiError,
 } from '../features/auth/api/auth';
+import { AUTH_SESSION_EXPIRED_NOTICE_MESSAGE } from '../features/auth/constants/session';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
+import { resolveAuthFeedbackVisibility } from '../features/auth/utils/feedbackPriority';
+import { focusFieldByName } from '../features/auth/utils/focusField';
 import { getSocialCallbackErrorMessage } from '../features/auth/utils/socialAuth';
 import { mockServiceWorkerEnabled } from '../lib/env';
 import { useAuthStore } from '../store/useAuthStore';
@@ -69,21 +72,9 @@ const getLoginFieldErrors = (
   } satisfies Record<LoginFieldName, string>;
 };
 
-const focusLoginFieldByName = (fieldName: LoginFieldName | null) => {
-  if (!fieldName) {
-    return;
-  }
-
-  const targetElementId =
-    fieldName === 'login_id' ? 'login-id' : 'login-password';
-
-  window.requestAnimationFrame(() => {
-    const targetElement = document.getElementById(targetElementId);
-
-    if (targetElement instanceof HTMLInputElement) {
-      targetElement.focus();
-    }
-  });
+const LOGIN_FIELD_ELEMENT_IDS: Record<LoginFieldName, string> = {
+  login_id: 'login-id',
+  password: 'login-password',
 };
 
 function LoginPage() {
@@ -105,20 +96,32 @@ function LoginPage() {
   });
   const [apiFieldErrors, setApiFieldErrors] = useState<LoginFieldErrors>({});
   const locationState = location.state as LoginLocationState | null;
-  const locationSearchErrorMessage = getSocialCallbackErrorMessage(
-    new URLSearchParams(location.search),
-  );
+  const locationSearchParams = new URLSearchParams(location.search);
+  const locationSearchErrorMessage =
+    getSocialCallbackErrorMessage(locationSearchParams);
+  const locationSearchNoticeMessage =
+    locationSearchParams.get('expired') === 'true'
+      ? AUTH_SESSION_EXPIRED_NOTICE_MESSAGE
+      : '';
   const [formMessage, setFormMessage] = useState(
     locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
   );
   const [noticeMessage, setNoticeMessage] = useState(
-    locationState?.noticeMessage ?? '',
+    locationState?.noticeMessage ?? locationSearchNoticeMessage,
   );
   const fieldErrors = getLoginFieldErrors(formValues, touchedState);
   const resolvedFieldErrors: Record<LoginFieldName, string> = {
     login_id: apiFieldErrors.login_id ?? fieldErrors.login_id,
     password: apiFieldErrors.password ?? fieldErrors.password,
   };
+  const feedbackVisibility = resolveAuthFeedbackVisibility({
+    fieldErrors: resolvedFieldErrors,
+    formMessage,
+  });
+  const showNoticeMessage =
+    !feedbackVisibility.hasFieldError &&
+    !feedbackVisibility.showFormMessage &&
+    Boolean(noticeMessage.trim());
   const showMockAccounts = mockServiceWorkerEnabled && mockAccounts.length > 0;
 
   useEffect(() => {
@@ -128,8 +131,10 @@ function LoginPage() {
   }, [locationState?.errorMessage, locationSearchErrorMessage]);
 
   useEffect(() => {
-    setNoticeMessage(locationState?.noticeMessage ?? '');
-  }, [locationState?.noticeMessage]);
+    setNoticeMessage(
+      locationState?.noticeMessage ?? locationSearchNoticeMessage,
+    );
+  }, [locationState?.noticeMessage, locationSearchNoticeMessage]);
 
   useEffect(() => {
     if (!mockServiceWorkerEnabled) {
@@ -268,7 +273,7 @@ function LoginPage() {
           ? 'password'
           : null;
 
-      focusLoginFieldByName(firstInvalidField);
+      focusFieldByName(firstInvalidField, LOGIN_FIELD_ELEMENT_IDS);
       return;
     }
 
@@ -290,7 +295,7 @@ function LoginPage() {
 
       setApiFieldErrors(resolvedError.fieldErrors);
       setFormMessage(resolvedError.message);
-      focusLoginFieldByName(resolvedError.focusField);
+      focusFieldByName(resolvedError.focusField, LOGIN_FIELD_ELEMENT_IDS);
     }
   };
 
@@ -352,7 +357,7 @@ function LoginPage() {
             reserveMessageSpace
           />
 
-          {noticeMessage ? (
+          {showNoticeMessage ? (
             <AuthFormMessage
               tone="success"
               className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
@@ -361,7 +366,7 @@ function LoginPage() {
             </AuthFormMessage>
           ) : null}
 
-          {formMessage ? (
+          {feedbackVisibility.showFormMessage ? (
             <AuthFormMessage
               className={AUTH_SHARED_FORM_CLASS_NAMES.feedbackMessage}
             >
