@@ -234,6 +234,20 @@ export const syncMockLikedGamesForAuthorization = (
   mockLikedGamesByLoginId.set(user.loginId, nextLikedGames);
 };
 
+export const getMockLikedGameIdsForAuthorization = (
+  authorization: string | null,
+) => {
+  const user = getAuthorizedUser(authorization);
+
+  if (!user) {
+    return new Set<number>();
+  }
+
+  return new Set(
+    getOrCreateLikedGames(user.loginId).map((game) => game.game_id),
+  );
+};
+
 const loginHandlers = [
   http.get(`${AUTH_BASE_PATH}/dev-login-accounts`, async () => {
     await delay(120);
