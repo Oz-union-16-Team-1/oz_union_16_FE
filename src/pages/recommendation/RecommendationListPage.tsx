@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronDown, ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import ActionButton from '../../components/common/ActionButton';
@@ -266,6 +266,8 @@ function RecommendationListPage() {
   const [likeFeedbackMessage, setLikeFeedbackMessage] = useState<string | null>(
     null,
   );
+  const recommendationScrollRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreAnchorOffsetRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const source = searchParams.get('source');
   const legacySessionId = searchParams.get('session_id');
@@ -315,8 +317,38 @@ function RecommendationListPage() {
       errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
       recommendationItems.length === 0,
     );
+
+  useEffect(() => {
+    if (loadMoreAnchorOffsetRef.current === null) {
+      return;
+    }
+
+    const scrollContainer = recommendationScrollRef.current;
+
+    if (!scrollContainer) {
+      loadMoreAnchorOffsetRef.current = null;
+      return;
+    }
+
+    const nextScrollTop =
+      scrollContainer.scrollHeight - loadMoreAnchorOffsetRef.current;
+    scrollContainer.scrollTop = Math.max(0, nextScrollTop);
+    loadMoreAnchorOffsetRef.current = null;
+  }, [recommendationItems.length]);
+
   const handleOpenDetail = (item: RecommendationDisplayItem) => {
     setSelectedGame(toGameListItem(item));
+  };
+
+  const handleLoadMore = () => {
+    const scrollContainer = recommendationScrollRef.current;
+
+    if (scrollContainer) {
+      loadMoreAnchorOffsetRef.current =
+        scrollContainer.scrollHeight - scrollContainer.scrollTop;
+    }
+
+    void fetchNextPage();
   };
 
   useEffect(() => {
@@ -648,7 +680,10 @@ function RecommendationListPage() {
                 </div>
               ) : (
                 <>
-                  <div className="recommendation-scroll max-h-[62vh] overflow-y-auto">
+                  <div
+                    ref={recommendationScrollRef}
+                    className="recommendation-scroll max-h-[62vh] overflow-y-auto"
+                  >
                     <div className="divide-y divide-white/8">
                       {recommendationItems.map((item) => (
                         <RecommendationRow
@@ -663,19 +698,24 @@ function RecommendationListPage() {
                   </div>
 
                   {hasNextPage || isFetchingNextPage ? (
-                    <div className="flex justify-end border-t border-white/8 px-4 py-4 sm:px-6 lg:px-7">
-                      <button
-                        type="button"
-                        onClick={() => void fetchNextPage()}
-                        disabled={isFetchingNextPage}
-                        className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white/82 transition hover:border-[#6f2525] hover:bg-[#160b0b] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        {isFetchingNextPage ? '불러오는 중...' : '더보기'}
-                        {!isFetchingNextPage ? (
-                          <ChevronRight size={16} />
-                        ) : null}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLoadMore}
+                      disabled={isFetchingNextPage}
+                      className="flex w-full flex-col items-center justify-center gap-1 border-t border-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/[0.03] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
+                    >
+                      <span>
+                        {isFetchingNextPage
+                          ? '추천 결과를 불러오는 중입니다...'
+                          : '더보기'}
+                      </span>
+                      {!isFetchingNextPage ? (
+                        <ChevronDown
+                          size={18}
+                          className="translate-y-[1px] text-white/56"
+                        />
+                      ) : null}
+                    </button>
                   ) : null}
                 </>
               )}
