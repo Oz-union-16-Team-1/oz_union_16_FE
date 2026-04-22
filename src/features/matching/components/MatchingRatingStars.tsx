@@ -22,7 +22,7 @@ function MatchingRatingStars({ value, onRate }: MatchingRatingStarsProps) {
             onClick={() => onRate(ratingValue)}
             aria-label={`${ratingValue}점 선택`}
             aria-pressed={value === ratingValue}
-            className={`flex h-11 w-11 items-center justify-center rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
               isActive
                 ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
                 : 'border-white/10 bg-white/[0.03] text-white/34 hover:border-white/18 hover:text-white/72'
