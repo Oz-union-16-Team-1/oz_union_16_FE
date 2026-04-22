@@ -5,6 +5,7 @@ import {
 } from '../genres';
 import { mockGameDetails } from '../mockGameDetails';
 import { mockTopGames } from '../mockGames';
+import { createSearchKeyword, type SearchKeyword } from '../search';
 import type { GameDetail, GameListItem, GameLikeResponse } from '../types';
 
 const steamStoreUrl = (gameId: number) =>
@@ -17,7 +18,140 @@ const genreIdToFilterMap = new Map<number, GameGenreFilter>(
   ]),
 );
 
-const normalizeSearchKeyword = (value: string) => value.trim().toLowerCase();
+const getFuzzySearchDistance = (value: string) => {
+  if (value.length < 3) {
+    return 0;
+  }
+
+  if (value.length < 7) {
+    return 1;
+  }
+
+  return 2;
+};
+
+const getLevenshteinDistance = (
+  source: string,
+  target: string,
+  maxDistance: number,
+) => {
+  const sourceLength = source.length;
+  const targetLength = target.length;
+
+  if (Math.abs(sourceLength - targetLength) > maxDistance) {
+    return maxDistance + 1;
+  }
+
+  const previous = Array.from(
+    { length: targetLength + 1 },
+    (_, index) => index,
+  );
+  const current = new Array<number>(targetLength + 1).fill(0);
+
+  for (let sourceIndex = 1; sourceIndex <= sourceLength; sourceIndex += 1) {
+    current[0] = sourceIndex;
+    let rowMin = current[0];
+
+    for (let targetIndex = 1; targetIndex <= targetLength; targetIndex += 1) {
+      const substitutionCost =
+        source[sourceIndex - 1] === target[targetIndex - 1] ? 0 : 1;
+
+      current[targetIndex] = Math.min(
+        previous[targetIndex] + 1,
+        current[targetIndex - 1] + 1,
+        previous[targetIndex - 1] + substitutionCost,
+      );
+
+      rowMin = Math.min(rowMin, current[targetIndex]);
+    }
+
+    if (rowMin > maxDistance) {
+      return maxDistance + 1;
+    }
+
+    previous.splice(0, previous.length, ...current);
+  }
+
+  return previous[targetLength];
+};
+
+const includesFuzzyText = (
+  haystack: string,
+  needle: string,
+  maxDistance: number,
+) => {
+  if (!needle) {
+    return true;
+  }
+
+  if (!haystack || haystack.length < needle.length - maxDistance) {
+    return false;
+  }
+
+  if (haystack.includes(needle)) {
+    return true;
+  }
+
+  const minimumLength = Math.max(1, needle.length - maxDistance);
+  const maximumLength = Math.min(haystack.length, needle.length + maxDistance);
+
+  for (
+    let candidateLength = minimumLength;
+    candidateLength <= maximumLength;
+    candidateLength += 1
+  ) {
+    for (
+      let startIndex = 0;
+      startIndex <= haystack.length - candidateLength;
+      startIndex += 1
+    ) {
+      const candidate = haystack.slice(
+        startIndex,
+        startIndex + candidateLength,
+      );
+
+      if (
+        getLevenshteinDistance(candidate, needle, maxDistance) <= maxDistance
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+const matchesSearchKeyword = (
+  candidate: SearchKeyword,
+  keyword: SearchKeyword,
+  fuzzy: boolean,
+) => {
+  if (!keyword.normalized) {
+    return true;
+  }
+
+  if (
+    candidate.normalized.includes(keyword.normalized) ||
+    candidate.collapsed.includes(keyword.collapsed) ||
+    candidate.stripped.includes(keyword.stripped)
+  ) {
+    return true;
+  }
+
+  if (!fuzzy) {
+    return false;
+  }
+
+  const fuzzySource = keyword.stripped || keyword.collapsed;
+  const fuzzyTarget = candidate.stripped || candidate.collapsed;
+  const maxDistance = getFuzzySearchDistance(fuzzySource);
+
+  if (!fuzzySource || !fuzzyTarget || maxDistance === 0) {
+    return false;
+  }
+
+  return includesFuzzyText(fuzzyTarget, fuzzySource, maxDistance);
+};
 
 const cloneGameDetail = (detail: GameDetail): GameDetail => ({
   ...detail,
@@ -140,19 +274,23 @@ const sortGames = (
 
 const filterGames = ({
   search = '',
+  fuzzy = true,
   genreId,
 }: {
   search?: string;
+  fuzzy?: boolean;
   genreId?: number;
 }) => {
-  const normalizedSearch = normalizeSearchKeyword(search);
+  const searchKeyword = createSearchKeyword(search);
   const selectedGenre = getGenreFilterById(genreId);
 
   return getHydratedTopGames().filter((game) => {
     const matchesSearch =
-      !normalizedSearch ||
-      [game.name, ...game.genres].some((keyword) =>
-        keyword.toLowerCase().includes(normalizedSearch),
+      !searchKeyword.normalized ||
+      matchesSearchKeyword(
+        createSearchKeyword(game.name),
+        searchKeyword,
+        fuzzy,
       );
     const matchesGenre = selectedGenre
       ? matchesGenreFilter(game.genres, selectedGenre)
@@ -167,18 +305,23 @@ export const getStoredTop100Games = ({ genreId }: { genreId?: number } = {}) =>
 
 export const searchStoredGames = ({
   search = '',
+  fuzzy = true,
   genreId,
   sort = 'rating_desc',
   page = 1,
   pageSize = 20,
 }: {
   search?: string;
+  fuzzy?: boolean;
   genreId?: number;
   sort?: 'rating_desc' | 'like_desc' | 'created_at';
   page?: number;
   pageSize?: number;
 }) => {
-  const filteredGames = sortGames(filterGames({ search, genreId }), sort);
+  const filteredGames = sortGames(
+    filterGames({ search, fuzzy, genreId }),
+    sort,
+  );
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
   const safePageSize =
     Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 20;

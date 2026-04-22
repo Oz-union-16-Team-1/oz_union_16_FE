@@ -10,6 +10,7 @@ import type {
   RawGameLikeResponse,
   RawGameListItem,
   SearchGamesParams,
+  SearchGamesResult,
 } from './types';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -79,15 +80,16 @@ export const getTopGames = async ({
 
 export const searchGames = async ({
   search,
+  fuzzy = true,
   genre = '전체',
   page = 1,
   pageSize = DEFAULT_PAGE_SIZE,
   sort = DEFAULT_SORT,
-}: SearchGamesParams): Promise<GameListItem[]> => {
+}: SearchGamesParams): Promise<SearchGamesResult> => {
   const response = await api.get<GameListResponse>('/api/v1/games/list', {
     params: {
       search,
-      fuzzy: true,
+      fuzzy,
       sort,
       page,
       page_size: pageSize,
@@ -95,7 +97,10 @@ export const searchGames = async ({
     },
   });
 
-  return response.data.results.map(normalizeGameListItem);
+  return {
+    count: response.data.count ?? response.data.results.length,
+    results: response.data.results.map(normalizeGameListItem),
+  };
 };
 
 export const getGameDetail = async (gameId: number): Promise<GameDetail> => {
