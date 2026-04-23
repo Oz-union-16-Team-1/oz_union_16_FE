@@ -126,10 +126,12 @@ function LoginPage() {
     !feedbackVisibility.hasFieldError &&
     !feedbackVisibility.showFormMessage &&
     Boolean(noticeMessage.trim());
+  const primaryMockAccount =
+    mockAccounts.find((account) => account.loginId === 'pgti-demo') ??
+    mockAccounts[0];
+  const visibleMockAccounts = primaryMockAccount ? [primaryMockAccount] : [];
   const showMockAccounts =
-    mockServiceWorkerEnabled &&
-    Array.isArray(mockAccounts) &&
-    mockAccounts.length > 0;
+    mockServiceWorkerEnabled && visibleMockAccounts.length > 0;
 
   useEffect(() => {
     setFormMessage(
@@ -434,7 +436,7 @@ function LoginPage() {
 
             <div className="support-chat-scrollbar max-h-[min(60vh,28rem)] overflow-y-auto px-4 py-4">
               <ul className="space-y-2.5">
-                {mockAccounts.map((account) => (
+                {visibleMockAccounts.map((account) => (
                   <li
                     key={account.loginId}
                     className="border-login-outline rounded-2xl border bg-black/20 p-3"
@@ -443,9 +445,6 @@ function LoginPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-white">
                           {account.name}
-                        </p>
-                        <p className="text-login-helper mt-1 text-xs/5">
-                          {account.note}
                         </p>
                       </div>
                       <button
