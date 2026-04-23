@@ -9,6 +9,7 @@ import ActionButton from '../../components/common/ActionButton';
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
+import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import {
@@ -30,7 +31,6 @@ import type {
   SurveyResultResponse,
 } from '../../features/survey/types/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
-import { getAccessToken } from '../../utils/auth';
 
 const FALLBACK_BACKDROP_ITEMS = [
   {
@@ -275,8 +275,8 @@ function RecommendationListPage() {
   const isSurveySource =
     source === 'survey' || (!source && Boolean(legacySessionId));
   const isMockMode = isMockServiceWorkerEnabled();
-  const hasAccessToken = Boolean(getAccessToken());
-  const canAccessPage = isMockMode || hasAccessToken;
+  const { canAccessAuthenticatedRoute, isAuthReady } = useAuthGuardState();
+  const canAccessPage = isMockMode || canAccessAuthenticatedRoute;
 
   const surveyResultsQuery = useSurveyResultsInfinite(
     !isMatchSource && isSurveySource && canAccessPage,
@@ -595,7 +595,16 @@ function RecommendationListPage() {
             </aside>
           </div>
 
-          {!canAccessPage ? (
+          {!isMockMode && !isAuthReady ? (
+            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+              <h2 className="text-2xl font-bold text-white">
+                인증 상태를 확인하는 중입니다.
+              </h2>
+              <p className="mt-4 text-base leading-7 break-keep text-white/60">
+                잠시만 기다려 주세요. 세션 확인 후 추천 결과를 불러옵니다.
+              </p>
+            </section>
+          ) : !canAccessPage ? (
             <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
               <h2 className="text-2xl font-bold text-white">
                 로그인 후 추천 결과를 볼 수 있어요.

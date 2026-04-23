@@ -6,6 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
+import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import {
   useMatchCandidatesQuery,
@@ -21,7 +22,6 @@ import {
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
-import { getAccessToken } from '../../utils/auth';
 
 const formatMatchingCandidateRating = (rating: number | null) => {
   if (typeof rating !== 'number') {
@@ -45,9 +45,9 @@ function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hasAccessToken = Boolean(getAccessToken());
+  const { canAccessAuthenticatedRoute, isAuthReady } = useAuthGuardState();
   const isMockMode = isMockServiceWorkerEnabled();
-  const canAccessPage = isMockMode || hasAccessToken;
+  const canAccessPage = isMockMode || canAccessAuthenticatedRoute;
   const isValidGenreSlug = genreSlug ? isMatchingGenreSlug(genreSlug) : false;
   const genre = genreSlug ? getMatchingGenreBySlug(genreSlug) : undefined;
 
@@ -228,6 +228,10 @@ function MatchingGenreDetailPage() {
               <ChevronLeft size={16} />
               장르 선택으로 돌아가기
             </Link>
+          </section>
+        ) : !isMockMode && !isAuthReady ? (
+          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
+            인증 상태를 확인하는 중입니다...
           </section>
         ) : !canAccessPage ? (
           <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">

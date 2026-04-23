@@ -35,6 +35,7 @@ import {
   useUploadFileToS3Mutation,
 } from '../../features/auth/api/useAuthApi';
 import { authKeys } from '../../features/auth/api/queryKeys';
+import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import type {
   AuthGender,
@@ -44,11 +45,7 @@ import type {
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import type { GameListItem } from '../../features/games/types';
 import type { FavoriteGamePreview } from '../../features/mypage/types';
-import {
-  clearAuthTokens,
-  getAccessToken,
-  setAuthAccount,
-} from '../../utils/auth';
+import { clearAuthTokens, setAuthAccount } from '../../utils/auth';
 import { useAuthStore } from '../../store/useAuthStore';
 
 type PasswordTouchedState = Record<PasswordChangeFieldName, boolean>;
@@ -171,7 +168,7 @@ const toGenderLabel = (gender?: AuthGender) => {
 function MyPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hasAccessToken = Boolean(getAccessToken());
+  const { canAccessAuthenticatedRoute, isAuthReady } = useAuthGuardState();
   const { logout, isPending: isLogoutPending } = useLogoutAction();
   const changePasswordMutation = useChangePasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
@@ -181,9 +178,9 @@ function MyPage() {
     useProfileImagePresignedUrlMutation();
   const uploadFileToS3Mutation = useUploadFileToS3Mutation();
   const confirmProfileImageMutation = useConfirmProfileImageMutation();
-  const profileQuery = useCurrentUserProfileQuery(hasAccessToken);
+  const profileQuery = useCurrentUserProfileQuery(canAccessAuthenticatedRoute);
   const likedGamesQuery = useLikedGamesInfiniteQuery(
-    hasAccessToken,
+    canAccessAuthenticatedRoute,
     DEFAULT_LIKED_GAMES_PAGE_SIZE,
   );
   const storedAccount = useAuthStore((state) => state.account);
@@ -321,7 +318,20 @@ function MyPage() {
     isFavoriteGamesFetchingNextPage,
   ]);
 
-  if (!hasAccessToken) {
+  if (!isAuthReady) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+        <Header fixed />
+        <main className="mx-auto flex min-h-screen w-full max-w-[1240px] px-4 pt-[6.1rem] pb-12 sm:px-6 md:px-8 md:pt-[6.4rem]">
+          <section className="survey-panel mx-auto w-full max-w-[920px] px-8 py-12 text-center text-white/68">
+            인증 상태를 확인하는 중입니다...
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (!canAccessAuthenticatedRoute) {
     return (
       <Navigate
         to={`/${ROUTES.LOGIN}`}

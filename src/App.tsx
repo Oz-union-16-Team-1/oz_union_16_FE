@@ -7,9 +7,11 @@ import {
   AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
   type AuthSessionExpiredDetail,
 } from './features/auth/constants/session';
+import useAuthBootstrap from './features/auth/hooks/useAuthBootstrap';
 import SupportChatWidget from './components/support-chat/SupportChatWidget';
 
 function App() {
+  useAuthBootstrap();
   const navigate = useNavigate();
   const location = useLocation();
 

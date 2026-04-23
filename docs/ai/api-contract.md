@@ -11,11 +11,13 @@
 
 - **Access Token**: 클라이언트 메모리(Zustand State) 내에서 관리하여 XSS 공격 방어.
 - **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화.
-- **Legacy Cleanup**: 기존 `localStorage`에 `refresh_token`을 저장하던 방식은 완전히 폐기하며, 관련 데이터를 일괄 삭제함.
+- **Startup Bootstrap**: 앱 최초 진입 시 `POST /api/v1/accounts/token/refresh`로 세션 복구를 시도하고, 성공 시 `/me` 조회로 사용자 정보를 hydrate함.
+- **Legacy Cleanup**: 기존 `localStorage` 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리함.
 
 ### 2. 인증 관련 API 엔드포인트
 
 - **소셜 로그인 진입**: `GET /api/v1/accounts/social-login/{google|kakao|naver}` (백엔드 제공 OAuth 시작점)
+- **소셜 로그인 콜백 경로**: 정식 경로는 `/callback`이며, 기존 `/auth/callback`은 하위 호환 redirect 경로로 유지함.
 - **토큰 갱신**: `POST /api/v1/accounts/token/refresh` (쿠키의 리프레시 토큰을 사용하여 액세스 토큰 재발급)
 - **주의**: API 명세서 표에 `refresh_token` body 예시가 있어도, 실서버 동작 기준은 HttpOnly 쿠키 인증이며 프론트는 `withCredentials` 요청으로 맞춥니다.
 - **로그아웃**: `POST /api/v1/accounts/logout` (액세스 토큰 무효화 및 서버측 쿠키 삭제 요청)
@@ -34,6 +36,7 @@
 
 - **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
 - **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
+- **초기 진입 예외 처리**: 콜백 라우트(`/callback`, `/auth/callback`)에서는 중복 refresh를 피하기 위해 앱 시작 bootstrap을 건너뜀.
 
 ### 5. 마이페이지 프로필 표시 필드
 
