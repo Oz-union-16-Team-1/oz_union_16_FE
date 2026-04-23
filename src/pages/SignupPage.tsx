@@ -476,13 +476,13 @@ function SignupPage() {
   return (
     <AuthLayout
       title="회원가입"
-      titleClassName="sr-only"
+      titleClassName="text-[clamp(1.68rem,4vw,2.45rem)]"
       withPanel
       panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
       contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
     >
       <form
-        className={`${AUTH_SHARED_FORM_CLASS_NAMES.form} pt-1 sm:pt-1.5`}
+        className={`${AUTH_SHARED_FORM_CLASS_NAMES.form} mt-5 sm:mt-6`}
         autoComplete="on"
         onSubmit={handleSubmit}
       >
