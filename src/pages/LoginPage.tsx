@@ -77,6 +77,10 @@ const LOGIN_FIELD_ELEMENT_IDS: Record<LoginFieldName, string> = {
   password: 'login-password',
 };
 
+const resolveMockAccounts = (
+  accounts: DevMockLoginAccountsResponse['accounts'] | undefined,
+) => (Array.isArray(accounts) ? accounts : []);
+
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -122,7 +126,12 @@ function LoginPage() {
     !feedbackVisibility.hasFieldError &&
     !feedbackVisibility.showFormMessage &&
     Boolean(noticeMessage.trim());
-  const showMockAccounts = mockServiceWorkerEnabled && mockAccounts.length > 0;
+  const primaryMockAccount =
+    mockAccounts.find((account) => account.loginId === 'pgti-demo') ??
+    mockAccounts[0];
+  const visibleMockAccounts = primaryMockAccount ? [primaryMockAccount] : [];
+  const showMockAccounts =
+    mockServiceWorkerEnabled && visibleMockAccounts.length > 0;
 
   useEffect(() => {
     setFormMessage(
@@ -150,7 +159,7 @@ function LoginPage() {
           return;
         }
 
-        setMockAccounts(data.accounts);
+        setMockAccounts(resolveMockAccounts(data?.accounts));
       })
       .catch(async () => {
         try {
@@ -303,15 +312,14 @@ function LoginPage() {
     <>
       <AuthLayout
         title="로그인"
+        titleClassName="sr-only"
         withPanel
         panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
         contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
       >
-        <AuthSocialLoginGroup
-          className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
-        />
+        <AuthSocialLoginGroup className="mt-2 sm:mt-2.5" />
 
-        <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
+        <AuthDivider className="my-4 sm:my-5" />
 
         <form
           className={AUTH_SHARED_FORM_CLASS_NAMES.form}
@@ -334,7 +342,6 @@ function LoginPage() {
             }
             errorMessage={resolvedFieldErrors.login_id}
             disabled={loginMutation.isPending}
-            reserveMessageSpace
           />
 
           <AuthInputField
@@ -354,7 +361,6 @@ function LoginPage() {
             }
             errorMessage={resolvedFieldErrors.password}
             disabled={loginMutation.isPending}
-            reserveMessageSpace
           />
 
           {showNoticeMessage ? (
@@ -373,15 +379,6 @@ function LoginPage() {
               {formMessage}
             </AuthFormMessage>
           ) : null}
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className={AUTH_SHARED_FORM_CLASS_NAMES.auxiliaryLink}
-            >
-              아이디/비밀번호를 잊어버리셨나요?
-            </button>
-          </div>
 
           <AuthButton
             type="submit"
@@ -439,7 +436,7 @@ function LoginPage() {
 
             <div className="support-chat-scrollbar max-h-[min(60vh,28rem)] overflow-y-auto px-4 py-4">
               <ul className="space-y-2.5">
-                {mockAccounts.map((account) => (
+                {visibleMockAccounts.map((account) => (
                   <li
                     key={account.loginId}
                     className="border-login-outline rounded-2xl border bg-black/20 p-3"
@@ -448,9 +445,6 @@ function LoginPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-white">
                           {account.name}
-                        </p>
-                        <p className="text-login-helper mt-1 text-xs/5">
-                          {account.note}
                         </p>
                       </div>
                       <button

@@ -32,8 +32,10 @@ function AuthRadioGroup({
   required = false,
   disabled = false,
 }: AuthRadioGroupProps) {
+  const shouldRenderMessage = Boolean(errorMessage) || reserveMessageSpace;
+
   return (
-    <fieldset className="space-y-3">
+    <fieldset className="space-y-2.5">
       <legend className="text-login-label block text-sm font-medium">
         {label}
       </legend>
@@ -65,10 +67,10 @@ function AuthRadioGroup({
                 className="peer sr-only"
               />
               <span
-                className={`flex h-14 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition-all group-hover:border-white/20 group-hover:text-white/85 peer-checked:border-[#ff8a3d] peer-checked:bg-[linear-gradient(135deg,rgba(255,138,61,0.24),rgba(255,110,48,0.1))] peer-checked:text-white peer-checked:shadow-[0_14px_32px_rgba(255,138,61,0.18)] peer-disabled:opacity-60 ${
+                className={`flex h-14 items-center justify-center rounded-xl border px-4 text-sm font-semibold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#ff5c60]/25 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black peer-disabled:opacity-60 ${
                   errorMessage
-                    ? 'border-red-500/80 bg-white/[0.03] text-red-200'
-                    : 'border-login-field text-login-helper bg-white/[0.03]'
+                    ? 'border-red-500/80 bg-[#1d1215] text-red-200 group-hover:border-red-400/90 group-hover:bg-[#2f1519] group-hover:text-red-100'
+                    : 'bg-login-field text-login-label border-white/16 group-hover:border-white/24 group-hover:bg-[#1d1e22] group-hover:text-white/90 peer-checked:border-[#ff6b6e]/70 peer-checked:bg-[#29161a] peer-checked:text-white'
                 }`}
               >
                 {option.label}
@@ -77,11 +79,11 @@ function AuthRadioGroup({
           );
         })}
       </div>
-      {errorMessage || reserveMessageSpace ? (
+      {shouldRenderMessage ? (
         <p
           role={errorMessage ? 'alert' : undefined}
           aria-hidden={!errorMessage}
-          className={`min-h-5 pl-1 text-sm/5 font-medium ${errorMessage ? 'text-red-400' : 'text-transparent'}`}
+          className={`${reserveMessageSpace ? 'min-h-5' : ''} pl-1 text-sm/5 font-medium ${errorMessage ? 'text-red-400' : 'text-transparent'}`}
         >
           {errorMessage ?? ''}
         </p>
