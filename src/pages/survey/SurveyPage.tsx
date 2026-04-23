@@ -5,7 +5,32 @@ import Header from '../../components/common/Header';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
 import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
+import { mockTopGames } from '../../features/games/mockGames';
 import { useAuthStore } from '../../store/useAuthStore';
+
+const SURVEY_BACKDROP_ITEMS = [...mockTopGames, ...mockTopGames].slice(0, 14);
+
+function SurveyBackdrop() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="grid h-full grid-cols-3 gap-3 p-4 opacity-[0.22] saturate-0 sm:grid-cols-4 sm:gap-4 sm:p-6 lg:grid-cols-5 lg:gap-5 lg:p-8">
+        {SURVEY_BACKDROP_ITEMS.map((game, index) => (
+          <div
+            key={`${game.gameId}-${index}`}
+            className="overflow-hidden rounded-[28px] border border-white/6 bg-white/[0.03] blur-[14px]"
+          >
+            <img
+              src={game.thumbnailUrl ?? ''}
+              alt={game.name}
+              className="h-full min-h-[180px] w-full scale-110 object-cover"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(170,25,25,0.16),transparent_24%),linear-gradient(180deg,rgba(5,5,5,0.46),rgba(5,5,5,0.92))]" />
+    </div>
+  );
+}
 
 function SurveyPage() {
   const authGate = useAuthGate({ allowMockBypass: true });
@@ -26,6 +51,7 @@ function SurveyPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+      <SurveyBackdrop />
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
       <Header fixed />
 

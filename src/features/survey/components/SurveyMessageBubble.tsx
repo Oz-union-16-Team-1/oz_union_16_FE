@@ -1,5 +1,7 @@
 import { Bot, UserRound } from 'lucide-react';
 
+import defaultProfileImage from '../../../assets/프로필 이미지.png';
+import { useAuthStore } from '../../../store/useAuthStore';
 import type { SurveyMessage } from '../types/survey';
 
 interface SurveyMessageBubbleProps {
@@ -8,7 +10,6 @@ interface SurveyMessageBubbleProps {
 
 const roleMeta = {
   assistant: {
-    label: 'AI 질문',
     icon: Bot,
     wrapperClassName: 'justify-start',
     contentClassName: 'flex-row',
@@ -18,7 +19,6 @@ const roleMeta = {
     iconClassName: 'bg-white/[0.05] text-[#ff4d4d]',
   },
   user: {
-    label: '내 답변',
     icon: UserRound,
     wrapperClassName: 'justify-end',
     contentClassName: 'flex-row-reverse',
@@ -32,24 +32,56 @@ const roleMeta = {
 function SurveyMessageBubble({ message }: SurveyMessageBubbleProps) {
   const meta = roleMeta[message.role];
   const Icon = meta.icon;
+  const account = useAuthStore((state) => state.account);
+  const isAuthenticatedUser = useAuthStore((state) => state.isAuthenticated);
+  const userAvatarUrl = account?.profile_img_url?.trim() || defaultProfileImage;
+  const normalizedContent = message.content.trim();
+  const isCompactMessage =
+    !normalizedContent.includes('\n') && normalizedContent.length <= 36;
+  const bubbleSpacingClassName = isCompactMessage ? 'gap-2.5' : 'gap-[0.7rem]';
+  const avatarSizeClassName = isCompactMessage
+    ? 'h-9 w-9'
+    : 'h-[38px] w-[38px]';
+  const bubblePaddingClassName = isCompactMessage
+    ? 'px-4 py-3'
+    : 'px-4 py-3.5 md:px-[1.125rem]';
+  const bubbleTextClassName = isCompactMessage
+    ? 'text-[15px] leading-6'
+    : 'text-[15px] leading-[1.6rem]';
 
   return (
     <div className={`flex w-full ${meta.wrapperClassName}`}>
       <div
-        className={`flex max-w-[92%] items-start gap-3 md:max-w-[74%] ${meta.contentClassName}`}
+        className={`flex max-w-[92%] items-start ${bubbleSpacingClassName} md:max-w-[78%] ${meta.contentClassName}`}
       >
         <div
-          className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${meta.iconClassName}`}
+          className={`mt-1 flex shrink-0 items-center justify-center rounded-2xl ${avatarSizeClassName} ${meta.iconClassName}`}
         >
-          <Icon size={18} />
+          {message.role === 'user' ? (
+            <img
+              src={userAvatarUrl}
+              alt={
+                isAuthenticatedUser
+                  ? '회원 프로필 이미지'
+                  : '비회원 프로필 이미지'
+              }
+              className="h-full w-full rounded-2xl object-cover"
+              onError={(event) => {
+                if (event.currentTarget.src !== defaultProfileImage) {
+                  event.currentTarget.src = defaultProfileImage;
+                }
+              }}
+            />
+          ) : (
+            <Icon size={18} />
+          )}
         </div>
         <div
-          className={`px-4 py-4 md:px-5 ${meta.bubbleClassName} ${meta.textClassName}`}
+          className={`${bubblePaddingClassName} ${meta.bubbleClassName} ${meta.textClassName}`}
         >
-          <p className="mb-2 text-xs font-semibold tracking-[0.24em] text-white/45 uppercase">
-            {meta.label}
-          </p>
-          <p className="text-[15px] leading-7 whitespace-pre-line text-white/92">
+          <p
+            className={`whitespace-pre-line text-white/92 ${bubbleTextClassName}`}
+          >
             {message.content}
           </p>
         </div>

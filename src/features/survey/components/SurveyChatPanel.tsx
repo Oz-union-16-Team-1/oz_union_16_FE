@@ -8,12 +8,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import {
+  BadgeInfo,
   ChevronRight,
   RotateCcw,
   SendHorizontal,
   TriangleAlert,
+  X,
 } from 'lucide-react';
 
 import { ROUTES } from '../../../constants/routes';
@@ -93,6 +96,7 @@ function SurveyChatPanel() {
   const lastMessageCountRef = useRef(0);
   const [inputValue, setInputValue] = useState('');
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [isGuardrailPanelOpen, setIsGuardrailPanelOpen] = useState(false);
 
   const {
     sessionId,
@@ -152,6 +156,12 @@ function SurveyChatPanel() {
     isChatTemporarilyBlocked ||
     hasExpiredChatBlock ||
     hasReachedNonGameChatLimit;
+  const shouldShowGuardrailPanel = import.meta.env.DEV;
+  const guardrailStatusLabel = isChatTemporarilyBlocked
+    ? `${formatRemainingBlockTime(remainingBlockTimeMs)} 남음`
+    : hasExpiredChatBlock
+      ? '제한 종료'
+      : `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`;
   const inputPlaceholder = useMemo(() => {
     if (isChatTemporarilyBlocked) {
       return '반복된 이상행동으로 인해 5분간 채팅이 정지됩니다.';
@@ -162,7 +172,7 @@ function SurveyChatPanel() {
     }
 
     if (recommendationReady) {
-      return "추천 결과가 준비되었어요. 우측 상단의 '추천 결과 보기' 버튼을 눌러 다음 단계로 이동해 주세요.";
+      return '추천 결과가 준비되었어요. 아래 버튼으로 다음 단계로 이동해 주세요.';
     }
 
     return '취향과 관련된 게임 이야기를 입력해 주세요.';
@@ -479,67 +489,105 @@ function SurveyChatPanel() {
     }
   };
 
+  const guardrailLauncher =
+    shouldShowGuardrailPanel && typeof document !== 'undefined'
+      ? createPortal(
+          <div className="pointer-events-none fixed bottom-6 left-2 z-[95] hidden lg:block">
+            {isGuardrailPanelOpen ? (
+              <aside className="pointer-events-auto mb-3 ml-3 w-[300px] rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(8,8,9,0.94))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.26)] backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-[0.18em] text-[#ff8a8a] uppercase">
+                      Dev Guardrail
+                    </p>
+                    <h3 className="mt-1 text-sm font-semibold text-white">
+                      설문 키워드 휴리스틱
+                    </h3>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/64">
+                      {guardrailStatusLabel}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsGuardrailPanelOpen(false)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/58 transition hover:bg-white/[0.06] hover:text-white"
+                      aria-label="개발용 가드레일 패널 닫기"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs leading-5 break-keep text-white/54">
+                  개발 환경에서만 보이는 설명 패널입니다. 현재 설문은 키워드
+                  `includes()` 휴리스틱으로 게임 관련 질문 여부를 판정하고,
+                  비게임 질문 3회 누적 시 5분 제한을 적용합니다.
+                </p>
+
+                <div className="mt-3 rounded-[18px] border border-white/8 bg-white/[0.03] px-3 py-3">
+                  <p className="text-[11px] font-semibold tracking-[0.18em] text-white/42 uppercase">
+                    허용 키워드
+                  </p>
+                  <div className="mt-2 flex max-h-[132px] flex-wrap gap-1.5 overflow-y-auto pr-1">
+                    {GAME_RELATED_KEYWORDS.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/72"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setIsGuardrailPanelOpen((current) => !current)}
+              className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(255,53,53,0.94),rgba(130,11,11,0.96))] text-white shadow-[0_18px_40px_rgba(130,0,0,0.28)] transition hover:-translate-y-0.5 hover:brightness-105 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              aria-label="개발용 설문 키워드 가이드 열기"
+            >
+              <BadgeInfo size={24} />
+            </button>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <section className="survey-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+    <section className="survey-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="border-b border-white/8 px-4 py-2.5 sm:px-5 md:px-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-[22px] font-bold text-white sm:text-2xl md:text-[28px]">
-              설문 조사
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="hidden sm:block" />
+
+          <div className="min-w-0 text-center">
+            <h2 className="text-[24px] font-bold tracking-[-0.03em] text-white sm:text-[28px] md:text-[31px]">
+              게임 선호도 설문조사
             </h2>
-            <p className="mt-1 text-sm leading-6 break-keep text-white/58 md:text-[15px]">
-              대화형 AI 설문으로 플레이 스타일을 빠르게 파악하고, 이어지는 추천
-              리스트까지 자연스럽게 연결합니다.
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            <SurveyProgress progress={progress} compact />
             <button
               type="button"
               onClick={handleReset}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RotateCcw size={16} />
               설문 초기화
-            </button>
-
-            <button
-              type="button"
-              onClick={handleMoveToRecommendation}
-              disabled={isRecommendationButtonDisabled}
-              className="inline-flex items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#ee2525,#9b1010)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:translate-y-[-1px] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              추천 결과 보기
-              <ChevronRight size={16} />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="survey-grid min-h-0 flex-1 gap-2.5 px-3 py-3 sm:px-4 sm:py-4 md:gap-3 md:px-5 md:py-4">
-        <div className="min-h-0 space-y-2.5">
-          <SurveyProgress progress={progress} />
-
-          <section className="survey-panel px-4 py-3.5 sm:px-5 md:py-3.5">
-            <h3 className="text-[12px] font-semibold tracking-[0.16em] text-white/42 uppercase">
-              안내사항
-            </h3>
-            <div className="mt-2 space-y-2 text-sm leading-[1.35rem] text-white/56">
-              <p>게임 취향, 플레이 스타일, 선호 장르 중심으로 답변해 주세요.</p>
-              <p>구체적으로 적을수록 설문 흐름이 더 빠르게 정리될 수 있어요.</p>
-              <p>
-                게임과 관련없는 질문을 3회 이상 반복할 시 5분 동안 설문 기능을
-                사용할 수 없습니다.
-              </p>
-            </div>
-          </section>
-        </div>
-
-        <div className="survey-panel flex min-h-0 flex-col">
+      <div className="min-h-0 flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3">
+        <div className="survey-panel flex h-full min-h-0 flex-col overflow-hidden border-white/6 bg-[linear-gradient(180deg,rgba(12,12,14,0.86),rgba(7,7,8,0.94))]">
           <div
             ref={viewportRef}
-            className="survey-message-scroll flex-1 space-y-3.5 px-4 py-4 sm:px-5 sm:py-4 md:px-6"
+            className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-[1.125rem] md:px-6"
           >
             {!messages.length && isSubmitting ? (
               <div className="flex w-full justify-start">
@@ -579,11 +627,31 @@ function SurveyChatPanel() {
                 </div>
               </div>
             ) : null}
+
+            {recommendationReady ? (
+              <div className="flex w-full justify-center pt-2">
+                {isRecommendationButtonDisabled ? (
+                  <div className="max-w-[520px] rounded-[26px] border border-white/8 bg-white/[0.025] px-5 py-4 text-center text-sm leading-6 break-keep text-white/58">
+                    추천 결과는 준비되었지만 현재 설문 제한 상태에서는 바로
+                    이동할 수 없어요. 설문 초기화 후 다시 진행해 주세요.
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleMoveToRecommendation}
+                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:translate-y-[-1px] hover:brightness-105"
+                  >
+                    추천 결과 바로 보기
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
 
-          <div className="border-t border-white/8 px-4 py-3 sm:px-5 sm:py-3.5 md:px-6">
+          <div className="border-t border-white/8 px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
             <form ref={formRef} onSubmit={handleSubmit}>
-              <label className="relative block h-[58px] overflow-hidden rounded-full border border-white/10 bg-[#0e0e10] transition focus-within:border-[#b42525] focus-within:bg-[#121214]">
+              <label className="relative block h-[60px] overflow-hidden rounded-full border border-white/10 bg-[#0e0e10] transition focus-within:border-[#b42525] focus-within:bg-[#121214]">
                 <textarea
                   ref={textareaRef}
                   rows={1}
@@ -591,7 +659,7 @@ function SurveyChatPanel() {
                   onChange={(event) => setInputValue(event.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder={inputPlaceholder}
-                  className="h-full min-h-full w-full resize-none overflow-hidden bg-transparent py-4 pr-[5.9rem] pl-4 text-[15px] leading-6 text-white outline-none placeholder:text-white/26 sm:pl-5"
+                  className="h-full min-h-full w-full resize-none overflow-hidden bg-transparent py-[17px] pr-[5.8rem] pl-4 text-[15px] leading-6 text-white outline-none placeholder:text-white/26 sm:pl-5"
                   disabled={isTextareaDisabled}
                 />
                 {isChatTemporarilyBlocked ? (
@@ -623,6 +691,8 @@ function SurveyChatPanel() {
           </div>
         </div>
       </div>
+
+      {guardrailLauncher}
     </section>
   );
 }
