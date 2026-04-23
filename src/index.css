@@ -33,9 +33,14 @@
   --color-login-naver: #03c75a;
   --color-login-primary: #f20f17;
   --color-login-primary-hover: #dd0d14;
-  --color-auth-panel: #111111;
-  --color-auth-panel-border: rgba(255, 255, 255, 0.08);
-  --shadow-auth-panel: rgba(0, 0, 0, 0.34);
+  --color-auth-panel: rgba(12, 12, 14, 0.88);
+  --color-auth-panel-border: rgba(255, 255, 255, 0.13);
+  --shadow-auth-panel: rgba(0, 0, 0, 0.5);
+  --color-auth-backdrop-grid: rgba(255, 255, 255, 0.045);
+  --color-auth-backdrop-red-glow: rgba(242, 15, 23, 0.2);
+  --color-auth-backdrop-white-glow: rgba(255, 255, 255, 0.08);
+  --color-auth-panel-top: rgba(255, 255, 255, 0.06);
+  --color-auth-panel-bottom: rgba(255, 255, 255, 0.02);
   --shadow-login-primary: rgba(242, 15, 23, 0.42);
   --color-support-chat-panel: rgba(8, 8, 9, 0.92);
   --color-support-chat-panel-border: rgba(153, 25, 20, 0.8);
@@ -127,6 +132,70 @@
         transparent 24%
       ),
       linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 32%);
+  }
+
+  .auth-layout-main {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      transparent 35%
+    );
+  }
+
+  .auth-layout-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+    background:
+      radial-gradient(
+        circle at 14% 14%,
+        var(--color-auth-backdrop-red-glow),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at 86% 8%,
+        var(--color-auth-backdrop-white-glow),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 52% 86%,
+        rgba(150, 20, 20, 0.14),
+        transparent 42%
+      );
+  }
+
+  .auth-layout-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.32;
+    background-image:
+      linear-gradient(var(--color-auth-backdrop-grid) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        var(--color-auth-backdrop-grid) 1px,
+        transparent 1px
+      );
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse at center, black 32%, transparent 78%);
+  }
+
+  .auth-layout-panel {
+    border-color: var(--color-auth-panel-border);
+    background:
+      linear-gradient(
+        180deg,
+        var(--color-auth-panel-top),
+        var(--color-auth-panel-bottom)
+      ),
+      var(--color-auth-panel);
+    box-shadow:
+      0 36px 70px -28px var(--shadow-auth-panel),
+      0 0 0 1px rgba(255, 255, 255, 0.035),
+      0 0 44px rgba(242, 15, 23, 0.14);
+    backdrop-filter: blur(18px);
   }
 
   .survey-panel {
