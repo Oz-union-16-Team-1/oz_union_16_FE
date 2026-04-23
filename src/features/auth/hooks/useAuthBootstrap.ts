@@ -33,6 +33,11 @@ function useAuthBootstrap() {
 
     const store = useAuthStore.getState();
 
+    if (store.accessToken) {
+      store.setAuthBootstrapStatus('ready');
+      return;
+    }
+
     if (AUTH_BOOTSTRAP_SKIP_PATHS.has(location.pathname)) {
       store.setAuthBootstrapStatus('ready');
       return;

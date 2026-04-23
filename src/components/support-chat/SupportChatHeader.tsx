@@ -14,21 +14,18 @@ function SupportChatHeader({
   onClose,
 }: SupportChatHeaderProps) {
   return (
-    <div className="border-b border-[#641312] px-4 py-4 sm:px-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="support-chat-header-badge">
-            <Bot size={20} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-semibold tracking-[0.02em] text-white sm:text-xl">
-              고객센터
-            </p>
-            <p className="mt-1 truncate text-sm leading-5 whitespace-nowrap text-white/70">
-              {routeContext.pageLabel} 화면에서도 바로 문의하실 수 있어요.
-            </p>
-          </div>
+    <div
+      className="border-b border-[#641312] px-4 py-3.5 sm:px-5"
+      data-route-context={routeContext.pageLabel}
+    >
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="support-chat-header-badge">
+          <Bot size={20} />
         </div>
+
+        <p className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[1.35rem] leading-none font-semibold tracking-[0.01em] text-white sm:text-[1.45rem]">
+          고객센터
+        </p>
 
         <div className="flex items-center gap-1.5">
           <button

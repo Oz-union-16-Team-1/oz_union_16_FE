@@ -32,6 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       accessToken: token,
       isAuthenticated: !!token,
+      authBootstrapStatus: 'ready',
     }),
 
   setAccount: (account) => set({ account }),
@@ -41,6 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken: token,
       account: account,
       isAuthenticated: true,
+      authBootstrapStatus: 'ready',
     }),
 
   clearAuth: () => {

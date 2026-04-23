@@ -31,6 +31,7 @@ import type {
 
 const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
 const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
+const AUTH_REFRESH_TIMEOUT_MS = 7000;
 const DEFAULT_API_ERROR_MESSAGE =
   '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
 
@@ -100,6 +101,7 @@ export const refreshAccessToken = async () => {
     {},
     {
       withCredentials: true,
+      timeout: AUTH_REFRESH_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
       },
