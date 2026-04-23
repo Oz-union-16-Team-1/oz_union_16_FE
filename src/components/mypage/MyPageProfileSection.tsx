@@ -39,7 +39,13 @@ function MyPageProfileSection({
   onProfileImageSelect,
   children,
 }: MyPageProfileSectionProps) {
-  const hasProfileImage = Boolean(profileImageUrl?.trim());
+  const normalizedProfileImageUrl = profileImageUrl?.trim() ?? '';
+  const [failedProfileImageUrl, setFailedProfileImageUrl] = useState<
+    string | null
+  >(null);
+  const hasProfileImage =
+    Boolean(normalizedProfileImageUrl) &&
+    failedProfileImageUrl !== normalizedProfileImageUrl;
   const [isNicknameEditMode, setIsNicknameEditMode] = useState(false);
   const [nextNickname, setNextNickname] = useState(nickname);
   const [nicknameFieldError, setNicknameFieldError] = useState('');
@@ -101,8 +107,11 @@ function MyPageProfileSection({
               <div className="border-mypage-panel bg-mypage-card relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border shadow-[0_24px_50px_rgba(0,0,0,0.46),0_0_0_1px_rgba(255,255,255,0.03)]">
                 {hasProfileImage ? (
                   <img
-                    src={profileImageUrl!}
+                    src={normalizedProfileImageUrl}
                     alt={`${nickname} 프로필 이미지`}
+                    onError={() =>
+                      setFailedProfileImageUrl(normalizedProfileImageUrl)
+                    }
                     className={`h-full w-full object-cover transition duration-200 ${
                       isProfileImageUploading
                         ? 'blur-[1.8px] brightness-[0.62]'
