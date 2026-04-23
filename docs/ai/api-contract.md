@@ -26,6 +26,39 @@
 - **마이페이지 찜 목록 조회**: `GET /api/v1/accounts/me/game-like`
 - **마이페이지 찜 해제**: `DELETE /api/v1/accounts/me/game-like/{game_id}`
 
+#### 비밀번호 변경 필드 계약
+
+비밀번호 변경은 현재 프론트 구현 기준으로 아래 필드명을 canonical contract로 사용합니다.
+백엔드 명세가 다시 조정되더라도, 프론트는 이 문서를 먼저 갱신한 뒤 타입과 mock을 함께 수정합니다.
+
+```json
+{
+  "old_password": "string",
+  "new_password": "string",
+  "new_password_check": "string"
+}
+```
+
+- `old_password`: 현재 비밀번호
+- `new_password`: 새 비밀번호
+- `new_password_check`: 새 비밀번호 확인
+- 필드 검증 에러는 `detail` 또는 `error_detail` 안에 위 3개 키로 내려오는 것을 기준으로 처리합니다.
+- 현재 비밀번호 불일치는 field error가 아니라 일반 에러 메시지로 처리하며, 응답 예시는 아래와 같습니다.
+
+```json
+{
+  "error_detail": "현재 비밀번호가 올바르지 않습니다."
+}
+```
+
+- 성공 응답은 아래 형태를 기준으로 사용합니다.
+
+```json
+{
+  "detail": "비밀번호가 변경되었습니다."
+}
+```
+
 ### 3. 로그아웃 및 세션 초기화 규정
 
 - **상태 초기화**: 로그아웃 실행 시 `useAuthStore`의 토큰 및 사용자 프로필 정보를 즉시 `null`로 초기화.
