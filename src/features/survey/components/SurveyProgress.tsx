@@ -10,20 +10,17 @@ function SurveyProgress({ progress }: SurveyProgressProps) {
   const percentage = Math.max(0, Math.min(progress.completion_rate * 100, 100));
 
   return (
-    <section className="survey-panel p-4">
-      <div className="mb-2.5 flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-[#ff4d4d]">
-            <Activity size={18} />
+    <section className="survey-panel p-3.5">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] text-[#ff4d4d]">
+            <Activity size={16} />
           </div>
           <div className="space-y-0.5">
             <p className="text-sm font-semibold text-white">진행률</p>
-            <p className="text-[13px] leading-5 text-white/55">
-              답변이 구체적일수록 남은 질문 수가 줄어들 수 있습니다.
-            </p>
           </div>
         </div>
-        <p className="pt-0.5 text-sm font-semibold text-[#ff7a7a]">
+        <p className="text-sm font-semibold text-[#ff7a7a]">
           {Math.round(percentage)}%
         </p>
       </div>

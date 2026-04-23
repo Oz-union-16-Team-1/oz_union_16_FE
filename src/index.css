@@ -149,12 +149,12 @@
   .survey-grid {
     display: grid;
     min-height: 0;
-    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 248px) minmax(0, 1fr);
   }
 
   .survey-message-scroll {
     min-height: 0;
-    max-height: min(54vh, 560px);
+    max-height: min(64vh, 700px);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
