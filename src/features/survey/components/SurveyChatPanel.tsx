@@ -133,6 +133,8 @@ function SurveyChatPanel() {
   const remainingBlockTimeMs = chatBlockedUntil
     ? Math.max(chatBlockedUntil - currentTime, 0)
     : 0;
+  const hasReachedNonGameChatLimit =
+    nonGameStrikeCount >= NON_GAME_CHAT_MAX_STRIKES;
   const isChatTemporarilyBlocked = Boolean(
     chatBlockedUntil && remainingBlockTimeMs > 0,
   );
@@ -144,6 +146,12 @@ function SurveyChatPanel() {
     recommendationReady ||
     isChatTemporarilyBlocked ||
     hasExpiredChatBlock;
+  const isRecommendationButtonDisabled =
+    !recommendationReady ||
+    isSubmitting ||
+    isChatTemporarilyBlocked ||
+    hasExpiredChatBlock ||
+    hasReachedNonGameChatLimit;
   const inputPlaceholder = useMemo(() => {
     if (isChatTemporarilyBlocked) {
       return '반복된 이상행동으로 인해 5분간 채팅이 정지됩니다.';
@@ -277,7 +285,7 @@ function SurveyChatPanel() {
     const trimmed = content.trim();
 
     if (!trimmed || isSubmitting) {
-      return;
+      return false;
     }
 
     clearError();
@@ -314,8 +322,11 @@ function SurveyChatPanel() {
 
         applyChatResponse(response);
       }
+
+      return true;
     } catch (requestError) {
       setError(extractApiErrorMessage(requestError));
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -336,23 +347,32 @@ function SurveyChatPanel() {
     }
 
     const isGameRelatedMessage = isLikelyGameRelatedMessage(nextMessage);
-
-    if (!isGameRelatedMessage) {
-      const nextStrikeCount = nonGameStrikeCount + 1;
-      setNonGameStrikeCount(nextStrikeCount);
-
-      if (nextStrikeCount >= NON_GAME_CHAT_MAX_STRIKES) {
-        setCurrentTime(Date.now());
-        setChatBlockedUntil(Date.now() + NON_GAME_CHAT_BLOCK_DURATION_MS);
-        setInputValue('');
-        shouldRestoreFocusRef.current = false;
-        return;
-      }
-    }
+    const nextStrikeCount = isGameRelatedMessage
+      ? nonGameStrikeCount
+      : nonGameStrikeCount + 1;
+    const shouldBlockAfterResponse =
+      !isGameRelatedMessage && nextStrikeCount >= NON_GAME_CHAT_MAX_STRIKES;
 
     shouldRestoreFocusRef.current = true;
     setInputValue('');
-    await submitMessage({ content: nextMessage, appendUserMessage: true });
+    const didSubmitSucceed = await submitMessage({
+      content: nextMessage,
+      appendUserMessage: true,
+    });
+
+    if (!didSubmitSucceed) {
+      return;
+    }
+
+    if (!isGameRelatedMessage) {
+      setNonGameStrikeCount(nextStrikeCount);
+    }
+
+    if (shouldBlockAfterResponse) {
+      setCurrentTime(Date.now());
+      setChatBlockedUntil(Date.now() + NON_GAME_CHAT_BLOCK_DURATION_MS);
+      shouldRestoreFocusRef.current = false;
+    }
   };
 
   const handleRetry = async () => {
@@ -443,6 +463,10 @@ function SurveyChatPanel() {
   };
 
   const handleMoveToRecommendation = () => {
+    if (isRecommendationButtonDisabled) {
+      return;
+    }
+
     startTransition(() => {
       navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=survey`);
     });
@@ -483,7 +507,7 @@ function SurveyChatPanel() {
             <button
               type="button"
               onClick={handleMoveToRecommendation}
-              disabled={!recommendationReady || isSubmitting}
+              disabled={isRecommendationButtonDisabled}
               className="inline-flex items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#ee2525,#9b1010)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:translate-y-[-1px] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
             >
               추천 결과 보기
