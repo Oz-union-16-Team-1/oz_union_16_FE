@@ -4,11 +4,12 @@ import { ChevronDown, ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
+import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
-import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
+import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import {
@@ -26,7 +27,6 @@ import type { MatchResultItem } from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
 import type { SurveyResultItem } from '../../features/survey/types/survey';
-import { isMockServiceWorkerEnabled } from '../../lib/env';
 
 const FALLBACK_BACKDROP_ITEMS = [
   {
@@ -270,9 +270,8 @@ function RecommendationListPage() {
   const isMatchSource = source === 'match';
   const isSurveySource =
     source === 'survey' || (!source && Boolean(legacySessionId));
-  const isMockMode = isMockServiceWorkerEnabled();
-  const { canAccessAuthenticatedRoute, isAuthReady } = useAuthGuardState();
-  const canAccessPage = isMockMode || canAccessAuthenticatedRoute;
+  const authGate = useAuthGate({ allowMockBypass: true });
+  const canAccessPage = authGate.accessStatus === 'authorized';
 
   const surveyResultsQuery = useSurveyResultsInfinite(
     !isMatchSource && isSurveySource && canAccessPage,
@@ -550,25 +549,16 @@ function RecommendationListPage() {
             </aside>
           </div>
 
-          {!isMockMode && !isAuthReady ? (
-            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
-              <h2 className="text-2xl font-bold text-white">
-                인증 상태를 확인하는 중입니다.
-              </h2>
-              <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                잠시만 기다려 주세요. 세션 확인 후 추천 결과를 불러옵니다.
-              </p>
-            </section>
+          {authGate.accessStatus === 'loading' ? (
+            <AuthGateStatusPanel
+              title="인증 상태를 확인하는 중입니다."
+              description="잠시만 기다려 주세요. 세션 확인 후 추천 결과를 불러옵니다."
+            />
           ) : !canAccessPage ? (
-            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
-              <h2 className="text-2xl font-bold text-white">
-                로그인 후 추천 결과를 볼 수 있어요.
-              </h2>
-              <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를
-                켜두면 추천 결과 흐름을 확인할 수 있습니다.
-              </p>
-            </section>
+            <AuthGateStatusPanel
+              title="로그인 후 추천 결과를 볼 수 있어요."
+              description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를 켜두면 추천 결과 흐름을 확인할 수 있습니다."
+            />
           ) : !isMatchSource && !isSurveySource ? (
             <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
               <h2 className="text-2xl font-bold text-white">

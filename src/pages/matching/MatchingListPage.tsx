@@ -4,16 +4,14 @@ import { Link } from 'react-router';
 
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
-import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
+import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
 import { MATCHING_GENRES } from '../../features/matching/genres';
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
-import { isMockServiceWorkerEnabled } from '../../lib/env';
 
 function MatchingListPage() {
-  const { canAccessAuthenticatedRoute } = useAuthGuardState();
-  const isMockMode = isMockServiceWorkerEnabled();
-  const canFetchGenreImages = isMockMode || canAccessAuthenticatedRoute;
+  const authGate = useAuthGate({ allowMockBypass: true });
+  const canFetchGenreImages = authGate.accessStatus === 'authorized';
   const resetFlow = useMatchingStore((state) => state.resetFlow);
   const genreImageQueries = useMatchingGenreImageQueries(
     MATCHING_GENRES.map((genre) => genre.genreId),

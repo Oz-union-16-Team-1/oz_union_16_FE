@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,11 +14,12 @@ import RecommendationListPage from './pages/recommendation/RecommendationListPag
 import SurveyPage from './pages/survey/SurveyPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import MyPage from './pages/mypage/MyPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import './index.css';
 
 const queryClient = new QueryClient();
+// eslint-disable-next-line react-refresh/only-export-components
+const LazyMyPage = lazy(() => import('./pages/mypage/MyPage'));
 
 const router = createBrowserRouter([
   {
@@ -67,7 +68,20 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.MY_PAGE,
-        element: <MyPage />,
+        element: (
+          <Suspense
+            fallback={
+              <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
+                <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
+                <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1240px] items-center justify-center px-4 text-center text-white/70 sm:px-6 md:px-8">
+                  마이페이지를 불러오는 중입니다...
+                </main>
+              </div>
+            }
+          >
+            <LazyMyPage />
+          </Suspense>
+        ),
       },
     ],
   },

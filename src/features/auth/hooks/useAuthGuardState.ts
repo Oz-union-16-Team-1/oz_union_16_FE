@@ -1,17 +1,13 @@
-import { useAuthStore } from '../../../store/useAuthStore';
+import useAuthGate from './useAuthGate';
 
 function useAuthGuardState() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const authBootstrapStatus = useAuthStore(
-    (state) => state.authBootstrapStatus,
-  );
-  const isAuthReady = authBootstrapStatus === 'ready';
+  const gate = useAuthGate();
 
   return {
-    isAuthenticated,
-    isAuthReady,
-    authBootstrapStatus,
-    canAccessAuthenticatedRoute: isAuthReady && isAuthenticated,
+    isAuthenticated: gate.isAuthenticated,
+    isAuthReady: gate.isAuthReady,
+    authBootstrapStatus: gate.authBootstrapStatus,
+    canAccessAuthenticatedRoute: gate.canAccessAuthenticatedRoute,
   };
 }
 

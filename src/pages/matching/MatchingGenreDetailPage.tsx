@@ -3,10 +3,11 @@ import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
+import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import Header from '../../components/common/Header';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
-import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
+import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import {
   useMatchCandidatesQuery,
@@ -21,7 +22,6 @@ import {
 } from '../../features/matching/genres';
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
-import { isMockServiceWorkerEnabled } from '../../lib/env';
 
 const formatMatchingCandidateRating = (rating: number | null) => {
   if (typeof rating !== 'number') {
@@ -45,9 +45,8 @@ function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { canAccessAuthenticatedRoute, isAuthReady } = useAuthGuardState();
-  const isMockMode = isMockServiceWorkerEnabled();
-  const canAccessPage = isMockMode || canAccessAuthenticatedRoute;
+  const authGate = useAuthGate({ allowMockBypass: true });
+  const canAccessPage = authGate.accessStatus === 'authorized';
   const isValidGenreSlug = genreSlug ? isMatchingGenreSlug(genreSlug) : false;
   const genre = genreSlug ? getMatchingGenreBySlug(genreSlug) : undefined;
 
@@ -229,23 +228,19 @@ function MatchingGenreDetailPage() {
               장르 선택으로 돌아가기
             </Link>
           </section>
-        ) : !isMockMode && !isAuthReady ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
-            인증 상태를 확인하는 중입니다...
-          </section>
+        ) : authGate.accessStatus === 'loading' ? (
+          <AuthGateStatusPanel
+            title="인증 상태를 확인하는 중입니다."
+            description="잠시만 기다려 주세요. 세션 확인 후 매칭 화면을 불러옵니다."
+            align="center"
+            className="mx-auto max-w-[760px] sm:py-12"
+          />
         ) : !canAccessPage ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
-            <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
-              Matching
-            </p>
-            <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
-              로그인 후 매칭을 진행할 수 있어요.
-            </h1>
-            <p className="mt-4 max-w-[52ch] text-sm leading-7 break-keep text-white/60 sm:text-base">
-              실제 API 모드에서는 인증 토큰이 필요합니다. 개발 환경에서 MSW를
-              켜두면 로그인 없이도 매칭 흐름을 확인할 수 있어요.
-            </p>
-          </section>
+          <AuthGateStatusPanel
+            title="로그인 후 매칭을 진행할 수 있어요."
+            description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 환경에서 MSW를 켜두면 로그인 없이도 매칭 흐름을 확인할 수 있어요."
+            className="mx-auto max-w-[760px] sm:py-12"
+          />
         ) : matchCandidatesQuery.isLoading ? (
           <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
             매칭 후보 게임을 불러오는 중입니다...
