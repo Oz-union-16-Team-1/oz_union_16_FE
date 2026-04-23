@@ -67,10 +67,10 @@ function AuthRadioGroup({
                 className="peer sr-only"
               />
               <span
-                className={`bg-login-field text-login-label flex h-14 items-center justify-center rounded-xl border px-4 text-sm font-semibold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#ff5c60]/25 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black peer-disabled:opacity-60 ${
+                className={`flex h-14 items-center justify-center rounded-xl border px-4 text-sm font-semibold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#ff5c60]/25 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black peer-disabled:opacity-60 ${
                   errorMessage
-                    ? 'border-red-500/80 text-red-200 group-hover:border-red-400/90 group-hover:bg-[#2f1519] group-hover:text-red-100'
-                    : 'border-white/16 group-hover:border-[#ff6b6e]/60 group-hover:bg-[#261216] group-hover:text-[#ffd7d8] peer-checked:border-[#ff6b6e]/70 peer-checked:bg-[#261216] peer-checked:text-[#ffd7d8]'
+                    ? 'border-red-500/80 bg-[#1d1215] text-red-200 group-hover:border-red-400/90 group-hover:bg-[#2f1519] group-hover:text-red-100'
+                    : 'bg-login-field text-login-label border-white/16 group-hover:border-white/24 group-hover:bg-[#1d1e22] group-hover:text-white/90 peer-checked:border-[#ff6b6e]/70 peer-checked:bg-[#29161a] peer-checked:text-white'
                 }`}
               >
                 {option.label}

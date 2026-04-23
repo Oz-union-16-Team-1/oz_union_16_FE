@@ -16,7 +16,7 @@ function AuthInputActionButton({
     <AuthButton
       type={type}
       variant="secondary"
-      className={`bg-login-field text-login-label w-full border border-white/16 text-sm font-semibold hover:border-[#ff6b6e]/60 hover:bg-[#261216] hover:text-[#ffd7d8] focus-visible:ring-[#ff5c60]/25 sm:w-[5.75rem] sm:shrink-0 ${className}`}
+      className={`w-full border border-[#5b3035] bg-[#1d1215] text-sm font-semibold text-[#f2d8d9] hover:border-[#ff6b6e]/65 hover:bg-[#29161a] hover:text-white focus-visible:ring-[#ff5c60]/25 active:scale-[0.99] sm:w-[5.75rem] sm:shrink-0 ${className}`}
       {...props}
     >
       {children}

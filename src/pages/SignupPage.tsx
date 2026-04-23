@@ -482,7 +482,7 @@ function SignupPage() {
       contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
     >
       <form
-        className={AUTH_SHARED_FORM_CLASS_NAMES.form}
+        className={`${AUTH_SHARED_FORM_CLASS_NAMES.form} pt-1 sm:pt-1.5`}
         autoComplete="on"
         onSubmit={handleSubmit}
       >
@@ -512,7 +512,6 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.name}
           disabled={isSubmitting}
-          containerClassName="pt-1"
         />
 
         <AuthInputField

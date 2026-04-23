@@ -37,14 +37,14 @@ function AuthInputField({
   const shouldRenderMessage = Boolean(resolvedMessage) || reserveMessageSpace;
 
   return (
-    <div className={`space-y-1.5 ${containerClassName} sm:space-y-2`}>
+    <div className={`space-y-2 ${containerClassName} sm:space-y-2.5`}>
       <label
         htmlFor={id}
         className="text-login-label block text-sm font-medium"
       >
         {label}
       </label>
-      <div className="relative flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <InputControl
           id={id}
           {...inputProps}
@@ -58,7 +58,7 @@ function AuthInputField({
         <p
           role={errorMessage ? 'alert' : undefined}
           aria-hidden={!resolvedMessage}
-          className={`${reserveMessageSpace ? 'min-h-5' : ''} pl-1 text-sm/5 font-medium ${resolvedMessage ? resolvedMessageClassName : 'text-transparent'}`}
+          className={`${reserveMessageSpace ? 'min-h-5' : ''} pt-0.5 pl-1 text-sm/5 font-medium ${resolvedMessage ? resolvedMessageClassName : 'text-transparent'}`}
         >
           {resolvedMessage ?? ''}
         </p>

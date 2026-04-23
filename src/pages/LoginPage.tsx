@@ -315,11 +315,9 @@ function LoginPage() {
         panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
         contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
       >
-        <AuthSocialLoginGroup
-          className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
-        />
+        <AuthSocialLoginGroup className="mt-2 sm:mt-2.5" />
 
-        <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
+        <AuthDivider className="my-4 sm:my-5" />
 
         <form
           className={AUTH_SHARED_FORM_CLASS_NAMES.form}
