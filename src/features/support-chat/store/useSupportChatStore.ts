@@ -20,7 +20,6 @@ type SupportChatStoreState = {
   isPinnedToBottom: boolean;
   isOpen: boolean;
   isSubmitting: boolean;
-  error: string | null;
   routeContext: SupportChatRouteContext;
   bootstrapConversation: (routeContext?: SupportChatRouteContext) => void;
   resetConversation: (routeContext?: SupportChatRouteContext) => void;
@@ -31,10 +30,9 @@ type SupportChatStoreState = {
   setSessionId: (sessionId: number | null) => void;
   setPinnedToBottom: (isPinnedToBottom: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
-  setError: (error: string | null) => void;
-  clearError: () => void;
   hideQuickActions: () => void;
   appendUserMessage: (content: string) => void;
+  appendAssistantMessage: (content: string) => void;
   beginAssistantMessage: (messageId: string) => void;
   appendAssistantChunk: (messageId: string, chunk: string) => void;
   finalizeAssistantMessage: (messageId: string) => void;
@@ -74,7 +72,6 @@ const initialState = {
   isPinnedToBottom: true,
   isOpen: false,
   isSubmitting: false,
-  error: null as string | null,
   routeContext: createDefaultRouteContext(),
 };
 
@@ -114,14 +111,19 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
     setSessionId: (sessionId) => set({ sessionId }),
     setPinnedToBottom: (isPinnedToBottom) => set({ isPinnedToBottom }),
     setSubmitting: (isSubmitting) => set({ isSubmitting }),
-    setError: (error) => set({ error }),
-    clearError: () => set({ error: null }),
     hideQuickActions: () => set({ showQuickActions: false }),
     appendUserMessage: (content) =>
       set((state) => ({
         messages: capMessages([
           ...state.messages,
           createMessage('user', content),
+        ]),
+      })),
+    appendAssistantMessage: (content) =>
+      set((state) => ({
+        messages: capMessages([
+          ...state.messages,
+          createMessage('assistant', content),
         ]),
       })),
     beginAssistantMessage: (messageId) =>
