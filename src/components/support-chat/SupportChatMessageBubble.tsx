@@ -1,6 +1,8 @@
-import { Bot, UserRound } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 import type { SupportChatMessage } from '@/features/support-chat/types/supportChat';
+import { useAuthStore } from '@/store/useAuthStore';
+import defaultProfileImage from '@/assets/프로필 이미지.png';
 import SupportChatTypingIndicator from './SupportChatTypingIndicator';
 
 type SupportChatMessageBubbleProps = {
@@ -16,7 +18,6 @@ const roleMeta = {
       'border border-[#7a1715]/70 bg-[#2a0e0d] text-[#ff6b62] shadow-[0_0_24px_rgba(201,41,35,0.16)]',
   },
   user: {
-    Icon: UserRound,
     wrapperClassName: 'justify-end',
     bodyClassName: 'support-chat-bubble-user',
     badgeClassName:
@@ -26,7 +27,10 @@ const roleMeta = {
 
 function SupportChatMessageBubble({ message }: SupportChatMessageBubbleProps) {
   const meta = roleMeta[message.role];
-  const Icon = meta.Icon;
+  const AssistantIcon = roleMeta.assistant.Icon;
+  const account = useAuthStore((state) => state.account);
+  const isAuthenticatedUser = useAuthStore((state) => state.isAuthenticated);
+  const userAvatarUrl = account?.profile_img_url?.trim() || defaultProfileImage;
   const isTyping =
     message.role === 'assistant' &&
     message.status === 'streaming' &&
@@ -39,7 +43,7 @@ function SupportChatMessageBubble({ message }: SupportChatMessageBubbleProps) {
           <div
             className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${meta.badgeClassName}`}
           >
-            <Icon size={18} />
+            <AssistantIcon size={18} />
           </div>
         ) : null}
 
@@ -59,7 +63,20 @@ function SupportChatMessageBubble({ message }: SupportChatMessageBubbleProps) {
           <div
             className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${meta.badgeClassName}`}
           >
-            <Icon size={18} />
+            <img
+              src={userAvatarUrl}
+              alt={
+                isAuthenticatedUser
+                  ? '회원 프로필 이미지'
+                  : '비회원 프로필 이미지'
+              }
+              className="h-full w-full rounded-2xl object-cover"
+              onError={(event) => {
+                if (event.currentTarget.src !== defaultProfileImage) {
+                  event.currentTarget.src = defaultProfileImage;
+                }
+              }}
+            />
           </div>
         ) : null}
       </div>

@@ -60,6 +60,8 @@ const getRouteContext = (pathname: string): SupportChatRouteContext => ({
 });
 
 const AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX = 72;
+const SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE =
+  '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
 
 function SupportChatWidget() {
   const location = useLocation();
@@ -84,7 +86,6 @@ function SupportChatWidget() {
     isPinnedToBottom,
     isOpen,
     isSubmitting,
-    error,
     bootstrapConversation,
     resetConversation,
     closePanel,
@@ -93,10 +94,9 @@ function SupportChatWidget() {
     setSessionId,
     setPinnedToBottom,
     setSubmitting,
-    setError,
-    clearError,
     hideQuickActions,
     appendUserMessage,
+    appendAssistantMessage,
     beginAssistantMessage,
     appendAssistantChunk,
     finalizeAssistantMessage,
@@ -150,6 +150,20 @@ function SupportChatWidget() {
       setHasUnreadMessages(false);
     },
     [setPinnedToBottom],
+  );
+
+  const appendAssistantErrorMessage = useCallback(
+    (message: string) => {
+      const trimmedMessage = message.trim();
+
+      if (!trimmedMessage) {
+        return;
+      }
+
+      hideQuickActions();
+      appendAssistantMessage(trimmedMessage);
+    },
+    [appendAssistantMessage, hideQuickActions],
   );
 
   const handleClosePanel = useCallback(() => {
@@ -305,14 +319,17 @@ function SupportChatWidget() {
   const submitMessage = async (message: string) => {
     const trimmedMessage = message.trim();
 
-    if (trimmedMessage.length < 2 || isSubmitting) {
-      setError('메시지는 공백일 수 없고 2자 이상이어야 합니다.');
+    if (trimmedMessage.length < 2) {
+      appendAssistantErrorMessage(SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE);
+      return;
+    }
+
+    if (isSubmitting) {
       return;
     }
 
     const assistantPlaceholderMessageId = crypto.randomUUID();
 
-    clearError();
     hideQuickActions();
     appendUserMessage(trimmedMessage);
     beginAssistantMessage(assistantPlaceholderMessageId);
@@ -365,7 +382,7 @@ function SupportChatWidget() {
       const errorMessage = extractSupportChatErrorMessage(requestError);
 
       if (errorMessage) {
-        setError(errorMessage);
+        appendAssistantErrorMessage(errorMessage);
       }
 
       setSubmitting(false);
@@ -376,7 +393,7 @@ function SupportChatWidget() {
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) {
-      setError('메시지는 공백일 수 없고 2자 이상이어야 합니다.');
+      appendAssistantErrorMessage(SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE);
       return;
     }
 
@@ -413,7 +430,6 @@ function SupportChatWidget() {
         isPinnedToBottom={isPinnedToBottom}
         showJumpToLatestButton={showJumpToLatestButton}
         liveStatusMessage={liveStatusMessage}
-        error={error}
         inputValue={inputValue}
         onReset={handleReset}
         onClose={handleClosePanel}
@@ -422,10 +438,6 @@ function SupportChatWidget() {
         }}
         onQuickActionSelect={handleQuickActionSelect}
         onInputChange={(value) => {
-          if (error) {
-            clearError();
-          }
-
           setInputValue(value);
         }}
         onSubmit={handleSubmit}

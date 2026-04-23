@@ -24,7 +24,7 @@ function SupportChatHeader({
         </div>
 
         <p className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[1.35rem] leading-none font-semibold tracking-[0.01em] text-white sm:text-[1.45rem]">
-          고객센터
+          고객센터 챗봇
         </p>
 
         <div className="flex items-center gap-1.5">

@@ -22,7 +22,6 @@ type SupportChatPanelProps = {
   isPinnedToBottom: boolean;
   showJumpToLatestButton: boolean;
   liveStatusMessage: string | null;
-  error: string | null;
   inputValue: string;
   onReset: () => void;
   onClose: () => void;
@@ -44,7 +43,6 @@ function SupportChatPanel({
   isPinnedToBottom,
   showJumpToLatestButton,
   liveStatusMessage,
-  error,
   inputValue,
   onReset,
   onClose,
@@ -118,7 +116,6 @@ function SupportChatPanel({
       <SupportChatComposer
         value={inputValue}
         disabled={isSubmitting}
-        error={error}
         onChange={onInputChange}
         onSubmit={onSubmit}
       />
