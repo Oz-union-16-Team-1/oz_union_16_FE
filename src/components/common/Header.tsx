@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ROUTES } from '../../constants/routes';
+import { useCurrentUserProfileQuery } from '../../features/auth/api/useAuthApi';
 import { useAuthStore } from '../../store/useAuthStore';
 import HeaderProfileMenu from './HeaderProfileMenu';
 
@@ -18,9 +20,22 @@ const HIDDEN_GUEST_ACTION_PATHS = new Set([
 const Header = ({ fixed = true }: HeaderProps) => {
   const location = useLocation();
   const isLoggedIn = useAuthStore((state) => Boolean(state.accessToken));
+  const account = useAuthStore((state) => state.account);
+  const setAccount = useAuthStore((state) => state.setAccount);
+  const profileHydrationQuery = useCurrentUserProfileQuery(
+    isLoggedIn && !account,
+  );
   const shouldHideGuestActions = HIDDEN_GUEST_ACTION_PATHS.has(
     location.pathname,
   );
+  const resolvedProfileImageUrl =
+    account?.profile_img_url ?? profileHydrationQuery.data?.profile_img_url;
+
+  useEffect(() => {
+    if (profileHydrationQuery.data) {
+      setAccount(profileHydrationQuery.data);
+    }
+  }, [profileHydrationQuery.data, setAccount]);
 
   return (
     <header
@@ -62,7 +77,7 @@ const Header = ({ fixed = true }: HeaderProps) => {
               </>
             )
           ) : (
-            <HeaderProfileMenu />
+            <HeaderProfileMenu profileImageUrl={resolvedProfileImageUrl} />
           )}
         </div>
       </div>

@@ -84,7 +84,9 @@ const resolveMockAccounts = (
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
+  const setAccount = useAuthStore((state) => state.setAccount);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const loginMutation = useLoginMutation();
   const [mockAccounts, setMockAccounts] = useState<DevMockLoginAccount[]>([]);
   const [isMockPanelOpen, setIsMockPanelOpen] = useState(false);
@@ -293,18 +295,26 @@ function LoginPage() {
 
     try {
       const response = await loginMutation.mutateAsync(payload);
-
-      // [Refactor] #94: Access Token 메모리 저장, Refresh Token은 HttpOnly 쿠키로 관리됨
-      const profile = await getCurrentUserProfile();
-      setAuth(response.access_token, profile);
-
-      navigate(ROUTES.HOME);
+      setAccessToken(response.access_token);
     } catch (error) {
       const resolvedError = resolveLoginApiError(error, payload);
 
       setApiFieldErrors(resolvedError.fieldErrors);
       setFormMessage(resolvedError.message);
       focusFieldByName(resolvedError.focusField, LOGIN_FIELD_ELEMENT_IDS);
+      return;
+    }
+
+    try {
+      // [Refactor] #94: Access Token 메모리 저장 후 현재 사용자 프로필을 동기화합니다.
+      const profile = await getCurrentUserProfile();
+      setAccount(profile);
+      navigate(ROUTES.HOME);
+    } catch {
+      clearAuth();
+      setFormMessage(
+        '로그인 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      );
     }
   };
 

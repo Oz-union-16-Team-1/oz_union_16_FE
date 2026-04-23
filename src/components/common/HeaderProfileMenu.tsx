@@ -7,12 +7,18 @@ import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 
 const PROFILE_MENU_ID = 'header-profile-menu';
 
-function HeaderProfileMenu() {
+type HeaderProfileMenuProps = {
+  profileImageUrl?: string | null;
+};
+
+function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { logout, isPending } = useLogoutAction();
   const location = useLocation();
   const isMyPage = location.pathname === `/${ROUTES.MY_PAGE}`;
+  const trimmedProfileImageUrl = profileImageUrl?.trim() || null;
+  const resolvedProfileImageUrl = trimmedProfileImageUrl || profileImg;
 
   useEffect(() => {
     if (!isOpen) {
@@ -63,9 +69,13 @@ function HeaderProfileMenu() {
         className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
       >
         <img
-          src={profileImg}
+          src={resolvedProfileImageUrl}
           alt="프로필 이미지"
           className="h-full w-full object-cover"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = profileImg;
+          }}
         />
       </button>
 
