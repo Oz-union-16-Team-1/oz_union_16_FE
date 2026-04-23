@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { ROUTES } from '../../constants/routes';
-import { useAuthStore } from '../../store/useAuthStore';
+import useAuthGuardState from '../../features/auth/hooks/useAuthGuardState';
 import HeaderProfileMenu from './HeaderProfileMenu';
 
 type HeaderProps = {
@@ -17,7 +17,7 @@ const HIDDEN_GUEST_ACTION_PATHS = new Set([
 
 const Header = ({ fixed = true }: HeaderProps) => {
   const location = useLocation();
-  const isLoggedIn = useAuthStore((state) => Boolean(state.accessToken));
+  const { isAuthReady, canAccessAuthenticatedRoute } = useAuthGuardState();
   const shouldHideGuestActions = HIDDEN_GUEST_ACTION_PATHS.has(
     location.pathname,
   );
@@ -40,7 +40,9 @@ const Header = ({ fixed = true }: HeaderProps) => {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {!isLoggedIn ? (
+          {!isAuthReady ? (
+            <div aria-hidden className="h-9 w-44" />
+          ) : !canAccessAuthenticatedRoute ? (
             shouldHideGuestActions ? null : (
               <>
                 <Link
