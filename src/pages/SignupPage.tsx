@@ -3,12 +3,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import AuthButton from '../components/auth/AuthButton';
-import AuthDivider from '../components/auth/AuthDivider';
 import AuthFormMessage from '../components/auth/AuthFormMessage';
 import AuthInputActionButton from '../components/auth/AuthInputActionButton';
 import AuthInputField from '../components/auth/AuthInputField';
 import AuthRadioGroup from '../components/auth/AuthRadioGroup';
-import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
 import {
   AUTH_SHARED_FORM_CLASS_NAMES,
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
@@ -478,18 +476,11 @@ function SignupPage() {
   return (
     <AuthLayout
       title="회원가입"
-      subtitle="회원가입 후 취향 기반 게임 추천을 시작해보세요"
+      titleClassName="sr-only"
       withPanel
       panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
       contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
-      subtitleClassName="mx-auto max-w-[290px] sm:max-w-[320px]"
     >
-      <AuthSocialLoginGroup
-        className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
-      />
-
-      <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
-
       <form
         className={AUTH_SHARED_FORM_CLASS_NAMES.form}
         autoComplete="on"
@@ -520,13 +511,7 @@ function SignupPage() {
             }))
           }
           errorMessage={resolvedFieldErrors.name}
-          helperMessage={
-            !resolvedFieldErrors.name
-              ? `이름은 ${NAME_MAX_LENGTH}자 이하로 입력해주세요.`
-              : ''
-          }
           disabled={isSubmitting}
-          reserveMessageSpace
           containerClassName="pt-1"
         />
 
@@ -550,17 +535,15 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.login_id}
           helperMessage={
-            !resolvedFieldErrors.login_id
-              ? loginIdCheckState.tone === 'success'
-                ? loginIdCheckState.message
-                : `아이디는 ${LOGIN_ID_MAX_LENGTH}자 이하로 입력해주세요.`
+            !resolvedFieldErrors.login_id &&
+            loginIdCheckState.tone === 'success'
+              ? loginIdCheckState.message
               : ''
           }
           helperMessageTone={
             loginIdCheckState.tone === 'success' ? 'success' : 'muted'
           }
           disabled={isSubmitting}
-          reserveMessageSpace
           action={
             <AuthInputActionButton
               onClick={handleCheckLoginIdDuplicate}
@@ -617,7 +600,6 @@ function SignupPage() {
           }
           helperMessageTone="success"
           disabled={isSubmitting}
-          reserveMessageSpace
           action={
             <AuthInputActionButton
               onClick={handleCheckNicknameDuplicate}
@@ -666,7 +648,6 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.password}
           disabled={isSubmitting}
-          reserveMessageSpace
         />
 
         <AuthInputField
@@ -688,7 +669,6 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.password_check}
           disabled={isSubmitting}
-          reserveMessageSpace
         />
 
         <AuthRadioGroup
@@ -702,7 +682,6 @@ function SignupPage() {
           }
           errorMessage={resolvedFieldErrors.gender}
           disabled={isSubmitting}
-          reserveMessageSpace
         />
 
         {feedbackVisibility.showFormMessage ? (

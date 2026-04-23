@@ -6,7 +6,7 @@ export const AUTH_SHARED_LAYOUT_CLASS_NAMES = {
 export const AUTH_SHARED_FORM_CLASS_NAMES = {
   socialGroup: 'mt-6 sm:mt-7',
   divider: 'my-5 sm:my-6',
-  form: 'space-y-3 sm:space-y-3.5',
+  form: 'space-y-2.5 sm:space-y-3',
   feedbackMessage: 'text-sm/5',
   submitButton: 'mt-1 h-14 w-full text-base/6 sm:mt-2',
   auxiliaryLink:
