@@ -42,9 +42,9 @@ function FavoriteGameCard({
             variant="icon"
             aria-label={`${game.title} 찜 해제`}
             onClick={() => onFavoriteClick?.(game)}
-            className="border-white/18 bg-black/55 text-white/90 shadow-[0_10px_24px_rgba(0,0,0,0.35)] hover:border-white/32 hover:bg-black/70 hover:text-white focus-visible:ring-white/25"
+            className="hover:!border-login-primary hover:!bg-login-primary-hover !border-login-primary !bg-login-primary !text-white shadow-[0_10px_24px_rgba(0,0,0,0.38)] hover:!text-white focus-visible:ring-red-300/45"
           >
-            <X size={15} />
+            <X size={15} strokeWidth={2.25} />
           </ActionButton>
         </div>
       </div>
