@@ -1,68 +1,62 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
 
 /**
- * [Auth] 새로고침 로그인 유지 업데이트
- * - Access Token: 로컬 개발/테스트 흐름에 맞춰 localStorage 기반으로 유지합니다.
+ * [Auth] 쿠키 기반 세션 복구 업데이트
+ * - Access Token: 클라이언트 메모리(Zustand State)에서만 유지합니다.
  * - Refresh Token: 브라우저 HttpOnly Cookie 기반 관리 (백엔드 주도)
- * - 로그아웃/세션 만료 시 localStorage 인증 데이터를 즉시 제거합니다.
+ * - 레거시 localStorage 인증 키는 앱 시작 시 1회 정리합니다.
  */
+
+export type AuthBootstrapStatus = 'idle' | 'loading' | 'ready';
 
 interface AuthState {
   accessToken: string | null;
   account: CurrentUserProfileResponse | null;
   isAuthenticated: boolean;
+  authBootstrapStatus: AuthBootstrapStatus;
   setAccessToken: (token: string) => void;
   setAccount: (account: CurrentUserProfileResponse | null) => void;
   setAuth: (token: string, account: CurrentUserProfileResponse) => void;
   clearAuth: () => void;
+  setAuthBootstrapStatus: (status: AuthBootstrapStatus) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
+  accessToken: null,
+  account: null,
+  isAuthenticated: false,
+  authBootstrapStatus: 'idle',
+
+  setAccessToken: (token) =>
+    set({
+      accessToken: token,
+      isAuthenticated: !!token,
+    }),
+
+  setAccount: (account) => set({ account }),
+
+  setAuth: (token, account) =>
+    set({
+      accessToken: token,
+      account: account,
+      isAuthenticated: true,
+    }),
+
+  clearAuth: () => {
+    set({
       accessToken: null,
       account: null,
       isAuthenticated: false,
+    });
+  },
 
-      setAccessToken: (token) =>
-        set({
-          accessToken: token,
-          isAuthenticated: !!token,
-        }),
-
-      setAccount: (account) => set({ account }),
-
-      setAuth: (token, account) =>
-        set({
-          accessToken: token,
-          account: account,
-          isAuthenticated: true,
-        }),
-
-      clearAuth: () => {
-        set({
-          accessToken: null,
-          account: null,
-          isAuthenticated: false,
-        });
-
-        // 기존 localStorage 기반 레거시 데이터 완전 삭제
-        clearLegacyAuthStorage();
-      },
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => window.localStorage),
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        account: state.account,
-        isAuthenticated: state.isAuthenticated,
-      }),
-    },
-  ),
-);
+  setAuthBootstrapStatus: (status) => {
+    set({
+      authBootstrapStatus: status,
+    });
+  },
+}));
 
 /**
  * 기존 localStorage에 저장되던 모든 인증 관련 레거시 키를 삭제합니다.
