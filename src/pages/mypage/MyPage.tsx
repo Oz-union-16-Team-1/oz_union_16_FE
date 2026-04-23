@@ -112,33 +112,15 @@ const mapPasswordApiFieldErrors = (
   newPasswordConfirm: fieldErrors.new_password_check,
 });
 
-const formatLikedAt = (likedAt: string) => {
-  const date = new Date(likedAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString('ko-KR');
-};
-
 const toFavoriteGamePreview = (
   game: LikedGameItemResponse,
 ): FavoriteGamePreview => {
   const normalizedGenres = game.genres.filter((genre) => genre.trim());
-  const likedAtLabel = formatLikedAt(game.liked_at);
-
-  const summaryParts = [
-    normalizedGenres.length > 0
-      ? `장르: ${normalizedGenres.join(', ')}`
-      : '장르 정보 없음',
-    likedAtLabel ? `찜한 날짜: ${likedAtLabel}` : null,
-  ].filter(Boolean);
 
   return {
     gameId: game.game_id,
     title: game.game_title.trim() || 'N/A',
-    summary: summaryParts.join(' · '),
+    summary: normalizedGenres.length > 0 ? normalizedGenres.join(', ') : 'N/A',
     thumbnailUrl: game.thumbnail_url,
     genres: normalizedGenres,
   };
@@ -710,13 +692,13 @@ function MyPage() {
 
           <div
             ref={favoriteGamesScrollRef}
-            className="mypage-scrollbar mt-5 max-h-[760px] overflow-y-auto pr-1"
+            className="mypage-scrollbar mt-5 h-[23rem] overflow-y-auto pr-1 sm:h-[25rem] lg:h-[25rem]"
           >
             {isFavoriteGamesLoading ? (
               <FavoriteGameCardSkeleton />
             ) : favoriteCount > 0 ? (
               <div>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 2xl:grid-cols-4">
                   {favoriteGames.map((game) => (
                     <FavoriteGameCard
                       key={game.gameId}

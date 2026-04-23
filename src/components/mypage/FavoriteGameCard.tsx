@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import type { FavoriteGamePreview } from '../../features/mypage/types';
 import ActionButton from '../common/ActionButton';
@@ -40,11 +40,11 @@ function FavoriteGameCard({
           <ActionButton
             type="button"
             variant="icon"
-            aria-label={`${game.title} 찜 삭제`}
+            aria-label={`${game.title} 찜 해제`}
             onClick={() => onFavoriteClick?.(game)}
-            className="bg-login-primary hover:bg-login-primary-hover border-transparent text-white shadow-[0_12px_28px_rgba(242,15,23,0.25)] hover:text-white focus-visible:ring-red-500/35"
+            className="hover:!border-login-primary hover:!bg-login-primary-hover !border-login-primary !bg-login-primary !text-white shadow-[0_10px_24px_rgba(0,0,0,0.38)] hover:!text-white focus-visible:ring-red-300/45"
           >
-            <Heart size={15} fill="currentColor" />
+            <X size={15} strokeWidth={2.25} />
           </ActionButton>
         </div>
       </div>
@@ -57,7 +57,7 @@ function FavoriteGameCard({
         <h3 className="line-clamp-1 text-base/6 font-semibold text-white sm:text-lg/7">
           {game.title}
         </h3>
-        <p className="text-mypage-muted line-clamp-2 text-xs/5 sm:text-sm/6">
+        <p className="text-mypage-muted line-clamp-1 text-xs/5 sm:text-sm/6">
           {game.summary}
         </p>
       </button>
