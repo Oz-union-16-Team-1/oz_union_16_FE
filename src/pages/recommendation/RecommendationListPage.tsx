@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { ChevronDown, ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -17,19 +16,16 @@ import {
   likeGame,
   unlikeGame,
 } from '../../features/games/gameApi';
-import type { GameDetail } from '../../features/games/types';
+import {
+  gamesKeys,
+  syncGameLikeStateInQueryCache,
+} from '../../features/games/queryCache';
 import type { GameListItem } from '../../features/games/types';
 import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
-import type {
-  MatchResultItem,
-  MatchResultResponse,
-} from '../../features/matching/types';
+import type { MatchResultItem } from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
-import type {
-  SurveyResultItem,
-  SurveyResultResponse,
-} from '../../features/survey/types/survey';
+import type { SurveyResultItem } from '../../features/survey/types/survey';
 import { isMockServiceWorkerEnabled } from '../../lib/env';
 
 const FALLBACK_BACKDROP_ITEMS = [
@@ -149,21 +145,21 @@ function RecommendationRow({
   isLikePending,
 }: RecommendationRowProps) {
   return (
-    <article className="group grid gap-4 px-4 py-5 transition-colors duration-200 hover:bg-white/[0.025] sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
+    <article className="group grid gap-4 px-4 py-5 transition-colors duration-200 hover:bg-white/2.5 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
       <button
         type="button"
         onClick={() => onOpenDetail(item)}
         aria-label={`${item.title} 상세 보기`}
-        className="overflow-hidden rounded-[20px] border border-white/6 bg-[#111111] text-left shadow-[0_14px_32px_rgba(0,0,0,0.18)] transition hover:border-white/12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
+        className="bg-auth-panel overflow-hidden rounded-[20px] border border-white/6 text-left shadow-[0_14px_32px_rgba(0,0,0,0.18)] transition hover:border-white/12 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12]"
       >
         {item.thumbnail_url ? (
           <img
             src={item.thumbnail_url}
             alt={item.title}
-            className="h-[94px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] sm:h-[88px]"
+            className="h-23.5 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] sm:h-22"
           />
         ) : (
-          <div className="flex h-[94px] w-full items-center justify-center bg-[#151515] text-sm text-white/35 sm:h-[88px]">
+          <div className="flex h-23.5 w-full items-center justify-center bg-[#151515] text-sm text-white/35 sm:h-22">
             이미지 준비 중
           </div>
         )}
@@ -186,7 +182,7 @@ function RecommendationRow({
         </p>
       </div>
 
-      <div className="flex items-center justify-end gap-3 lg:min-w-[96px]">
+      <div className="flex items-center justify-end gap-3 lg:min-w-24">
         <ActionButton
           type="button"
           variant="icon"
@@ -195,7 +191,7 @@ function RecommendationRow({
           className={`${
             item.is_liked
               ? 'border-[#6f2525] bg-[#170b0b] text-[#f07373]'
-              : 'border-white/10 bg-white/[0.02] text-white/60 hover:border-white/18 hover:text-white/86'
+              : 'border-white/10 bg-white/2 text-white/60 hover:border-white/18 hover:text-white/86'
           } ${isLikePending ? 'cursor-not-allowed opacity-55' : ''}`}
           aria-label={item.is_liked ? '좋아요 해제' : '좋아요 추가'}
         >
@@ -207,7 +203,7 @@ function RecommendationRow({
           variant="icon"
           onClick={() => onOpenDetail(item)}
           aria-label={`${item.title} 상세 보기`}
-          className="border-transparent text-white/42 group-hover:border-white/8 group-hover:bg-white/[0.03] group-hover:text-white/82"
+          className="border-transparent text-white/42 group-hover:border-white/8 group-hover:bg-white/3 group-hover:text-white/82"
         >
           <ChevronRight size={18} />
         </ActionButton>
@@ -236,7 +232,7 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
         {backdropItems.map((item) => (
           <div
             key={item.id}
-            className="overflow-hidden rounded-[20px] border border-white/6 bg-white/[0.02] shadow-[0_18px_34px_rgba(0,0,0,0.18)]"
+            className="overflow-hidden rounded-[20px] border border-white/6 bg-white/2 shadow-[0_18px_34px_rgba(0,0,0,0.18)]"
           >
             {item.thumbnail ? (
               <img
@@ -245,7 +241,7 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full min-h-[160px] items-center justify-center bg-[#161616] text-sm text-white/25">
+              <div className="flex h-full min-h-40 items-center justify-center bg-[#161616] text-sm text-white/25">
                 PGTI
               </div>
             )}
@@ -365,39 +361,6 @@ function RecommendationListPage() {
     };
   }, [likeFeedbackMessage]);
 
-  const updateRecommendationResultsCache = (
-    gameId: number,
-    nextIsLiked: boolean,
-  ) => {
-    const updatePages = <
-      TPage extends { results: Array<{ game_id: number; is_liked: boolean }> },
-    >(
-      data: InfiniteData<TPage> | undefined,
-    ) =>
-      data
-        ? {
-            ...data,
-            pages: data.pages.map((page) => ({
-              ...page,
-              results: page.results.map((result) =>
-                result.game_id === gameId
-                  ? { ...result, is_liked: nextIsLiked }
-                  : result,
-              ),
-            })),
-          }
-        : data;
-
-    queryClient.setQueryData<InfiniteData<SurveyResultResponse>>(
-      ['survey-results'],
-      updatePages,
-    );
-    queryClient.setQueryData<InfiniteData<MatchResultResponse>>(
-      ['match-results'],
-      updatePages,
-    );
-  };
-
   const updateLikedGamesCache = (
     item: RecommendationDisplayItem,
     nextIsLiked: boolean,
@@ -464,29 +427,21 @@ function RecommendationListPage() {
       setLikeFeedbackMessage(null);
     },
     onSuccess: async (response, variables) => {
-      updateRecommendationResultsCache(response.gameId, response.isLiked);
       updateLikedGamesCache(variables.item, response.isLiked);
       setSelectedGame((current) =>
         current?.gameId === response.gameId
           ? { ...current, isLiked: response.isLiked }
           : current,
       );
-
-      queryClient.setQueryData<GameDetail>(
-        ['games', 'detail', response.gameId],
-        (currentDetail) =>
-          currentDetail
-            ? {
-                ...currentDetail,
-                isLiked: response.isLiked,
-                likeCount: response.likeCount,
-              }
-            : currentDetail,
-      );
+      syncGameLikeStateInQueryCache(queryClient, {
+        gameId: response.gameId,
+        isLiked: response.isLiked,
+        likeCount: response.likeCount,
+      });
 
       try {
         const detail = await queryClient.fetchQuery({
-          queryKey: ['games', 'detail', response.gameId],
+          queryKey: gamesKeys.detail(response.gameId),
           queryFn: () => getGameDetail(response.gameId),
           staleTime: 60_000,
         });
@@ -552,18 +507,18 @@ function RecommendationListPage() {
       <RecommendationBackdrop items={recommendationItems} />
       <Header fixed />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
-        <section className="mx-auto w-full max-w-[980px]">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
+        <section className="mx-auto w-full max-w-245">
           <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
             <div>
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-white/45 uppercase backdrop-blur-md">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-white/45 uppercase backdrop-blur-md">
                 <Sparkles size={13} />
                 AI Curated
               </div>
               <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
                 게임 추천 리스트
               </h1>
-              <p className="mt-4 max-w-[620px] text-sm leading-7 break-keep text-white/58 sm:text-base">
+              <p className="mt-4 max-w-155 text-sm leading-7 break-keep text-white/58 sm:text-base">
                 {isMatchSource
                   ? '장르별 매칭에서 남긴 별점과 좋아요를 바탕으로 정리된 추천 결과예요. 마음에 드는 게임은 좋아요로 표시해 두고 마이페이지에서도 다시 확인할 수 있어요.'
                   : '설문에서 드러난 취향을 바탕으로, 지금 바로 플레이하고 싶어질 만한 게임들을 차분하게 정리해뒀어요.'}
@@ -572,7 +527,7 @@ function RecommendationListPage() {
                 {recommendationHighlights.map((highlight) => (
                   <span
                     key={highlight}
-                    className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
+                    className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
                   >
                     {highlight}
                   </span>
@@ -646,7 +601,7 @@ function RecommendationListPage() {
               </Link>
             </section>
           ) : (
-            <section className="overflow-hidden rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
+            <section className="overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               <div className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
                 <div className="flex flex-col gap-3 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -660,7 +615,7 @@ function RecommendationListPage() {
                     </p>
                   </div>
 
-                  <div className="inline-flex w-fit items-center rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-white/48">
+                  <div className="inline-flex w-fit items-center rounded-full border border-white/8 bg-white/3 px-4 py-2 text-xs text-white/48">
                     {cappedTotalCount > 0
                       ? `${cappedTotalCount}개의 추천 결과`
                       : '추천 결과를 정리하고 있어요'}
@@ -711,7 +666,7 @@ function RecommendationListPage() {
                       type="button"
                       onClick={handleLoadMore}
                       disabled={isFetchingNextPage}
-                      className="flex w-full flex-col items-center justify-center gap-1 border-t border-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/[0.03] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
+                      className="flex w-full flex-col items-center justify-center gap-1 border-t border-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/3 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
                     >
                       <span>
                         {isFetchingNextPage
@@ -721,7 +676,7 @@ function RecommendationListPage() {
                       {!isFetchingNextPage ? (
                         <ChevronDown
                           size={18}
-                          className="translate-y-[1px] text-white/56"
+                          className="translate-y-px text-white/56"
                         />
                       ) : null}
                     </button>

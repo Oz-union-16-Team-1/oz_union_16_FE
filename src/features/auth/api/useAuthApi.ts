@@ -30,6 +30,7 @@ import type {
   UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
+import { syncGameLikeStateInQueryCache } from '../../games/queryCache';
 import { setAuthAccount } from '../../../utils/auth';
 
 export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
@@ -132,11 +133,12 @@ export const useUnlikeLikedGameMutation = () => {
           };
         },
       );
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
+      syncGameLikeStateInQueryCache(queryClient, {
+        gameId,
+        isLiked: false,
       });
       void queryClient.invalidateQueries({
-        queryKey: ['games', 'detail', gameId],
+        queryKey: authKeys.likedGames(),
       });
     },
   });
