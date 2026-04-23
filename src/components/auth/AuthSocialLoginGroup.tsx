@@ -21,9 +21,9 @@ const GROUP_SIZE_CLASS_NAMES = {
 
 const BUTTON_SIZE_CLASS_NAMES = {
   default: {
-    google: 'h-14',
-    kakao: 'h-14',
-    naver: 'h-14',
+    google: 'h-12 sm:h-[3.2rem]',
+    kakao: 'h-12 sm:h-[3.2rem]',
+    naver: 'h-12 sm:h-[3.2rem]',
     label: '',
   },
   compact: {

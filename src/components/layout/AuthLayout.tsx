@@ -27,7 +27,7 @@ function AuthLayout({
   const content = (
     <>
       <h1
-        className={`text-center text-[clamp(2rem,4.8vw,3rem)] leading-none font-semibold ${titleClassName}`}
+        className={`text-center text-[clamp(1.8rem,4.3vw,2.65rem)] leading-[1.05] font-semibold tracking-[-0.02em] text-white ${titleClassName}`}
       >
         {title}
       </h1>
@@ -47,11 +47,14 @@ function AuthLayout({
       <Header fixed={false} />
 
       <main
-        className={`flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 ${mainClassName}`}
+        className={`auth-layout-main relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8 ${mainClassName}`}
       >
+        <div aria-hidden="true" className="auth-layout-backdrop" />
+        <div aria-hidden="true" className="auth-layout-grid" />
+
         {withPanel ? (
           <section
-            className={`bg-auth-panel border-auth-panel shadow-auth-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
+            className={`auth-layout-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
           >
             <div className={`mx-auto w-full max-w-[440px] ${contentClassName}`}>
               {content}

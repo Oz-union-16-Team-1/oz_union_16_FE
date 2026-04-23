@@ -322,14 +322,16 @@ function LoginPage() {
     <>
       <AuthLayout
         title="로그인"
-        titleClassName="sr-only"
+        titleClassName="text-[clamp(1.68rem,4vw,2.45rem)]"
         withPanel
         panelClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.panel}
         contentClassName={AUTH_SHARED_LAYOUT_CLASS_NAMES.content}
       >
-        <AuthSocialLoginGroup className="mt-2 sm:mt-2.5" />
+        <AuthSocialLoginGroup
+          className={AUTH_SHARED_FORM_CLASS_NAMES.socialGroup}
+        />
 
-        <AuthDivider className="my-4 sm:my-5" />
+        <AuthDivider className={AUTH_SHARED_FORM_CLASS_NAMES.divider} />
 
         <form
           className={AUTH_SHARED_FORM_CLASS_NAMES.form}
