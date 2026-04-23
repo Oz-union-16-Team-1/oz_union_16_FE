@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from 'msw';
 
 import { AUTH_BASE_PATH } from '../constants/auth';
+import { mockGameDetails } from '../../games/mockGameDetails';
 import { mockTopGames } from '../../games/mockGames';
 import type { RawGameLikeResponse } from '../../games/types';
 import type {
@@ -40,7 +41,12 @@ let pendingSocialLoginId: string | null = null;
 const mockLikedGamesByLoginId = new Map<string, LikedGameItemResponse[]>(
   [...mockUsers.keys()].map((loginId) => [loginId, []]),
 );
-const mockGameLikeCountByGameId = new Map<number, number>();
+const mockGameLikeCountByGameId = new Map<number, number>(
+  Object.values(mockGameDetails).map((detail) => [
+    detail.gameId,
+    detail.likeCount,
+  ]),
+);
 const mockUploadedProfileImagesByPath = new Map<
   string,
   { contentType: string; bytes: ArrayBuffer }
@@ -161,8 +167,8 @@ const getOrCreateLikedGames = (loginId: string) => {
   return nextLikedGames;
 };
 
-const getCurrentLikeCount = (gameId: number) =>
-  Math.max(0, mockGameLikeCountByGameId.get(gameId) ?? 0);
+const getCurrentLikeCount = (gameId: number, fallbackLikeCount = 0) =>
+  Math.max(0, mockGameLikeCountByGameId.get(gameId) ?? fallbackLikeCount);
 
 const increaseLikeCount = (gameId: number) => {
   const nextLikeCount = getCurrentLikeCount(gameId) + 1;
@@ -256,6 +262,23 @@ export const getMockLikedGameIdsForAuthorization = (
   return new Set(
     getOrCreateLikedGames(user.loginId).map((game) => game.game_id),
   );
+};
+
+export const getMockGameLikeStateForAuthorization = (
+  authorization: string | null,
+  gameId: number,
+  fallbackLikeCount = 0,
+) => {
+  const user = getAuthorizedUser(authorization);
+
+  return {
+    is_liked: user
+      ? getOrCreateLikedGames(user.loginId).some(
+          (game) => game.game_id === gameId,
+        )
+      : null,
+    like_count: getCurrentLikeCount(gameId, fallbackLikeCount),
+  };
 };
 
 const loginHandlers = [

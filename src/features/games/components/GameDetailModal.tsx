@@ -7,6 +7,7 @@ import { authKeys } from '../../auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../auth/types/auth';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
+import { gamesKeys, syncGameLikeStateInQueryCache } from '../queryCache';
 import type { GameDetail, GameListItem } from '../types';
 
 type GameDetailModalProps = {
@@ -86,7 +87,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   >({});
 
   const detailQuery = useQuery({
-    queryKey: ['games', 'detail', game.gameId],
+    queryKey: gamesKeys.detail(game.gameId),
     queryFn: () => getGameDetail(game.gameId),
     staleTime: 0,
     refetchOnMount: 'always',
@@ -109,17 +110,11 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       };
 
       setLikeState(nextLikeState);
-      queryClient.setQueryData<GameDetail>(
-        ['games', 'detail', game.gameId],
-        (currentDetail) =>
-          currentDetail
-            ? {
-                ...currentDetail,
-                isLiked: response.isLiked,
-                likeCount: response.likeCount,
-              }
-            : currentDetail,
-      );
+      syncGameLikeStateInQueryCache(queryClient, {
+        gameId: response.gameId,
+        isLiked: response.isLiked,
+        likeCount: response.likeCount,
+      });
 
       queryClient.setQueriesData<LikedGamesResponse>(
         { queryKey: authKeys.likedGames() },
@@ -171,9 +166,6 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       );
       void queryClient.invalidateQueries({
         queryKey: authKeys.likedGames(),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['games', 'detail', game.gameId],
       });
     },
     onError: (error) => {

@@ -23,6 +23,7 @@ import {
 import { getTopGames, searchGames } from '../../features/games/gameApi';
 import { GAME_GENRE_FILTERS } from '../../features/games/genres';
 import { useDebouncedValue } from '../../features/games/hooks/useDebouncedValue';
+import { gamesKeys } from '../../features/games/queryCache';
 import { normalizeSearchText } from '../../features/games/search';
 import type { GameListItem } from '../../features/games/types';
 import type { GameGenreFilter } from '../../features/games/genres';
@@ -72,7 +73,7 @@ const MainPage = () => {
   const isSearchMode = debouncedSearchText.length > 0;
 
   const topGamesQuery = useQuery({
-    queryKey: ['games', 'top100', selectedGenre],
+    queryKey: gamesKeys.top100(selectedGenre),
     enabled: !isSearchMode,
     queryFn: () => getTopGames({ genre: selectedGenre }),
     staleTime: 60_000,
@@ -80,7 +81,7 @@ const MainPage = () => {
   });
 
   const searchGamesQuery = useInfiniteQuery({
-    queryKey: ['games', 'search', debouncedSearchText, selectedGenre],
+    queryKey: gamesKeys.search(debouncedSearchText, selectedGenre),
     enabled: isSearchMode,
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>

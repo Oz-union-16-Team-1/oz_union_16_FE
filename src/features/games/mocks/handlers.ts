@@ -1,18 +1,16 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { getMockGameLikeStateForAuthorization } from '../../auth/mocks/handlers';
 import { GAME_GENRE_ID_MAP } from '../genres';
 import {
   getStoredGameDetail,
   getStoredTop100Games,
   searchStoredGames,
-  updateStoredGameLike,
 } from './state';
 import type {
   GameDetail,
-  GameLikeResponse,
   GameListItem,
   RawGameDetailResponse,
-  RawGameLikeResponse,
   RawGameListItem,
 } from '../types';
 
@@ -31,14 +29,6 @@ const getErrorResponse = (status: number, message: string) =>
       error_detail: message,
     },
     { status },
-  );
-
-const getUnauthorizedResponse = () =>
-  HttpResponse.json(
-    {
-      error_detail: '로그인이 필요합니다.',
-    },
-    { status: 401 },
   );
 
 const parsePositiveInteger = (value: string | null, fallback: number) => {
@@ -88,25 +78,32 @@ const toRawGameDetail = (detail: GameDetail): RawGameDetailResponse => ({
   is_liked: detail.isLiked,
 });
 
-const toRawGameLikeResponse = (
-  response: GameLikeResponse,
-): RawGameLikeResponse => ({
-  game_id: response.gameId,
-  is_liked: response.isLiked,
-  like_count: response.likeCount,
-});
-
 export const gamesHandlers = [
   http.get('/api/v1/games/list/top100', async ({ request }) => {
     const url = new URL(request.url);
     const genreIdValue = url.searchParams.get('genre_id');
     const genreId = parseGenreId(url.searchParams.get('genre_id'));
+    const resolveStoredGameLikeState = (
+      gameId: number,
+      fallback: { isLiked: boolean | null; likeCount: number },
+    ) => {
+      const likeState = getMockGameLikeStateForAuthorization(
+        request.headers.get('authorization'),
+        gameId,
+        fallback.likeCount,
+      );
+
+      return {
+        isLiked: likeState.is_liked,
+        likeCount: likeState.like_count,
+      };
+    };
 
     if (genreIdValue && (!genreId || !validGenreIds.has(genreId))) {
       return getErrorResponse(400, '유효하지 않은 genre_id 입니다. (1~14)');
     }
 
-    const games = getStoredTop100Games({ genreId });
+    const games = getStoredTop100Games({ genreId, resolveStoredGameLikeState });
 
     await delay(250);
 
@@ -128,6 +125,21 @@ export const gamesHandlers = [
       url.searchParams.get('page_size'),
       DEFAULT_GAME_PAGE_SIZE,
     );
+    const resolveStoredGameLikeState = (
+      gameId: number,
+      fallback: { isLiked: boolean | null; likeCount: number },
+    ) => {
+      const likeState = getMockGameLikeStateForAuthorization(
+        request.headers.get('authorization'),
+        gameId,
+        fallback.likeCount,
+      );
+
+      return {
+        isLiked: likeState.is_liked,
+        likeCount: likeState.like_count,
+      };
+    };
 
     if (genreIdValue && (!genreId || !validGenreIds.has(genreId))) {
       return getErrorResponse(400, '유효하지 않은 genre_id 입니다. (1~14)');
@@ -149,6 +161,7 @@ export const gamesHandlers = [
         DEFAULT_GAME_SORT,
       page,
       pageSize,
+      resolveStoredGameLikeState,
     });
 
     await delay(300);
@@ -159,14 +172,25 @@ export const gamesHandlers = [
     });
   }),
 
-  http.get('/api/v1/games/list/:gameId', async ({ params }) => {
+  http.get('/api/v1/games/list/:gameId', async ({ params, request }) => {
     const gameId = Number(params.gameId);
 
     if (!Number.isInteger(gameId) || gameId <= 0) {
       return getErrorResponse(400, '유효하지 않은 game_id 입니다.');
     }
 
-    const detail = getStoredGameDetail(gameId);
+    const detail = getStoredGameDetail(gameId, (resolvedGameId, fallback) => {
+      const likeState = getMockGameLikeStateForAuthorization(
+        request.headers.get('authorization'),
+        resolvedGameId,
+        fallback.likeCount,
+      );
+
+      return {
+        isLiked: likeState.is_liked,
+        likeCount: likeState.like_count,
+      };
+    });
 
     if (!detail) {
       return getErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
@@ -175,49 +199,5 @@ export const gamesHandlers = [
     await delay(220);
 
     return HttpResponse.json(toRawGameDetail(detail));
-  }),
-
-  http.post('/api/v1/games/:gameId/like', async ({ params, request }) => {
-    if (!request.headers.get('authorization')?.startsWith('Bearer ')) {
-      return getUnauthorizedResponse();
-    }
-
-    const gameId = Number(params.gameId);
-
-    if (!Number.isInteger(gameId) || gameId <= 0) {
-      return getErrorResponse(400, '유효하지 않은 game_id 입니다.');
-    }
-
-    const response = updateStoredGameLike(gameId, true);
-
-    if (!response) {
-      return getErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
-    }
-
-    await delay(180);
-
-    return HttpResponse.json(toRawGameLikeResponse(response));
-  }),
-
-  http.delete('/api/v1/games/:gameId/like', async ({ params, request }) => {
-    if (!request.headers.get('authorization')?.startsWith('Bearer ')) {
-      return getUnauthorizedResponse();
-    }
-
-    const gameId = Number(params.gameId);
-
-    if (!Number.isInteger(gameId) || gameId <= 0) {
-      return getErrorResponse(400, '유효하지 않은 game_id 입니다.');
-    }
-
-    const response = updateStoredGameLike(gameId, false);
-
-    if (!response) {
-      return getErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
-    }
-
-    await delay(180);
-
-    return HttpResponse.json(toRawGameLikeResponse(response));
   }),
 ];

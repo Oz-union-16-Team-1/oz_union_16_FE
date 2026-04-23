@@ -6,7 +6,7 @@ import {
 import { mockGameDetails } from '../mockGameDetails';
 import { mockTopGames } from '../mockGames';
 import { createSearchKeyword, type SearchKeyword } from '../search';
-import type { GameDetail, GameListItem, GameLikeResponse } from '../types';
+import type { GameDetail, GameListItem } from '../types';
 
 const steamStoreUrl = (gameId: number) =>
   `https://store.steampowered.com/app/${gameId}`;
@@ -17,6 +17,16 @@ const genreIdToFilterMap = new Map<number, GameGenreFilter>(
     genre as Exclude<GameGenreFilter, '전체'>,
   ]),
 );
+
+type StoredGameLikeState = {
+  isLiked: boolean | null;
+  likeCount: number;
+};
+
+type ResolveStoredGameLikeState = (
+  gameId: number,
+  fallback: StoredGameLikeState,
+) => StoredGameLikeState;
 
 const getFuzzySearchDistance = (value: string) => {
   if (value.length < 3) {
@@ -223,15 +233,33 @@ const ensureStoredDetail = (gameId: number) => {
 const getGenreFilterById = (genreId?: number) =>
   genreId ? (genreIdToFilterMap.get(genreId) ?? null) : '전체';
 
-const getEffectiveLikeCount = (gameId: number) =>
-  ensureStoredDetail(gameId)?.likeCount ?? 0;
+const getStoredLikeFallback = (gameId: number): StoredGameLikeState => ({
+  isLiked:
+    ensureStoredDetail(gameId)?.isLiked ??
+    getStoredTopGame(gameId)?.isLiked ??
+    null,
+  likeCount: ensureStoredDetail(gameId)?.likeCount ?? 0,
+});
 
-const getEffectiveIsLiked = (gameId: number) =>
-  ensureStoredDetail(gameId)?.isLiked ?? getStoredTopGame(gameId)?.isLiked;
+const getResolvedGameLikeState = (
+  gameId: number,
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState,
+) => {
+  const fallback = getStoredLikeFallback(gameId);
 
-const getHydratedTopGames = () =>
+  return resolveStoredGameLikeState
+    ? resolveStoredGameLikeState(gameId, fallback)
+    : fallback;
+};
+
+const getHydratedTopGames = (
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState,
+) =>
   storedTopGames.map((game) => {
-    const isLiked = getEffectiveIsLiked(game.gameId);
+    const { isLiked } = getResolvedGameLikeState(
+      game.gameId,
+      resolveStoredGameLikeState,
+    );
 
     return typeof isLiked === 'boolean' ? { ...game, isLiked } : { ...game };
   });
@@ -239,6 +267,7 @@ const getHydratedTopGames = () =>
 const sortGames = (
   games: GameListItem[],
   sort: 'rating_desc' | 'like_desc' | 'created_at',
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState,
 ) =>
   [...games].sort((left, right) => {
     if (sort === 'created_at') {
@@ -250,8 +279,10 @@ const sortGames = (
 
     if (sort === 'like_desc') {
       const likeCountDiff =
-        getEffectiveLikeCount(right.gameId) -
-        getEffectiveLikeCount(left.gameId);
+        getResolvedGameLikeState(right.gameId, resolveStoredGameLikeState)
+          .likeCount -
+        getResolvedGameLikeState(left.gameId, resolveStoredGameLikeState)
+          .likeCount;
 
       if (likeCountDiff !== 0) {
         return likeCountDiff;
@@ -276,15 +307,17 @@ const filterGames = ({
   search = '',
   fuzzy = true,
   genreId,
+  resolveStoredGameLikeState,
 }: {
   search?: string;
   fuzzy?: boolean;
   genreId?: number;
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState;
 }) => {
   const searchKeyword = createSearchKeyword(search);
   const selectedGenre = getGenreFilterById(genreId);
 
-  return getHydratedTopGames().filter((game) => {
+  return getHydratedTopGames(resolveStoredGameLikeState).filter((game) => {
     const matchesSearch =
       !searchKeyword.normalized ||
       matchesSearchKeyword(
@@ -300,8 +333,13 @@ const filterGames = ({
   });
 };
 
-export const getStoredTop100Games = ({ genreId }: { genreId?: number } = {}) =>
-  filterGames({ genreId }).slice(0, 100);
+export const getStoredTop100Games = ({
+  genreId,
+  resolveStoredGameLikeState,
+}: {
+  genreId?: number;
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState;
+} = {}) => filterGames({ genreId, resolveStoredGameLikeState }).slice(0, 100);
 
 export const searchStoredGames = ({
   search = '',
@@ -310,6 +348,7 @@ export const searchStoredGames = ({
   sort = 'rating_desc',
   page = 1,
   pageSize = 20,
+  resolveStoredGameLikeState,
 }: {
   search?: string;
   fuzzy?: boolean;
@@ -317,10 +356,12 @@ export const searchStoredGames = ({
   sort?: 'rating_desc' | 'like_desc' | 'created_at';
   page?: number;
   pageSize?: number;
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState;
 }) => {
   const filteredGames = sortGames(
-    filterGames({ search, fuzzy, genreId }),
+    filterGames({ search, fuzzy, genreId, resolveStoredGameLikeState }),
     sort,
+    resolveStoredGameLikeState,
   );
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
   const safePageSize =
@@ -334,37 +375,24 @@ export const searchStoredGames = ({
   };
 };
 
-export const getStoredGameDetail = (gameId: number) => {
-  const detail = ensureStoredDetail(gameId);
-
-  return detail ? cloneGameDetail(detail) : null;
-};
-
-export const updateStoredGameLike = (
+export const getStoredGameDetail = (
   gameId: number,
-  isLiked: boolean,
-): GameLikeResponse | null => {
+  resolveStoredGameLikeState?: ResolveStoredGameLikeState,
+) => {
   const detail = ensureStoredDetail(gameId);
 
   if (!detail) {
     return null;
   }
 
-  const currentLiked = detail.isLiked === true;
-  const likeCountAdjustment = currentLiked === isLiked ? 0 : isLiked ? 1 : -1;
-
-  detail.isLiked = isLiked;
-  detail.likeCount = Math.max(0, detail.likeCount + likeCountAdjustment);
-
-  const topGame = getStoredTopGame(gameId);
-
-  if (topGame) {
-    topGame.isLiked = isLiked;
-  }
+  const resolvedLikeState = getResolvedGameLikeState(
+    gameId,
+    resolveStoredGameLikeState,
+  );
 
   return {
-    gameId,
-    isLiked,
-    likeCount: detail.likeCount,
+    ...cloneGameDetail(detail),
+    isLiked: resolvedLikeState.isLiked,
+    likeCount: resolvedLikeState.likeCount,
   };
 };
