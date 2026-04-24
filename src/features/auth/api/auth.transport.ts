@@ -3,6 +3,7 @@ import axios from 'axios';
 import { api } from '@/api/axios';
 import { apiBaseUrl } from '@/lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
+import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
 import type {
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
@@ -33,18 +34,50 @@ const AUTH_REFRESH_TIMEOUT_MS = 7000;
 
 const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
 const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
+const loginRequestUrl = `${authApiUrl}/login`;
+const logoutRequestUrl = `${authApiUrl}/logout`;
+const refreshRequestUrl = `${authApiUrl}/token/refresh`;
+
+const createCredentialedAuthRequestConfig = () => ({
+  withCredentials: true,
+  timeout: AUTH_REFRESH_TIMEOUT_MS,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const requestLogin = async (payload: LoginRequest) => {
+  const requestConfig = createCredentialedAuthRequestConfig();
+
+  logCredentialedAuthRequestDiagnostics({
+    label: 'login',
+    requestUrl: loginRequestUrl,
+    withCredentials: requestConfig.withCredentials,
+  });
+
   const response = await api.post<LoginResponse>(
     `${AUTH_BASE_PATH}/login`,
     payload,
+    requestConfig,
   );
 
   return response.data;
 };
 
 export const requestLogout = async () => {
-  const response = await api.post<LogoutResponse>(`${AUTH_BASE_PATH}/logout`);
+  const requestConfig = createCredentialedAuthRequestConfig();
+
+  logCredentialedAuthRequestDiagnostics({
+    label: 'logout',
+    requestUrl: logoutRequestUrl,
+    withCredentials: requestConfig.withCredentials,
+  });
+
+  const response = await api.post<LogoutResponse>(
+    `${AUTH_BASE_PATH}/logout`,
+    undefined,
+    requestConfig,
+  );
 
   return response.data;
 };
@@ -52,16 +85,18 @@ export const requestLogout = async () => {
 export const requestRefreshAccessToken = async (
   payload: { refresh_token?: string } = {},
 ) => {
+  const requestConfig = createCredentialedAuthRequestConfig();
+
+  logCredentialedAuthRequestDiagnostics({
+    label: 'refresh',
+    requestUrl: refreshRequestUrl,
+    withCredentials: requestConfig.withCredentials,
+  });
+
   const response = await axios.post<RefreshAccessTokenResponse>(
-    `${authApiUrl}/token/refresh`,
+    refreshRequestUrl,
     payload,
-    {
-      withCredentials: true,
-      timeout: AUTH_REFRESH_TIMEOUT_MS,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    },
+    requestConfig,
   );
 
   return response.data;

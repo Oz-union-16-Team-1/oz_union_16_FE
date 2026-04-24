@@ -6,6 +6,11 @@ import {
   syncMockRefreshTokenFromResponse,
 } from './auth.session.helper';
 import {
+  logRefreshRequestFailed,
+  logRefreshRequestStarted,
+  logRefreshRequestSucceeded,
+} from './auth.diagnostics';
+import {
   requestLogin,
   requestLogout,
   requestRefreshAccessToken,
@@ -57,6 +62,8 @@ export const logout = async () => {
 };
 
 export const refreshAccessToken = async () => {
+  logRefreshRequestStarted();
+
   try {
     const response = await requestRefreshAccessToken(
       createRefreshTokenFallbackRequestBody(),
@@ -67,10 +74,12 @@ export const refreshAccessToken = async () => {
     );
 
     syncMockRefreshTokenFromResponse(normalizedResponse);
+    logRefreshRequestSucceeded(normalizedResponse.access_token);
 
     return normalizedResponse;
   } catch (error) {
     clearMockRefreshToken();
+    logRefreshRequestFailed(error);
     throw error;
   }
 };

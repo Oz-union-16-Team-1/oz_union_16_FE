@@ -10,9 +10,17 @@
 ### 1. 토큰 저장 및 관리 전략
 
 - **Access Token**: 클라이언트 메모리(Zustand State) 내에서 관리하여 XSS 공격 방어.
-- **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화.
+- **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화. 쿠키는 프론트 도메인이 아니라 **백엔드 API 도메인** 아래 저장되는 것을 기준으로 확인합니다.
 - **Startup Bootstrap**: 앱 최초 진입 시 `POST /api/v1/accounts/token/refresh`로 세션 복구를 시도하고, 성공 시 `/me` 조회로 사용자 정보를 hydrate함.
 - **Legacy Cleanup**: 기존 `localStorage` 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리함.
+
+#### 운영 Origin 기준
+
+- **Frontend Origin**: `https://oz-union-16-fe.vercel.app`
+- **Backend API Origin**: `https://oz-pgti.duckdns.org`
+- **DevTools Cookie 확인 위치**: `Application > Cookies > https://oz-pgti.duckdns.org`
+- 프론트의 `VITE_API_BASE_URL`과 소셜 로그인 시작 URL/refresh URL은 위 백엔드 Origin 기준으로 정렬합니다.
+- 운영에서 `Set-Cookie`는 보이는데 쿠키가 안 남는 경우, 먼저 **요청 host가 실제로 `oz-pgti.duckdns.org`인지**부터 확인합니다.
 
 ### 2. 인증 관련 API 엔드포인트
 
@@ -71,6 +79,14 @@
 - **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
 - **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
 - **초기 진입 예외 처리**: 콜백 라우트(`/callback`, `/auth/callback`)에서는 중복 refresh를 피하기 위해 앱 시작 bootstrap을 건너뜀.
+
+#### 배포 CORS / Cookie 전제 조건
+
+- `Access-Control-Allow-Origin`은 반드시 `https://oz-union-16-fe.vercel.app`와 정확히 일치해야 합니다.
+- `Access-Control-Allow-Credentials: true`가 포함되어야 합니다.
+- `Access-Control-Allow-Origin: *`는 credentials 요청과 함께 사용할 수 없습니다.
+- refresh 쿠키는 `SameSite=None; Secure; HttpOnly`를 전제로 하며, 프론트와 백엔드는 모두 `https:` 환경이어야 합니다.
+- 브라우저 런타임 코드에서는 `Set-Cookie` 응답 헤더와 실제 `Cookie` 요청 헤더 원문을 읽을 수 없으므로, 배포 검증은 DevTools와 DEV 진단 로그를 함께 사용합니다.
 
 ### 5. 마이페이지 프로필 표시 필드
 

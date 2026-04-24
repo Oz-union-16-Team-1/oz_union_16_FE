@@ -5,6 +5,7 @@ import {
   type AuthSessionExpiredDetail,
 } from '../constants/session';
 import { getCurrentUserProfile, refreshAccessToken } from '../api/auth';
+import { logRefreshStoreSync } from '../api/auth.diagnostics';
 import type { CurrentUserProfileResponse } from '../types/auth';
 
 export const setAuthBootstrapLoading = () => {
@@ -58,6 +59,7 @@ export const hydrateAuthSessionFromAccessToken = async (
 export const refreshStoredAccessToken = async () => {
   const { access_token: accessToken } = await refreshAccessToken();
   applyAccessToken(accessToken);
+  logRefreshStoreSync(accessToken);
   return accessToken;
 };
 
