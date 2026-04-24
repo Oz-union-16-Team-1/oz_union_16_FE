@@ -1,6 +1,6 @@
 import { ClipboardCheck, Search } from 'lucide-react';
 import { useState } from 'react';
-import Header from '../../components/common/Header';
+import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import type { GameListItem } from '../../features/games/types';
@@ -14,7 +14,7 @@ const MainPage = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      <Header fixed />
+      <LazyHeader fixed />
       <main className="min-h-screen pt-24 pb-10 text-white sm:pt-28 sm:pb-14 lg:h-screen lg:overflow-hidden lg:pt-24 lg:pb-4 xl:pt-26 xl:pb-5">
         <section className="w-full lg:flex lg:h-full lg:flex-col">
           <MainGamesSection

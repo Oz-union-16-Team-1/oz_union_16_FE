@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
-import Header from '../../components/common/Header';
+import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
@@ -69,7 +69,7 @@ function SurveyPage() {
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <SurveyBackdrop />
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
-      <Header fixed />
+      <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-[100dvh] md:max-h-[100dvh] md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
         {authGate.accessStatus === 'loading' ? (

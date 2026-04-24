@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Header from '../common/Header';
+import LazyHeader from '../common/LazyHeader';
 
 type AuthLayoutProps = {
   title: string;
@@ -44,7 +44,7 @@ function AuthLayout({
 
   return (
     <div className="bg-login-page flex min-h-dvh flex-col text-white">
-      <Header fixed={false} />
+      <LazyHeader fixed={false} />
 
       <main
         className={`auth-layout-main relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8 ${mainClassName}`}

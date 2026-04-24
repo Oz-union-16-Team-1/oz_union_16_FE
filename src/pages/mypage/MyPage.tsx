@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate } from 'react-router';
 
 import AuthWrapper from '../../components/auth/AuthWrapper';
-import Header from '../../components/common/Header';
+import LazyHeader from '../../components/common/LazyHeader';
 import ToastMessage from '../../components/mypage/ToastMessage';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -18,7 +18,7 @@ import type { MyPageToast } from './types';
 
 const loadingFallback = (
   <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-    <Header fixed />
+    <LazyHeader fixed />
     <main className="mx-auto flex min-h-screen w-full max-w-[1240px] px-4 pt-[6.1rem] pb-12 sm:px-6 md:px-8 md:pt-[6.4rem]">
       <section className="survey-panel mx-auto w-full max-w-[920px] px-8 py-12 text-center text-white/68">
         인증 상태를 확인하는 중입니다...
@@ -57,7 +57,7 @@ function MyPage() {
     >
       <div className="relative min-h-screen overflow-hidden bg-[#050505]">
         <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
-        <Header fixed />
+        <LazyHeader fixed />
 
         <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 pt-24 pb-14 sm:px-6 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32 xl:px-14">
           <MyPageProfileContainer

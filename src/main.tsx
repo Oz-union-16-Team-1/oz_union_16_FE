@@ -12,14 +12,31 @@ import MatchingGenreDetailPage from './pages/matching/MatchingGenreDetailPage';
 import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import './index.css';
 
 const queryClient = new QueryClient();
 // eslint-disable-next-line react-refresh/only-export-components
+const LazyLoginPage = lazy(() => import('./pages/LoginPage'));
+// eslint-disable-next-line react-refresh/only-export-components
+const LazySignupPage = lazy(() => import('./pages/SignupPage'));
+// eslint-disable-next-line react-refresh/only-export-components
 const LazyMyPage = lazy(() => import('./pages/mypage/MyPage'));
+
+const authPageFallback = (
+  <div className="bg-login-page flex min-h-dvh flex-col text-white">
+    <div className="header-shell h-16 w-full lg:h-18" aria-hidden="true" />
+    <main className="auth-layout-main relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <div aria-hidden="true" className="auth-layout-backdrop" />
+      <div aria-hidden="true" className="auth-layout-grid" />
+      <section className="auth-layout-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8">
+        <div className="mx-auto w-full max-w-[440px] text-center text-white/68">
+          화면을 불러오는 중입니다...
+        </div>
+      </section>
+    </main>
+  </div>
+);
 
 const router = createBrowserRouter([
   {
@@ -48,7 +65,11 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.LOGIN,
-        element: <LoginPage />,
+        element: (
+          <Suspense fallback={authPageFallback}>
+            <LazyLoginPage />
+          </Suspense>
+        ),
       },
       {
         path: ROUTES.AUTH_CALLBACK,
@@ -60,7 +81,11 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.SIGNUP,
-        element: <SignupPage />,
+        element: (
+          <Suspense fallback={authPageFallback}>
+            <LazySignupPage />
+          </Suspense>
+        ),
       },
       {
         path: ROUTES.LEGACY_SIGNUP,
