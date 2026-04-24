@@ -30,6 +30,25 @@ const resolveOrigin = (target: string) => {
 };
 
 const isHttpsOrigin = (origin: string) => origin.startsWith('https://');
+const getHostname = (target: string) => {
+  if (!target) {
+    return '';
+  }
+
+  try {
+    return new URL(target, getFrontendOrigin()).hostname;
+  } catch {
+    return '';
+  }
+};
+
+const isSecureBrowserContext = () => {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  return window.isSecureContext;
+};
 
 type AuthRequestDiagnostics = {
   label: 'login' | 'logout' | 'refresh';
@@ -49,20 +68,32 @@ export const logCredentialedAuthRequestDiagnostics = ({
   const frontendOrigin = getFrontendOrigin();
   const configuredBackendOrigin = resolveOrigin(configuredApiBaseUrl);
   const requestOrigin = resolveOrigin(requestUrl);
+  const frontendHostname = getHostname(frontendOrigin);
+  const configuredBackendHostname = getHostname(configuredBackendOrigin);
+  const requestHostname = getHostname(requestOrigin);
   const isCrossOrigin = Boolean(
     requestOrigin && frontendOrigin && requestOrigin !== frontendOrigin,
   );
+  const hostnamesDiffer = Boolean(
+    frontendHostname && requestHostname && frontendHostname !== requestHostname,
+  );
+  const secureContext = isSecureBrowserContext();
 
   console.info(`[auth-diagnostics] ${label} request`, {
     frontendOrigin,
+    frontendHostname,
     configuredBackendOrigin,
+    configuredBackendHostname,
     canonicalFrontendOrigin: CANONICAL_FRONTEND_ORIGIN,
     canonicalBackendOrigin: CANONICAL_BACKEND_ORIGIN,
     requestOrigin,
+    requestHostname,
     isCrossOrigin,
+    hostnamesDiffer,
     withCredentials,
     frontendUsesHttps: isHttpsOrigin(frontendOrigin),
     requestTargetUsesHttps: isHttpsOrigin(requestOrigin),
+    isSecureContext: secureContext,
   });
 
   if (
@@ -95,6 +126,18 @@ export const logCredentialedAuthRequestDiagnostics = ({
   if (isCrossOrigin && !withCredentials) {
     console.warn(
       '[auth-diagnostics] cross-origin auth request is missing withCredentials=true',
+    );
+  }
+
+  if (hostnamesDiffer) {
+    console.warn(
+      `[auth-diagnostics] frontend hostname (${frontendHostname}) and API hostname (${requestHostname}) differ. Browser third-party cookie blocking may prevent refresh_token storage/transmission.`,
+    );
+  }
+
+  if (!secureContext) {
+    console.warn(
+      '[auth-diagnostics] window.isSecureContext is false. Secure cookies may be rejected by the browser in this environment.',
     );
   }
 };
