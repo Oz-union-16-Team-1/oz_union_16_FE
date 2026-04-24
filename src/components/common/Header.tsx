@@ -35,7 +35,10 @@ const Header = ({ fixed = true }: HeaderProps) => {
     location.pathname,
   );
   const shouldDeferGuestActions =
-    !isLoggedIn && !shouldHideGuestActions && authBootstrapStatus !== 'ready';
+    !isLoggedIn &&
+    !shouldHideGuestActions &&
+    authBootstrapStatus !== 'ready' &&
+    Boolean(profilePreviewImageUrl);
   const shouldDeferProfileMenu =
     isLoggedIn &&
     !account &&
