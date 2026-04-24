@@ -50,8 +50,26 @@ const createMessage = (
   createdAt: new Date().toISOString(),
 });
 
+const SURVEY_INTRO_MESSAGE =
+  '설문을 시작하기 전에 안내드릴게요.\n게임 취향, 플레이 스타일, 선호 장르 중심으로 답변해 주세요.\n구체적으로 적을수록 설문 흐름이 더 빠르게 정리될 수 있어요.\n게임과 관련 없는 질문을 3회 이상 반복하면 5분 동안 설문 기능을 사용할 수 없어요.';
+
 const COMPLETION_GUIDE_MESSAGE =
-  "추천 결과가 준비되었어요. 우측 상단의 '추천 결과 보기' 버튼을 눌러 바로 확인해 보세요.";
+  "추천 결과가 준비되었어요. 아래의 '추천 결과 바로 보기' 버튼을 눌러 확인해 보세요.";
+
+const getInitialMessages = (payload: SurveySessionStartResponse) => {
+  if (payload.assistant_message) {
+    return [
+      createMessage('assistant', SURVEY_INTRO_MESSAGE),
+      createMessage('assistant', payload.assistant_message),
+    ];
+  }
+
+  if (payload.recommendation_ready) {
+    return [createMessage('assistant', COMPLETION_GUIDE_MESSAGE)];
+  }
+
+  return [];
+};
 
 const createInitialState = (ownerKey: string | null = null) => ({
   ownerKey,
@@ -109,11 +127,7 @@ export const useSurveyStore = create<SurveyStoreState>()(
           lastSubmittedMessage: null,
           nonGameStrikeCount: 0,
           chatBlockedUntil: null,
-          messages: payload.assistant_message
-            ? [createMessage('assistant', payload.assistant_message)]
-            : payload.recommendation_ready
-              ? [createMessage('assistant', COMPLETION_GUIDE_MESSAGE)]
-              : [],
+          messages: getInitialMessages(payload),
           ownerKey: state.ownerKey,
         })),
       beginSession: (payload) =>
@@ -125,23 +139,26 @@ export const useSurveyStore = create<SurveyStoreState>()(
           isSubmitting: false,
           error: null,
           recommendationReady: payload.recommendation_ready,
-          messages: payload.assistant_message
-            ? state.messages.at(-1)?.role === 'assistant' &&
-              state.messages.at(-1)?.content === payload.assistant_message
-              ? state.messages
-              : [
-                  ...state.messages,
-                  createMessage('assistant', payload.assistant_message),
-                ]
-            : payload.recommendation_ready
-              ? state.messages.at(-1)?.role === 'assistant' &&
-                state.messages.at(-1)?.content === COMPLETION_GUIDE_MESSAGE
-                ? state.messages
-                : [
-                    ...state.messages,
-                    createMessage('assistant', COMPLETION_GUIDE_MESSAGE),
-                  ]
-              : state.messages,
+          messages:
+            state.messages.length === 0
+              ? getInitialMessages(payload)
+              : payload.assistant_message
+                ? state.messages.at(-1)?.role === 'assistant' &&
+                  state.messages.at(-1)?.content === payload.assistant_message
+                  ? state.messages
+                  : [
+                      ...state.messages,
+                      createMessage('assistant', payload.assistant_message),
+                    ]
+                : payload.recommendation_ready
+                  ? state.messages.at(-1)?.role === 'assistant' &&
+                    state.messages.at(-1)?.content === COMPLETION_GUIDE_MESSAGE
+                    ? state.messages
+                    : [
+                        ...state.messages,
+                        createMessage('assistant', COMPLETION_GUIDE_MESSAGE),
+                      ]
+                  : state.messages,
         })),
       applyChatResponse: (payload) =>
         set((state) => ({
