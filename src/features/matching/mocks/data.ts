@@ -6,7 +6,6 @@ type MatchingMockCandidateRecord = {
   thumbnail_url: string | null;
   trailer_url: string | null;
   rating: number | null;
-  is_liked: boolean;
 };
 
 const createCandidate = (
@@ -16,7 +15,6 @@ const createCandidate = (
   thumbnailUrl: string,
   trailerUrl: string,
   rating: number,
-  isLiked = false,
   description = `${title}는 ${genres.join(' · ')} 흐름을 대표하는 후보 게임입니다.`,
 ): MatchingMockCandidateRecord => ({
   game_id: gameId,
@@ -26,7 +24,6 @@ const createCandidate = (
   thumbnail_url: thumbnailUrl,
   trailer_url: trailerUrl,
   rating,
-  is_liked: isLiked,
 });
 
 export const matchingMockCandidatesByGenreId: Record<
@@ -57,7 +54,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/1384160/header.jpg',
       'https://www.youtube.com/watch?v=3XH0D4xYjWk',
       4.6,
-      true,
     ),
     createCandidate(
       2138710,
@@ -92,7 +88,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/367520/header.jpg',
       'https://www.youtube.com/watch?v=UAO2urG23S4',
       4.9,
-      true,
     ),
     createCandidate(
       105600,
@@ -135,7 +130,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/1086940/header.jpg',
       'https://www.youtube.com/watch?v=1T22wNvoNiU',
       4.9,
-      true,
     ),
     createCandidate(
       1091500,
@@ -178,7 +172,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg',
       'https://www.youtube.com/watch?v=innmNewjkuk',
       4.3,
-      true,
     ),
     createCandidate(
       359550,
@@ -237,7 +230,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/949230/header.jpg',
       'https://www.youtube.com/watch?v=WdD66WGBVHM',
       4.0,
-      true,
     ),
     createCandidate(
       294100,
@@ -288,7 +280,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/2290180/header.jpg',
       'https://www.youtube.com/watch?v=Vt4anCwdg1A',
       4.1,
-      true,
     ),
   ],
   6: [
@@ -307,7 +298,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/2379780/header.jpg',
       'https://www.youtube.com/watch?v=VUyP21iQ_-g',
       4.9,
-      true,
     ),
     createCandidate(
       590380,
@@ -350,7 +340,6 @@ export const matchingMockCandidatesByGenreId: Record<
       'https://cdn.cloudflare.steamstatic.com/steam/apps/960170/header.jpg',
       'https://www.youtube.com/watch?v=gF9gP6L2Y8w',
       4.7,
-      true,
     ),
     createCandidate(
       774171,

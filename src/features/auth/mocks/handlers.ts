@@ -234,8 +234,14 @@ export const syncMockLikedGamesForAuthorization = (
   );
 
   updates.forEach((update) => {
+    const hadLiked = likedGamesById.has(update.game_id);
+
     if (update.is_liked) {
       const existingLikedGame = likedGamesById.get(update.game_id);
+
+      if (!hadLiked) {
+        increaseLikeCount(update.game_id);
+      }
 
       likedGamesById.set(update.game_id, {
         game_id: update.game_id,
@@ -252,6 +258,10 @@ export const syncMockLikedGamesForAuthorization = (
       });
 
       return;
+    }
+
+    if (hadLiked) {
+      decreaseLikeCount(update.game_id);
     }
 
     likedGamesById.delete(update.game_id);

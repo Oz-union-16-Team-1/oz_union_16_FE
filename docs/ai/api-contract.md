@@ -25,6 +25,7 @@
 - **회원 탈퇴**: `DELETE /api/v1/accounts/me` (request body에 `password` 포함)
 - **마이페이지 찜 목록 조회**: `GET /api/v1/accounts/me/game-like`
 - **마이페이지 찜 해제**: `DELETE /api/v1/accounts/me/game-like/{game_id}`
+- **게임 좋아요 등록/해제**: `POST/DELETE /api/v1/games/{game_id}/like`
 
 #### 비밀번호 변경 필드 계약
 
@@ -204,10 +205,16 @@ MSW mock은 실제 API 경로와 응답 구조를 최대한 동일하게 맞춥�
 - 상세 데이터 조회는 `getGameDetail(gameId)` 경계를 사용
 - 모달을 닫아도 추천 리스트 스크롤 위치와 현재 결과 상태는 유지
 
-### 8. Out of Scope / Follow-up Notes
+### 8. Matching Like State Rules
+
+- `GET /api/v1/match/candidates` 의 `is_liked` 는 정적 seed 값이 아니라 **현재 로그인 사용자의 찜 상태**를 기준으로 계산합니다.
+- 매칭 화면의 하트 클릭은 게임 공통 좋아요 API(`POST/DELETE /api/v1/games/{game_id}/like`)를 그대로 사용합니다.
+- 매칭 화면은 좋아요를 별도 로컬 상태로 복제하지 않고, 공통 좋아요 cache/source-of-truth 를 따릅니다.
+- 매칭 제출 시 mock liked 상태를 동기화할 때 `is_liked` 뿐 아니라 `like_count` 도 기존 좋아요 API와 같은 규칙으로 함께 맞춥니다.
+
+### 9. Out of Scope / Follow-up Notes
 
 - 추천 리스트 row의 찜 버튼 API 연결은 별도 작업 범위로 유지
-- 매칭 후보 조회 응답은 최신 명세서와 현재 프론트 구조 차이가 있어, 추후 매칭 adapter 정리 PR에서 별도 동기화 필요
 - 문서가 갱신되면 구현 코드는 이 문서를 우선 기준으로 맞추고, 명세 변경 시 adapter 계층을 먼저 수정합니다
 
 ## Customer Support Chatbot

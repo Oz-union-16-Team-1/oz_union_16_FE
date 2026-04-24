@@ -1,6 +1,7 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Link,
   Navigate,
@@ -15,6 +16,9 @@ import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import type { LikedGamesResponse } from '../../features/auth/types/auth';
+import { likeGame, unlikeGame } from '../../features/games/gameApi';
+import { syncGameLikeStateInQueryCache } from '../../features/games/queryCache';
+import type { MatchingCandidateItem } from '../../features/matching/types';
 import {
   useMatchCandidatesQuery,
   useSubmitMatchResponsesMutation,
@@ -28,6 +32,11 @@ import {
 } from '../../features/matching/genres';
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
+
+const MATCHING_LIKE_LOGIN_REQUIRED_MESSAGE =
+  '로그인 후 좋아요를 사용할 수 있어요.';
+const MATCHING_LIKE_ERROR_MESSAGE =
+  '좋아요 상태를 변경하지 못했어요. 잠시 후 다시 시도해 주세요.';
 
 const formatMatchingCandidateRating = (rating: number | null) => {
   if (typeof rating !== 'number') {
@@ -45,6 +54,14 @@ const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
   }
 
   return Array.isArray((value as Partial<LikedGamesResponse>).results);
+};
+
+const getMatchingLikeErrorMessage = (error: unknown) => {
+  if (error instanceof AxiosError && error.response?.status === 401) {
+    return MATCHING_LIKE_LOGIN_REQUIRED_MESSAGE;
+  }
+
+  return MATCHING_LIKE_ERROR_MESSAGE;
 };
 
 function MatchingGenreDetailPage() {
@@ -67,22 +84,19 @@ function MatchingGenreDetailPage() {
     () => matchCandidatesQuery.data?.results ?? [],
     [matchCandidatesQuery.data?.results],
   );
-  const selectedGenreSlug = useMatchingStore(
-    (state) => state.selectedGenreSlug,
-  );
-  const selectedGenreId = useMatchingStore((state) => state.selectedGenreId);
-  const flowCandidates = useMatchingStore((state) => state.candidates);
   const currentIndex = useMatchingStore((state) => state.currentIndex);
   const evaluationsByGameId = useMatchingStore(
     (state) => state.evaluationsByGameId,
   );
   const restartFlow = useMatchingStore((state) => state.restartFlow);
   const setRating = useMatchingStore((state) => state.setRating);
-  const toggleLiked = useMatchingStore((state) => state.toggleLiked);
   const goNext = useMatchingStore((state) => state.goNext);
   const goPrevious = useMatchingStore((state) => state.goPrevious);
   const resetFlow = useMatchingStore((state) => state.resetFlow);
   const hasInitializedFlowRef = useRef(false);
+  const [likeFeedbackMessage, setLikeFeedbackMessage] = useState<string | null>(
+    null,
+  );
 
   useLayoutEffect(() => {
     resetFlow();
@@ -103,12 +117,7 @@ function MatchingGenreDetailPage() {
     resetSubmitMatchResponsesMutation();
   }, [genre, candidates, restartFlow, resetSubmitMatchResponsesMutation]);
 
-  const displayCandidates =
-    selectedGenreSlug === genre?.slug &&
-    selectedGenreId === genre?.genreId &&
-    flowCandidates.length > 0
-      ? flowCandidates
-      : candidates;
+  const displayCandidates = candidates;
   const totalSteps = displayCandidates.length;
   const totalGamesLabel = `${totalSteps}개의 게임`;
   const safeIndex =
@@ -117,7 +126,6 @@ function MatchingGenreDetailPage() {
   const currentEvaluation = currentCandidate
     ? (evaluationsByGameId[currentCandidate.game_id] ?? {
         rating: null,
-        isLiked: currentCandidate.is_liked,
       })
     : null;
   const isLastCard = totalSteps > 0 && safeIndex === totalSteps - 1;
@@ -131,6 +139,87 @@ function MatchingGenreDetailPage() {
   const submitErrorMessage = submitMatchResponsesMutation.error
     ? extractApiErrorMessage(submitMatchResponsesMutation.error)
     : null;
+  const updateLikedGamesCache = (
+    candidate: MatchingCandidateItem,
+    nextIsLiked: boolean,
+  ) => {
+    queryClient.setQueriesData<LikedGamesResponse>(
+      { queryKey: authKeys.likedGames() },
+      (current) => {
+        if (!isLikedGamesResponse(current)) {
+          return current;
+        }
+
+        const currentLikedGames = current as LikedGamesResponse;
+
+        if (nextIsLiked) {
+          const alreadyExists = currentLikedGames.results.some(
+            (likedGame) => likedGame.game_id === candidate.game_id,
+          );
+
+          if (alreadyExists) {
+            return current;
+          }
+
+          return {
+            ...currentLikedGames,
+            count: currentLikedGames.count + 1,
+            results: [
+              {
+                game_id: candidate.game_id,
+                game_title: candidate.title,
+                thumbnail_url: candidate.thumbnail_url,
+                genres: candidate.genres,
+                liked_at: new Date().toISOString(),
+              },
+              ...currentLikedGames.results,
+            ],
+          };
+        }
+
+        const nextResults = currentLikedGames.results.filter(
+          (likedGame) => likedGame.game_id !== candidate.game_id,
+        );
+
+        if (nextResults.length === currentLikedGames.results.length) {
+          return current;
+        }
+
+        return {
+          ...currentLikedGames,
+          count: Math.max(0, currentLikedGames.count - 1),
+          results: nextResults,
+        };
+      },
+    );
+  };
+  const likeMutation = useMutation({
+    mutationFn: ({
+      candidate,
+      nextIsLiked,
+    }: {
+      candidate: MatchingCandidateItem;
+      nextIsLiked: boolean;
+    }) =>
+      nextIsLiked ? likeGame(candidate.game_id) : unlikeGame(candidate.game_id),
+    onMutate: () => {
+      setLikeFeedbackMessage(null);
+    },
+    onSuccess: (response, variables) => {
+      updateLikedGamesCache(variables.candidate, response.isLiked);
+      syncGameLikeStateInQueryCache(queryClient, {
+        gameId: response.gameId,
+        isLiked: response.isLiked,
+        likeCount: response.likeCount,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: authKeys.likedGames(),
+      });
+    },
+    onError: (error) => {
+      setLikeFeedbackMessage(getMatchingLikeErrorMessage(error));
+    },
+  });
 
   if (authGate.accessStatus === 'unauthorized') {
     return (
@@ -145,63 +234,6 @@ function MatchingGenreDetailPage() {
     );
   }
 
-  const syncLikedGamesCache = () => {
-    queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: authKeys.likedGames() },
-      (current) => {
-        if (!isLikedGamesResponse(current)) {
-          return current;
-        }
-
-        const currentLikedGames = current as LikedGamesResponse;
-        const likedAt = new Date().toISOString();
-        const nextLikedGamesById = new Map(
-          currentLikedGames.results.map((likedGame) => [
-            likedGame.game_id,
-            likedGame,
-          ]),
-        );
-
-        displayCandidates.forEach((candidate) => {
-          const evaluation = evaluationsByGameId[candidate.game_id];
-
-          if (!evaluation) {
-            return;
-          }
-
-          if (evaluation.isLiked) {
-            const existingLikedGame = nextLikedGamesById.get(candidate.game_id);
-
-            nextLikedGamesById.set(candidate.game_id, {
-              game_id: candidate.game_id,
-              game_title: candidate.title,
-              thumbnail_url: candidate.thumbnail_url,
-              genres: candidate.genres,
-              liked_at: existingLikedGame?.liked_at ?? likedAt,
-            });
-            return;
-          }
-
-          nextLikedGamesById.delete(candidate.game_id);
-        });
-
-        const nextResults = [...nextLikedGamesById.values()].sort(
-          (a, b) => Date.parse(b.liked_at) - Date.parse(a.liked_at),
-        );
-
-        return {
-          ...currentLikedGames,
-          count: nextResults.length,
-          results: nextResults,
-        };
-      },
-    );
-
-    void queryClient.invalidateQueries({
-      queryKey: authKeys.likedGames(),
-    });
-  };
-
   const handleSubmit = async () => {
     if (!allCandidatesRated || displayCandidates.length === 0) {
       return;
@@ -212,10 +244,9 @@ function MatchingGenreDetailPage() {
         match_result: displayCandidates.map((candidate) => ({
           game_id: candidate.game_id,
           rating: evaluationsByGameId[candidate.game_id]!.rating!,
-          is_liked: evaluationsByGameId[candidate.game_id]!.isLiked,
+          is_liked: candidate.is_liked,
         })),
       });
-      syncLikedGamesCache();
       navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=match`);
     } catch {
       return;
@@ -363,15 +394,21 @@ function MatchingGenreDetailPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => toggleLiked(currentCandidate.game_id)}
-                        aria-pressed={currentEvaluation.isLiked}
+                        onClick={() =>
+                          likeMutation.mutate({
+                            candidate: currentCandidate,
+                            nextIsLiked: !currentCandidate.is_liked,
+                          })
+                        }
+                        aria-pressed={currentCandidate.is_liked}
                         aria-label={
-                          currentEvaluation.isLiked
+                          currentCandidate.is_liked
                             ? '좋아요 해제'
                             : '좋아요 추가'
                         }
-                        className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
-                          currentEvaluation.isLiked
+                        disabled={likeMutation.isPending}
+                        className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] disabled:cursor-not-allowed disabled:opacity-60 ${
+                          currentCandidate.is_liked
                             ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
                             : 'border-white/10 bg-white/3 text-white/54 hover:border-white/20 hover:text-white/80'
                         }`}
@@ -379,7 +416,7 @@ function MatchingGenreDetailPage() {
                         <Heart
                           size={20}
                           fill={
-                            currentEvaluation.isLiked ? 'currentColor' : 'none'
+                            currentCandidate.is_liked ? 'currentColor' : 'none'
                           }
                         />
                       </button>
@@ -430,6 +467,12 @@ function MatchingGenreDetailPage() {
                       </p>
                     ) : null}
 
+                    {likeFeedbackMessage ? (
+                      <p className="mt-2.5 text-sm leading-6 break-keep text-[#ffc2c2]">
+                        {likeFeedbackMessage}
+                      </p>
+                    ) : null}
+
                     {isLastCard ? (
                       <div className="mt-auto pt-5">
                         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -448,7 +491,8 @@ function MatchingGenreDetailPage() {
                             onClick={() => void handleSubmit()}
                             disabled={
                               !allCandidatesRated ||
-                              submitMatchResponsesMutation.isPending
+                              submitMatchResponsesMutation.isPending ||
+                              likeMutation.isPending
                             }
                             className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:cursor-not-allowed disabled:bg-[#5c1a1a] disabled:text-white/44"
                           >

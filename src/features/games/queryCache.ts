@@ -2,6 +2,7 @@ import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
 import type { GameGenreFilter } from './genres';
 import type { GameDetail, GameListItem, SearchGamesResult } from './types';
+import type { MatchingCandidatesResponse } from '../matching/types';
 
 const gamesRootKey = ['games'] as const;
 const gamesTop100RootKey = [...gamesRootKey, 'top100'] as const;
@@ -120,5 +121,20 @@ export const syncGameLikeStateInQueryCache = (
   queryClient.setQueryData<InfiniteData<LikeableResultPage>>(
     ['match-results'],
     updateRecommendationPages,
+  );
+
+  queryClient.setQueriesData<MatchingCandidatesResponse>(
+    { queryKey: ['match-candidates'] },
+    (currentData) =>
+      currentData && Array.isArray(currentData.results)
+        ? {
+            ...currentData,
+            results: currentData.results.map((result) =>
+              result.game_id === update.gameId
+                ? { ...result, is_liked: update.isLiked }
+                : result,
+            ),
+          }
+        : currentData,
   );
 };
