@@ -25,6 +25,7 @@ import type {
   SocialAuthProvider,
   SignupRequest,
   UpdateUserInfoRequest,
+  UpdateUserInfoResponse,
 } from '../types/auth';
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
 
@@ -622,14 +623,19 @@ const accountHandlers = [
 
     await delay(180);
 
-    return HttpResponse.json({
-      login_id: user.loginId,
-      name: user.name,
-      nickname: user.nickname,
-      gender: user.gender,
-      email: user.email,
-      profile_img_url: user.profileImageUrl,
-    } satisfies CurrentUserProfileResponse);
+    const responseBody: UpdateUserInfoResponse = {
+      detail: '회원 정보가 수정되었습니다.',
+    };
+
+    if (hasNickname) {
+      responseBody.nickname = user.nickname;
+    }
+
+    if (hasProfileImage) {
+      responseBody.profile_img_url = user.profileImageUrl;
+    }
+
+    return HttpResponse.json(responseBody);
   }),
 
   http.post(

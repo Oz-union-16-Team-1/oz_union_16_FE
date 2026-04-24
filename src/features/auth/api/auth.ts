@@ -26,6 +26,7 @@ import type {
   SignupRequest,
   SignupResponse,
   UpdateUserInfoRequest,
+  UpdateUserInfoResponse,
   UploadFileToS3Request,
 } from '../types/auth';
 
@@ -219,7 +220,7 @@ export const getCurrentUserProfile = async () => {
 };
 
 export const updateUserInfo = async (payload: UpdateUserInfoRequest) => {
-  const response = await api.patch<CurrentUserProfileResponse>(
+  const response = await api.patch<UpdateUserInfoResponse>(
     `${AUTH_BASE_PATH}/me`,
     payload,
   );
