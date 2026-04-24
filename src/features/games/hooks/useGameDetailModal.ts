@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { authKeys } from '../../auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../auth/types/auth';
-import { mergeGameDetail } from '../detailUtils';
+import {
+  GAME_DETAIL_GC_TIME,
+  GAME_DETAIL_STALE_TIME,
+  mergeGameDetail,
+} from '../detailUtils';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
 import { gamesKeys, syncGameLikeStateInQueryCache } from '../queryCache';
 import type { GameDetail, GameLikeResponse, GameListItem } from '../types';
@@ -122,8 +126,8 @@ export const useGameDetailModal = (game: GameListItem) => {
 
       return mergeGameDetail(previousDetail, incomingDetail);
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
+    staleTime: GAME_DETAIL_STALE_TIME,
+    gcTime: GAME_DETAIL_GC_TIME,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     retry: false,
