@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import Header from '../../components/common/Header';
+import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
 import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
@@ -33,7 +35,8 @@ function SurveyBackdrop() {
 }
 
 function SurveyPage() {
-  const authGate = useAuthGate({ allowMockBypass: true });
+  const location = useLocation();
+  const authGate = useAuthGate();
   const canAccessSurvey = authGate.accessStatus === 'authorized';
   const account = useAuthStore((state) => state.account);
   const syncOwnerKey = useSurveyStore((state) => state.syncOwnerKey);
@@ -49,6 +52,19 @@ function SurveyPage() {
     syncOwnerKey(surveyOwnerKey);
   }, [surveyOwnerKey, syncOwnerKey]);
 
+  if (authGate.accessStatus === 'unauthorized') {
+    return (
+      <Navigate
+        to={`/${ROUTES.LOGIN}`}
+        replace
+        state={{
+          noticeMessage: '로그인 후 설문을 시작할 수 있어요.',
+          redirectTo: `${location.pathname}${location.search}`,
+        }}
+      />
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <SurveyBackdrop />
@@ -60,6 +76,8 @@ function SurveyPage() {
           <AuthGateStatusPanel
             title="인증 상태를 확인하는 중입니다."
             description="잠시만 기다려 주세요. 세션 확인 후 설문 화면을 이어서 보여드릴게요."
+            align="center"
+            className="mx-auto max-w-[760px] sm:py-12"
           />
         ) : canAccessSurvey ? (
           <SurveyChatPanel />
@@ -67,6 +85,8 @@ function SurveyPage() {
           <AuthGateStatusPanel
             title="로그인 후 설문을 시작할 수 있어요."
             description="로그인하면 취향을 바탕으로 질문을 이어가고, 설문이 끝난 뒤 바로 추천 결과까지 확인할 수 있어요."
+            align="center"
+            className="mx-auto max-w-[760px] sm:py-12"
           />
         )}
       </main>

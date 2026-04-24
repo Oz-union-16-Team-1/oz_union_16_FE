@@ -46,6 +46,8 @@ const readMockRefreshToken = () => {
   return window.sessionStorage.getItem(MOCK_REFRESH_TOKEN_STORAGE_KEY) ?? '';
 };
 
+export const hasMockRefreshToken = () => Boolean(readMockRefreshToken().trim());
+
 const persistMockRefreshToken = (refreshToken: string | null | undefined) => {
   if (!mockServiceWorkerEnabled || typeof window === 'undefined') {
     return;

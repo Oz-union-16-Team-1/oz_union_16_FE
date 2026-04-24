@@ -2,11 +2,16 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
+import { isMockServiceWorkerEnabled } from '../../../lib/env';
 import {
   clearLegacyAuthStorage,
   useAuthStore,
 } from '../../../store/useAuthStore';
-import { getCurrentUserProfile, refreshAccessToken } from '../api/auth';
+import {
+  getCurrentUserProfile,
+  hasMockRefreshToken,
+  refreshAccessToken,
+} from '../api/auth';
 
 const AUTH_BOOTSTRAP_SKIP_PATHS = new Set([
   `/${ROUTES.AUTH_CALLBACK}`,
@@ -62,6 +67,11 @@ function useAuthBootstrap() {
     }
 
     if (AUTH_BOOTSTRAP_SKIP_PATHS.has(location.pathname)) {
+      store.setAuthBootstrapStatus('ready');
+      return;
+    }
+
+    if (isMockServiceWorkerEnabled() && !hasMockRefreshToken()) {
       store.setAuthBootstrapStatus('ready');
       return;
     }
