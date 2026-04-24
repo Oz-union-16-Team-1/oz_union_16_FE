@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
-import Header from '../../components/common/Header';
+import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
@@ -51,7 +51,7 @@ function MatchingListPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
-      <Header fixed />
+      <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.5rem] pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-[6.25rem] md:pb-14">
         {authGate.accessStatus === 'loading' ? (

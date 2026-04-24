@@ -6,7 +6,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
-import Header from '../../components/common/Header';
+import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import { authKeys } from '../../features/auth/api/queryKeys';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -530,7 +530,7 @@ function RecommendationListPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <RecommendationBackdrop items={recommendationItems} />
-      <Header fixed />
+      <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mx-auto w-full max-w-245">
