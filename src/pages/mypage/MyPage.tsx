@@ -4,7 +4,7 @@ import { Navigate } from 'react-router';
 import AuthWrapper from '../../components/auth/AuthWrapper';
 import LazyHeader from '../../components/common/LazyHeader';
 import ToastMessage from '../../components/mypage/ToastMessage';
-import { ROUTES } from '../../constants/routes';
+import { ROUTE_PATHS } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
@@ -12,8 +12,9 @@ import type { GameListItem } from '../../features/games/types';
 import MyPageAccountDangerZone from './components/MyPageAccountDangerZone';
 import MyPageLikedGamesSection from './components/MyPageLikedGamesSection';
 import MyPageProfileContainer from './components/MyPageProfileContainer';
+import useMyPageDeleteAccount from './hooks/useMyPageDeleteAccount';
+import useMyPagePasswordChange from './hooks/useMyPagePasswordChange';
 import useMyPageProfile from './hooks/useMyPageProfile';
-import useMyPageSecurity from './hooks/useMyPageSecurity';
 import type { MyPageToast } from './types';
 
 const loadingFallback = (
@@ -29,7 +30,7 @@ const loadingFallback = (
 
 const unauthorizedFallback = (
   <Navigate
-    to={`/${ROUTES.LOGIN}`}
+    to={ROUTE_PATHS.LOGIN}
     replace
     state={{ noticeMessage: '로그인 후 마이페이지를 이용할 수 있습니다.' }}
   />
@@ -45,7 +46,8 @@ function MyPage() {
     enabled: authGate.canAccessAuthenticatedRoute,
     onToast: setToast,
   });
-  const myPageSecurity = useMyPageSecurity({
+  const myPagePasswordChange = useMyPagePasswordChange();
+  const myPageDeleteAccount = useMyPageDeleteAccount({
     onToast: setToast,
   });
 
@@ -75,19 +77,25 @@ function MyPage() {
             }}
             onNicknameSave={myPageProfile.handleNicknameSave}
             onProfileImageSelect={myPageProfile.handleProfileImageSelect}
-            isPasswordPanelOpen={myPageSecurity.isPasswordPanelOpen}
-            onPasswordToggle={myPageSecurity.togglePasswordPanel}
-            passwordValues={myPageSecurity.passwordValues}
-            passwordErrors={myPageSecurity.resolvedPasswordErrors}
-            passwordPanelMessage={myPageSecurity.passwordPanelMessage?.message}
-            passwordPanelMessageTone={
-              myPageSecurity.passwordPanelMessage?.tone ?? 'error'
+            isPasswordPanelOpen={myPagePasswordChange.isPasswordPanelOpen}
+            onPasswordToggle={myPagePasswordChange.togglePasswordPanel}
+            passwordValues={myPagePasswordChange.passwordValues}
+            passwordErrors={myPagePasswordChange.resolvedPasswordErrors}
+            passwordPanelMessage={
+              myPagePasswordChange.passwordPanelMessage?.message
             }
-            isPasswordChangePending={myPageSecurity.isChangePasswordPending}
-            onPasswordValueChange={myPageSecurity.handlePasswordValueChange}
-            onPasswordBlur={myPageSecurity.handlePasswordBlur}
-            onPasswordCancel={myPageSecurity.closePasswordPanel}
-            onPasswordSubmit={myPageSecurity.handlePasswordSubmit}
+            passwordPanelMessageTone={
+              myPagePasswordChange.passwordPanelMessage?.tone ?? 'error'
+            }
+            isPasswordChangePending={
+              myPagePasswordChange.isChangePasswordPending
+            }
+            onPasswordValueChange={
+              myPagePasswordChange.handlePasswordValueChange
+            }
+            onPasswordBlur={myPagePasswordChange.handlePasswordBlur}
+            onPasswordCancel={myPagePasswordChange.closePasswordPanel}
+            onPasswordSubmit={myPagePasswordChange.handlePasswordSubmit}
           />
 
           <MyPageLikedGamesSection
@@ -97,14 +105,16 @@ function MyPage() {
           />
 
           <MyPageAccountDangerZone
-            isDeleteModalOpen={myPageSecurity.isDeleteModalOpen}
-            deletePassword={myPageSecurity.deletePassword}
-            deletePasswordError={myPageSecurity.deletePasswordError}
-            isDeletePending={myPageSecurity.isDeleteAccountPending}
-            onOpenDeleteModal={myPageSecurity.openDeleteModal}
-            onCloseDeleteModal={myPageSecurity.closeDeleteModal}
-            onDeletePasswordChange={myPageSecurity.handleDeletePasswordChange}
-            onConfirmDeleteAccount={myPageSecurity.handleDeleteAccount}
+            isDeleteModalOpen={myPageDeleteAccount.isDeleteModalOpen}
+            deletePassword={myPageDeleteAccount.deletePassword}
+            deletePasswordError={myPageDeleteAccount.deletePasswordError}
+            isDeletePending={myPageDeleteAccount.isDeleteAccountPending}
+            onOpenDeleteModal={myPageDeleteAccount.openDeleteModal}
+            onCloseDeleteModal={myPageDeleteAccount.closeDeleteModal}
+            onDeletePasswordChange={
+              myPageDeleteAccount.handleDeletePasswordChange
+            }
+            onConfirmDeleteAccount={myPageDeleteAccount.handleDeleteAccount}
           />
         </main>
 

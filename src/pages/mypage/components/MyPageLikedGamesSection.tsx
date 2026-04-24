@@ -1,22 +1,13 @@
 import { Heart } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
 
 import AuthButton from '../../../components/auth/AuthButton';
 import ConfirmModal from '../../../components/mypage/ConfirmModal';
 import FavoriteGameCard from '../../../components/mypage/FavoriteGameCard';
 import FavoriteGameCardSkeleton from '../../../components/mypage/FavoriteGameCardSkeleton';
 import FavoriteGamesEmptyState from '../../../components/mypage/FavoriteGamesEmptyState';
-import { extractAuthApiErrorMessage } from '../../../features/auth/api/auth';
-import {
-  DEFAULT_LIKED_GAMES_PAGE_SIZE,
-  useLikedGamesInfiniteQuery,
-  useUnlikeLikedGameMutation,
-} from '../../../features/auth/api/useAuthApi';
 import type { GameListItem } from '../../../features/games/types';
-import type { FavoriteGamePreview } from '../../../features/mypage/types';
-import type { LikedGameItemResponse } from '../../../features/auth/types/auth';
+import useMyPageLikedGames from '../hooks/useMyPageLikedGames';
 import type { MyPageToastPayload } from '../types';
-import { toFavoriteGameListItem, toFavoriteGamePreview } from '../utils';
 
 type MyPageLikedGamesSectionProps = {
   enabled: boolean;
@@ -29,108 +20,29 @@ function MyPageLikedGamesSection({
   onOpenGameDetail,
   onToast,
 }: MyPageLikedGamesSectionProps) {
-  const likedGamesQuery = useLikedGamesInfiniteQuery(
-    enabled,
-    DEFAULT_LIKED_GAMES_PAGE_SIZE,
-  );
-  const unlikeLikedGameMutation = useUnlikeLikedGameMutation();
-  const [selectedFavoriteGame, setSelectedFavoriteGame] =
-    useState<FavoriteGamePreview | null>(null);
-  const favoriteGamesScrollRef = useRef<HTMLDivElement | null>(null);
-  const favoriteGamesLoadMoreRef = useRef<HTMLDivElement | null>(null);
-  const likedGameResults = useMemo(() => {
-    const pages = likedGamesQuery.data?.pages ?? [];
-
-    return pages.flatMap((page) => page.results);
-  }, [likedGamesQuery.data]);
-  const favoriteGames = useMemo(() => {
-    const deduplicatedGames = new Map<number, LikedGameItemResponse>();
-
-    likedGameResults.forEach((game) => {
-      deduplicatedGames.set(game.game_id, game);
-    });
-
-    return [...deduplicatedGames.values()].map(toFavoriteGamePreview);
-  }, [likedGameResults]);
-  const hasFavoriteGamesNextPage = Boolean(likedGamesQuery.hasNextPage);
-  const isFavoriteGamesFetchNextPageError =
-    likedGamesQuery.isFetchNextPageError;
-  const isFavoriteGamesFetchingNextPage = likedGamesQuery.isFetchingNextPage;
-  const fetchNextFavoriteGamesPage = likedGamesQuery.fetchNextPage;
-  const favoriteCount =
-    likedGamesQuery.data?.pages?.[0]?.count ?? favoriteGames.length;
-  const isFavoriteGamesLoading =
-    likedGamesQuery.isLoading && !favoriteGames.length;
-  const isFavoriteGamesError = likedGamesQuery.isError && !favoriteGames.length;
-
-  useEffect(() => {
-    if (isFavoriteGamesFetchNextPageError || !hasFavoriteGamesNextPage) {
-      return undefined;
-    }
-
-    const rootElement = favoriteGamesScrollRef.current;
-    const targetElement = favoriteGamesLoadMoreRef.current;
-
-    if (!rootElement || !targetElement) {
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-
-        if (!entry?.isIntersecting || isFavoriteGamesFetchingNextPage) {
-          return;
-        }
-
-        void fetchNextFavoriteGamesPage();
-      },
-      {
-        root: rootElement,
-        rootMargin: '0px 0px 160px 0px',
-        threshold: 0.1,
-      },
-    );
-
-    observer.observe(targetElement);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [
-    favoriteGames.length,
-    fetchNextFavoriteGamesPage,
+  const {
+    favoriteGamesScrollRef,
+    favoriteGamesLoadMoreRef,
+    favoriteGames,
+    favoriteCount,
+    isFavoriteGamesLoading,
+    isFavoriteGamesError,
     hasFavoriteGamesNextPage,
-    isFavoriteGamesFetchNextPageError,
     isFavoriteGamesFetchingNextPage,
-  ]);
-
-  const handleFavoriteGameCardClick = (game: FavoriteGamePreview) => {
-    onOpenGameDetail(toFavoriteGameListItem(game));
-  };
-
-  const handleFavoriteGameDeleteConfirm = async () => {
-    if (!selectedFavoriteGame) {
-      return;
-    }
-
-    try {
-      const response = await unlikeLikedGameMutation.mutateAsync(
-        selectedFavoriteGame.gameId,
-      );
-
-      setSelectedFavoriteGame(null);
-      onToast({
-        tone: 'success',
-        message: response.detail || '찜한 게임이 목록에서 삭제되었습니다.',
-      });
-    } catch (error) {
-      onToast({
-        tone: 'error',
-        message: extractAuthApiErrorMessage(error),
-      });
-    }
-  };
+    isFavoriteGamesFetchNextPageError,
+    isFetchingFavoriteGames,
+    selectedFavoriteGame,
+    isUnlikePending,
+    setSelectedFavoriteGame,
+    handleFavoriteGameCardClick,
+    handleFavoriteGameDeleteConfirm,
+    refetchFavoriteGames,
+    fetchNextFavoriteGamesPage,
+  } = useMyPageLikedGames({
+    enabled,
+    onOpenGameDetail,
+    onToast,
+  });
 
   return (
     <>
@@ -180,7 +92,7 @@ function MyPageLikedGamesSection({
                   aria-hidden="true"
                   className="h-0.5 w-full"
                 />
-                {likedGamesQuery.isFetchNextPageError ? (
+                {isFavoriteGamesFetchNextPageError ? (
                   <>
                     <p className="text-sm text-red-300">
                       추가 찜 목록을 불러오지 못했습니다.
@@ -189,15 +101,15 @@ function MyPageLikedGamesSection({
                       type="button"
                       variant="secondary"
                       className="w-full max-w-40"
-                      onClick={() => void likedGamesQuery.fetchNextPage()}
-                      disabled={likedGamesQuery.isFetchingNextPage}
+                      onClick={() => void fetchNextFavoriteGamesPage()}
+                      disabled={isFavoriteGamesFetchingNextPage}
                     >
-                      {likedGamesQuery.isFetchingNextPage
+                      {isFavoriteGamesFetchingNextPage
                         ? '다시 불러오는 중...'
                         : '다시 시도'}
                     </AuthButton>
                   </>
-                ) : likedGamesQuery.isFetchingNextPage ? (
+                ) : isFavoriteGamesFetchingNextPage ? (
                   <p className="text-mypage-muted text-sm">
                     찜 목록을 더 불러오는 중입니다...
                   </p>
@@ -221,16 +133,10 @@ function MyPageLikedGamesSection({
                 type="button"
                 variant="secondary"
                 className="w-full max-w-36"
-                onClick={() => void likedGamesQuery.refetch()}
-                disabled={
-                  likedGamesQuery.isFetching ||
-                  likedGamesQuery.isFetchingNextPage
-                }
+                onClick={() => void refetchFavoriteGames()}
+                disabled={isFetchingFavoriteGames}
               >
-                {likedGamesQuery.isFetching ||
-                likedGamesQuery.isFetchingNextPage
-                  ? '다시 불러오는 중...'
-                  : '다시 시도'}
+                {isFetchingFavoriteGames ? '다시 불러오는 중...' : '다시 시도'}
               </AuthButton>
             </div>
           ) : (
@@ -245,7 +151,7 @@ function MyPageLikedGamesSection({
         description={`'${selectedFavoriteGame?.title ?? ''}'을(를) 찜한 목록에서 삭제하시겠습니까?`}
         confirmLabel="예"
         cancelLabel="아니오"
-        isPending={unlikeLikedGameMutation.isPending}
+        isPending={isUnlikePending}
         onClose={() => setSelectedFavoriteGame(null)}
         onConfirm={() => {
           void handleFavoriteGameDeleteConfirm();
