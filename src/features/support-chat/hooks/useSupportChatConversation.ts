@@ -1,16 +1,11 @@
-import {
-  type Dispatch,
-  type SetStateAction,
-  useCallback,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import {
   extractSupportChatErrorMessage,
   streamChatbotResponse,
 } from '@/features/support-chat/api/chatbot';
 import { useSendChatbotMessageMutation } from '@/features/support-chat/api/useSupportChatApi';
+import { useSupportChatStore } from '@/features/support-chat/store/useSupportChatStore';
 import type { SupportChatRouteContext } from '@/features/support-chat/types/supportChat';
 
 const SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE =
@@ -19,47 +14,48 @@ const SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE =
 const isRecoverableSessionError = (message: string) =>
   message.includes('session_id') || message.includes('유효하지 않은');
 
+export type SupportChatConversationResetOptions = {
+  routeContext?: SupportChatRouteContext;
+  keepPanelOpen?: boolean;
+  preserveBootstrap?: boolean;
+  abortInFlightRequest?: boolean;
+};
+
 type UseSupportChatConversationParams = {
   routeContext: SupportChatRouteContext;
-  sessionId: number | null;
-  isSubmitting: boolean;
-  appendUserMessage: (content: string) => void;
-  appendAssistantMessage: (content: string) => void;
-  beginAssistantMessage: (messageId: string) => void;
-  appendAssistantChunk: (messageId: string, chunk: string) => void;
-  finalizeAssistantMessage: (messageId: string) => void;
-  removeMessage: (messageId: string) => void;
-  hideQuickActions: () => void;
-  resetConversation: (routeContext?: SupportChatRouteContext) => void;
-  setSessionId: (sessionId: number | null) => void;
-  setSubmitting: (isSubmitting: boolean) => void;
-  setPinnedToBottom: (isPinnedToBottom: boolean) => void;
-  setHasUnreadMessages: Dispatch<SetStateAction<boolean>>;
 };
 
 function useSupportChatConversation({
   routeContext,
-  sessionId,
-  isSubmitting,
-  appendUserMessage,
-  appendAssistantMessage,
-  beginAssistantMessage,
-  appendAssistantChunk,
-  finalizeAssistantMessage,
-  removeMessage,
-  hideQuickActions,
-  resetConversation,
-  setSessionId,
-  setSubmitting,
-  setPinnedToBottom,
-  setHasUnreadMessages,
 }: UseSupportChatConversationParams) {
   const [inputValue, setInputValue] = useState('');
   const streamAbortRef = useRef<AbortController | null>(null);
+  const requestGenerationRef = useRef(0);
   const sendMessageMutation = useSendChatbotMessageMutation();
+
+  const {
+    sessionId,
+    messages,
+    quickActions,
+    showQuickActions,
+    isSubmitting,
+    appendUserMessage,
+    appendAssistantMessage,
+    beginAssistantMessage,
+    appendAssistantChunk,
+    finalizeAssistantMessage,
+    removeMessage,
+    hideQuickActions,
+    resetConversation,
+    setSessionId,
+    setSubmitting,
+    setPinnedToBottom,
+  } = useSupportChatStore();
 
   const abortStreamingResponse = useCallback(
     (resetSubmitting = false) => {
+      requestGenerationRef.current += 1;
+
       if (streamAbortRef.current) {
         streamAbortRef.current.abort();
         streamAbortRef.current = null;
@@ -70,6 +66,32 @@ function useSupportChatConversation({
       }
     },
     [setSubmitting],
+  );
+
+  const resetConversationState = useCallback(
+    ({
+      routeContext: nextRouteContext = routeContext,
+      keepPanelOpen = true,
+      preserveBootstrap = true,
+      abortInFlightRequest = true,
+    }: SupportChatConversationResetOptions = {}) => {
+      if (abortInFlightRequest) {
+        abortStreamingResponse(true);
+      }
+
+      setInputValue('');
+      setPinnedToBottom(true);
+      resetConversation(nextRouteContext, {
+        isOpen: keepPanelOpen,
+        hasBootstrapped: preserveBootstrap,
+      });
+    },
+    [
+      abortStreamingResponse,
+      resetConversation,
+      routeContext,
+      setPinnedToBottom,
+    ],
   );
 
   const appendAssistantErrorMessage = useCallback(
@@ -100,6 +122,7 @@ function useSupportChatConversation({
       }
 
       const assistantPlaceholderMessageId = crypto.randomUUID();
+      const requestGeneration = requestGenerationRef.current;
 
       hideQuickActions();
       appendUserMessage(trimmedMessage);
@@ -117,6 +140,10 @@ function useSupportChatConversation({
         } catch (requestError) {
           const errorMessage = extractSupportChatErrorMessage(requestError);
 
+          if (requestGeneration !== requestGenerationRef.current) {
+            return;
+          }
+
           if (sessionId && isRecoverableSessionError(errorMessage)) {
             setSessionId(null);
             response = await sendMessageMutation.mutateAsync({
@@ -125,6 +152,10 @@ function useSupportChatConversation({
           } else {
             throw requestError;
           }
+        }
+
+        if (requestGeneration !== requestGenerationRef.current) {
+          return;
         }
 
         setSessionId(response.session_id);
@@ -136,6 +167,10 @@ function useSupportChatConversation({
           sessionId: response.session_id,
           signal: abortController.signal,
           onEvent: (event) => {
+            if (requestGeneration !== requestGenerationRef.current) {
+              return;
+            }
+
             if (event.type === 'chunk') {
               appendAssistantChunk(
                 assistantPlaceholderMessageId,
@@ -150,6 +185,10 @@ function useSupportChatConversation({
           },
         });
       } catch (requestError) {
+        if (requestGeneration !== requestGenerationRef.current) {
+          return;
+        }
+
         removeMessage(assistantPlaceholderMessageId);
         const errorMessage = extractSupportChatErrorMessage(requestError);
 
@@ -159,7 +198,9 @@ function useSupportChatConversation({
 
         setSubmitting(false);
       } finally {
-        streamAbortRef.current = null;
+        if (requestGeneration === requestGenerationRef.current) {
+          streamAbortRef.current = null;
+        }
       }
     },
     [
@@ -196,26 +237,16 @@ function useSupportChatConversation({
     [submitMessage],
   );
 
-  const handleReset = useCallback(() => {
-    abortStreamingResponse(true);
-    setInputValue('');
-    setHasUnreadMessages(false);
-    setPinnedToBottom(true);
-    resetConversation(routeContext);
-  }, [
-    abortStreamingResponse,
-    resetConversation,
-    routeContext,
-    setHasUnreadMessages,
-    setPinnedToBottom,
-  ]);
-
   return {
+    messages,
+    quickActions,
+    showQuickActions,
+    isSubmitting,
     inputValue,
     setInputValue,
     handleSubmit,
     handleQuickActionSelect,
-    handleReset,
+    resetConversationState,
     abortStreamingResponse,
   };
 }

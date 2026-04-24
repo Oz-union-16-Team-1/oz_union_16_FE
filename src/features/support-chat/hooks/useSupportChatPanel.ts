@@ -1,54 +1,49 @@
-import {
-  type Dispatch,
-  type MutableRefObject,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useSupportChatStore } from '@/features/support-chat/store/useSupportChatStore';
+import type { SupportChatMessage } from '@/features/support-chat/types/supportChat';
 
 const AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX = 72;
 
-type UseSupportChatPanelStateParams = {
-  isOpen: boolean;
-  isSubmitting: boolean;
-  isPinnedToBottom: boolean;
-  showQuickActions: boolean;
-  messages: Array<{
-    id: string;
-    content: string;
-  }>;
-  closePanel: () => void;
-  togglePanel: () => void;
-  setPinnedToBottom: (isPinnedToBottom: boolean) => void;
-  hasUnreadMessages: boolean;
-  setHasUnreadMessages: Dispatch<SetStateAction<boolean>>;
-  abortStreamingResponse: (resetSubmitting?: boolean) => void;
+type UseSupportChatPanelParams = {
+  onRequestClose: () => void;
 };
 
-function useSupportChatPanelState({
-  isOpen,
-  isSubmitting,
-  isPinnedToBottom,
-  showQuickActions,
-  messages,
-  closePanel,
-  togglePanel,
-  setPinnedToBottom,
-  hasUnreadMessages,
-  setHasUnreadMessages,
-  abortStreamingResponse,
-}: UseSupportChatPanelStateParams) {
+const toMessageUpdateCursor = (
+  messages: SupportChatMessage[],
+  isSubmitting: boolean,
+  showQuickActions: boolean,
+) => {
+  const latestMessage = messages.at(-1);
+
+  return `${messages.length}:${latestMessage?.id ?? 'none'}:${latestMessage?.content.length ?? 0}:${isSubmitting ? 1 : 0}:${showQuickActions ? 1 : 0}`;
+};
+
+function useSupportChatPanel({ onRequestClose }: UseSupportChatPanelParams) {
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const lastHandledMessageCursorRef = useRef<string | null>(null);
 
-  const messageUpdateCursor = useMemo(() => {
-    const latestMessage = messages.at(-1);
+  const {
+    messages,
+    showQuickActions,
+    isOpen,
+    isSubmitting,
+    isPinnedToBottom,
+    togglePanel,
+    setPinnedToBottom,
+  } = useSupportChatStore();
 
-    return `${messages.length}:${latestMessage?.id ?? 'none'}:${latestMessage?.content.length ?? 0}:${isSubmitting ? 1 : 0}:${showQuickActions ? 1 : 0}`;
-  }, [isSubmitting, messages, showQuickActions]);
+  const messageUpdateCursor = useMemo(
+    () => toMessageUpdateCursor(messages, isSubmitting, showQuickActions),
+    [isSubmitting, messages, showQuickActions],
+  );
+
+  const resetPanelUiState = useCallback(() => {
+    setHasUnreadMessages(false);
+    setPinnedToBottom(true);
+  }, [setPinnedToBottom]);
 
   const isNearBottom = useCallback((viewport: HTMLDivElement) => {
     const distanceFromBottom =
@@ -69,16 +64,15 @@ function useSupportChatPanelState({
         top: viewport.scrollHeight,
         behavior,
       });
-      setPinnedToBottom(true);
-      setHasUnreadMessages(false);
+      resetPanelUiState();
     },
-    [setHasUnreadMessages, setPinnedToBottom],
+    [resetPanelUiState],
   );
 
   const handleClosePanel = useCallback(() => {
-    abortStreamingResponse(true);
-    closePanel();
-  }, [abortStreamingResponse, closePanel]);
+    resetPanelUiState();
+    onRequestClose();
+  }, [onRequestClose, resetPanelUiState]);
 
   const handleTogglePanel = useCallback(() => {
     if (isOpen) {
@@ -119,18 +113,8 @@ function useSupportChatPanelState({
     };
   }, [handleClosePanel, isOpen]);
 
-  useEffect(
-    () => () => {
-      abortStreamingResponse(true);
-    },
-    [abortStreamingResponse],
-  );
-
   useEffect(() => {
     if (!isOpen) {
-      abortStreamingResponse(true);
-      setHasUnreadMessages(false);
-      setPinnedToBottom(true);
       return;
     }
 
@@ -141,13 +125,15 @@ function useSupportChatPanelState({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [
-    abortStreamingResponse,
-    isOpen,
-    scrollViewportToBottom,
-    setHasUnreadMessages,
-    setPinnedToBottom,
-  ]);
+  }, [isOpen, scrollViewportToBottom]);
+
+  useEffect(() => {
+    if (isOpen) {
+      return;
+    }
+
+    lastHandledMessageCursorRef.current = messageUpdateCursor;
+  }, [isOpen, messageUpdateCursor]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -177,7 +163,7 @@ function useSupportChatPanelState({
     return () => {
       viewport.removeEventListener('scroll', handleViewportScroll);
     };
-  }, [isNearBottom, isOpen, setHasUnreadMessages, setPinnedToBottom]);
+  }, [isNearBottom, isOpen, setPinnedToBottom]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -203,14 +189,14 @@ function useSupportChatPanelState({
       };
     }
 
-    setHasUnreadMessages(true);
-  }, [
-    isOpen,
-    isPinnedToBottom,
-    messageUpdateCursor,
-    scrollViewportToBottom,
-    setHasUnreadMessages,
-  ]);
+    const frameId = window.requestAnimationFrame(() => {
+      setHasUnreadMessages(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isOpen, isPinnedToBottom, messageUpdateCursor, scrollViewportToBottom]);
 
   const showJumpToLatestButton =
     isOpen && hasUnreadMessages && !isPinnedToBottom;
@@ -221,14 +207,17 @@ function useSupportChatPanelState({
       : null;
 
   return {
-    panelRef: panelRef as MutableRefObject<HTMLDivElement | null>,
-    viewportRef: viewportRef as MutableRefObject<HTMLDivElement | null>,
+    isOpen,
+    isPinnedToBottom,
+    panelRef,
+    viewportRef,
     handleClosePanel,
     handleTogglePanel,
     showJumpToLatestButton,
     liveStatusMessage,
     scrollViewportToBottom,
+    resetPanelUiState,
   };
 }
 
-export default useSupportChatPanelState;
+export default useSupportChatPanel;

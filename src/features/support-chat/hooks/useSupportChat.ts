@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router';
 
 import type { SupportChatPanelProps } from '@/components/support-chat/SupportChatPanel';
 import { SUPPORT_CHAT_QUICK_ACTIONS } from '@/features/support-chat/data/faqs';
 import { useSupportChatStore } from '@/features/support-chat/store/useSupportChatStore';
 import useSupportChatConversation from './useSupportChatConversation';
-import useSupportChatPanelState from './useSupportChatPanelState';
+import useSupportChatPanel from './useSupportChatPanel';
 import { getSupportChatRouteContext } from '../utils/routeContext';
 
 type UseSupportChatResult = {
@@ -18,74 +18,39 @@ type UseSupportChatResult = {
 
 export const useSupportChat = (): UseSupportChatResult => {
   const location = useLocation();
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const previousPathnameRef = useRef<string | null>(null);
 
   const routeContext = useMemo(
     () => getSupportChatRouteContext(location.pathname),
     [location.pathname],
   );
 
+  const { hasBootstrapped, bootstrapConversation, setRouteContext } =
+    useSupportChatStore();
+
   const {
-    sessionId,
     messages,
     quickActions,
     showQuickActions,
-    hasBootstrapped,
-    isPinnedToBottom,
-    isOpen,
     isSubmitting,
-    bootstrapConversation,
-    resetConversation,
-    closePanel,
-    togglePanel,
-    setRouteContext,
-    setSessionId,
-    setPinnedToBottom,
-    setSubmitting,
-    hideQuickActions,
-    appendUserMessage,
-    appendAssistantMessage,
-    beginAssistantMessage,
-    appendAssistantChunk,
-    finalizeAssistantMessage,
-    removeMessage,
-  } = useSupportChatStore();
-
-  useEffect(() => {
-    if (!hasBootstrapped) {
-      bootstrapConversation(routeContext);
-      return;
-    }
-
-    setRouteContext(routeContext);
-  }, [bootstrapConversation, hasBootstrapped, routeContext, setRouteContext]);
-
-  const {
     inputValue,
     setInputValue,
     handleSubmit,
     handleQuickActionSelect,
-    handleReset,
-    abortStreamingResponse,
-  } = useSupportChatConversation({
-    routeContext,
-    sessionId,
-    isSubmitting,
-    appendUserMessage,
-    appendAssistantMessage,
-    beginAssistantMessage,
-    appendAssistantChunk,
-    finalizeAssistantMessage,
-    removeMessage,
-    hideQuickActions,
-    resetConversation,
-    setSessionId,
-    setSubmitting,
-    setPinnedToBottom,
-    setHasUnreadMessages,
-  });
+    resetConversationState,
+  } = useSupportChatConversation({ routeContext });
+
+  const handleCloseConversation = useCallback(() => {
+    resetConversationState({
+      routeContext,
+      keepPanelOpen: false,
+      preserveBootstrap: false,
+    });
+  }, [resetConversationState, routeContext]);
 
   const {
+    isOpen,
+    isPinnedToBottom,
     panelRef,
     viewportRef,
     handleClosePanel,
@@ -93,19 +58,57 @@ export const useSupportChat = (): UseSupportChatResult => {
     showJumpToLatestButton,
     liveStatusMessage,
     scrollViewportToBottom,
-  } = useSupportChatPanelState({
-    isOpen,
-    isSubmitting,
-    isPinnedToBottom,
-    showQuickActions,
-    messages,
-    closePanel,
-    togglePanel,
-    setPinnedToBottom,
-    hasUnreadMessages,
-    setHasUnreadMessages,
-    abortStreamingResponse,
+    resetPanelUiState,
+  } = useSupportChatPanel({
+    onRequestClose: handleCloseConversation,
   });
+
+  const handleResetConversation = useCallback(() => {
+    resetPanelUiState();
+    resetConversationState({
+      routeContext,
+      keepPanelOpen: true,
+      preserveBootstrap: true,
+    });
+  }, [resetConversationState, resetPanelUiState, routeContext]);
+
+  useEffect(() => {
+    if (!hasBootstrapped) {
+      bootstrapConversation(routeContext);
+      previousPathnameRef.current = routeContext.pathname;
+      return;
+    }
+
+    if (
+      previousPathnameRef.current &&
+      previousPathnameRef.current !== routeContext.pathname
+    ) {
+      previousPathnameRef.current = routeContext.pathname;
+      const frameId = window.requestAnimationFrame(() => {
+        resetPanelUiState();
+        resetConversationState({
+          routeContext,
+          keepPanelOpen: isOpen,
+          preserveBootstrap: true,
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }
+
+    setRouteContext(routeContext);
+    previousPathnameRef.current = routeContext.pathname;
+  }, [
+    bootstrapConversation,
+    hasBootstrapped,
+    isOpen,
+    resetConversationState,
+    resetPanelUiState,
+    routeContext,
+    setRouteContext,
+  ]);
 
   return {
     panelProps: {
@@ -123,13 +126,13 @@ export const useSupportChat = (): UseSupportChatResult => {
       showJumpToLatestButton,
       liveStatusMessage,
       inputValue,
-      onReset: handleReset,
+      onReset: handleResetConversation,
       onClose: handleClosePanel,
       onJumpToLatest: () => {
         scrollViewportToBottom('smooth');
       },
       onQuickActionSelect: handleQuickActionSelect,
-      onInputChange: (value) => setInputValue(value),
+      onInputChange: setInputValue,
       onSubmit: handleSubmit,
     },
     launcherProps: {
