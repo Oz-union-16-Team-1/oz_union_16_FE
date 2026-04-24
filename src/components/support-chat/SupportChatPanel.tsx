@@ -10,7 +10,7 @@ import SupportChatHeader from './SupportChatHeader';
 import SupportChatMessageBubble from './SupportChatMessageBubble';
 import SupportChatQuickActions from './SupportChatQuickActions';
 
-type SupportChatPanelProps = {
+export type SupportChatPanelProps = {
   isOpen: boolean;
   panelRef: RefObject<HTMLDivElement | null>;
   viewportRef: RefObject<HTMLDivElement | null>;
