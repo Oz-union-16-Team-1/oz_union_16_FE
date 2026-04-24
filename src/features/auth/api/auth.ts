@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
 import { api } from '@/api/axios';
-import { apiBaseUrl } from '@/lib/env';
+import { apiBaseUrl, mockServiceWorkerEnabled } from '@/lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import type {
   CheckIdDuplicateRequest,
@@ -34,8 +34,52 @@ const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
 const AUTH_REFRESH_TIMEOUT_MS = 7000;
 const DEFAULT_API_ERROR_MESSAGE =
   '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+const MOCK_REFRESH_TOKEN_STORAGE_KEY = 'mock-refresh-token';
 
 type LoginFieldName = keyof LoginRequest;
+
+const readMockRefreshToken = () => {
+  if (!mockServiceWorkerEnabled || typeof window === 'undefined') {
+    return '';
+  }
+
+  return window.sessionStorage.getItem(MOCK_REFRESH_TOKEN_STORAGE_KEY) ?? '';
+};
+
+const persistMockRefreshToken = (refreshToken: string | null | undefined) => {
+  if (!mockServiceWorkerEnabled || typeof window === 'undefined') {
+    return;
+  }
+
+  const normalizedRefreshToken = refreshToken?.trim() ?? '';
+
+  if (!normalizedRefreshToken) {
+    window.sessionStorage.removeItem(MOCK_REFRESH_TOKEN_STORAGE_KEY);
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    MOCK_REFRESH_TOKEN_STORAGE_KEY,
+    normalizedRefreshToken,
+  );
+};
+
+const deriveMockRefreshTokenFromAccessToken = (accessToken: string) => {
+  const normalizedAccessToken = accessToken.trim();
+  const mockAccessTokenPrefix = 'mock-access-token-';
+
+  if (!normalizedAccessToken.startsWith(mockAccessTokenPrefix)) {
+    return null;
+  }
+
+  const loginId = normalizedAccessToken.slice(mockAccessTokenPrefix.length);
+
+  if (!loginId) {
+    return null;
+  }
+
+  return `mock-refresh-token-${loginId}`;
+};
 
 export type LoginErrorStatusCode = 400 | 401 | 403;
 
@@ -83,32 +127,85 @@ export const login = async (payload: LoginRequest) => {
     `${AUTH_BASE_PATH}/login`,
     payload,
   );
+  const normalizedAccessToken = response.data.access_token?.trim() ?? '';
 
-  return response.data;
+  if (!normalizedAccessToken) {
+    throw new Error('로그인 응답에 access_token이 없습니다.');
+  }
+
+  if (mockServiceWorkerEnabled) {
+    persistMockRefreshToken(
+      response.data.refresh_token ??
+        deriveMockRefreshTokenFromAccessToken(normalizedAccessToken),
+    );
+  }
+
+  return {
+    ...response.data,
+    access_token: normalizedAccessToken,
+  };
 };
 
 export const logout = async () => {
-  const response = await api.post<LogoutResponse>(`${AUTH_BASE_PATH}/logout`);
-
-  return response.data;
+  try {
+    const response = await api.post<LogoutResponse>(`${AUTH_BASE_PATH}/logout`);
+    return response.data;
+  } finally {
+    if (mockServiceWorkerEnabled) {
+      persistMockRefreshToken(null);
+    }
+  }
 };
 
 export const refreshAccessToken = async () => {
-  // 실서버 기준으로 refresh token은 HttpOnly 쿠키 기반으로 관리합니다.
-  // API 명세의 body 예시는 추후 문서 동기화 대상으로 두고, 현재는 빈 body 요청으로 고정합니다.
-  const response = await axios.post<RefreshAccessTokenResponse>(
-    `${authApiUrl}/token/refresh`,
-    {},
-    {
-      withCredentials: true,
-      timeout: AUTH_REFRESH_TIMEOUT_MS,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    },
-  );
+  const requestBody = (() => {
+    if (!mockServiceWorkerEnabled) {
+      return {};
+    }
 
-  return response.data;
+    const refreshToken = readMockRefreshToken().trim();
+
+    return refreshToken ? { refresh_token: refreshToken } : {};
+  })();
+
+  // 실서버 기준으로 refresh token은 HttpOnly 쿠키 기반으로 관리합니다.
+  // 단, DEV+MSW에서는 새로고침 복구 안정화를 위해 sessionStorage refresh_token을 body fallback으로 함께 전송합니다.
+  try {
+    const response = await axios.post<RefreshAccessTokenResponse>(
+      `${authApiUrl}/token/refresh`,
+      requestBody,
+      {
+        withCredentials: true,
+        timeout: AUTH_REFRESH_TIMEOUT_MS,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+    const normalizedAccessToken = response.data.access_token?.trim() ?? '';
+
+    if (!normalizedAccessToken) {
+      throw new Error('토큰 갱신 응답에 access_token이 없습니다.');
+    }
+
+    if (mockServiceWorkerEnabled) {
+      persistMockRefreshToken(
+        response.data.refresh_token ??
+          deriveMockRefreshTokenFromAccessToken(normalizedAccessToken),
+      );
+    }
+
+    return {
+      ...response.data,
+      access_token: normalizedAccessToken,
+    };
+  } catch (error) {
+    if (mockServiceWorkerEnabled) {
+      persistMockRefreshToken(null);
+    }
+
+    throw error;
+  }
 };
 
 export const getCurrentUserProfile = async () => {

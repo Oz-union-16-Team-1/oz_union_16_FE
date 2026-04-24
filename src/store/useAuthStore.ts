@@ -10,9 +10,38 @@ import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
 
 export type AuthBootstrapStatus = 'idle' | 'loading' | 'ready';
 
+const AUTH_PROFILE_PREVIEW_STORAGE_KEY = 'auth-profile-preview-image-url';
+
+const readPersistedProfilePreviewImageUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.sessionStorage.getItem(AUTH_PROFILE_PREVIEW_STORAGE_KEY);
+};
+
+const persistProfilePreviewImageUrl = (profileImageUrl?: string | null) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const normalizedProfileImageUrl = profileImageUrl?.trim() ?? '';
+
+  if (!normalizedProfileImageUrl) {
+    window.sessionStorage.removeItem(AUTH_PROFILE_PREVIEW_STORAGE_KEY);
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    AUTH_PROFILE_PREVIEW_STORAGE_KEY,
+    normalizedProfileImageUrl,
+  );
+};
+
 interface AuthState {
   accessToken: string | null;
   account: CurrentUserProfileResponse | null;
+  profilePreviewImageUrl: string | null;
   isAuthenticated: boolean;
   authBootstrapStatus: AuthBootstrapStatus;
   setAccessToken: (token: string) => void;
@@ -25,6 +54,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   account: null,
+  profilePreviewImageUrl: readPersistedProfilePreviewImageUrl(),
   isAuthenticated: false,
   authBootstrapStatus: 'idle',
 
@@ -35,20 +65,31 @@ export const useAuthStore = create<AuthState>((set) => ({
       authBootstrapStatus: 'ready',
     }),
 
-  setAccount: (account) => set({ account }),
+  setAccount: (account) => {
+    persistProfilePreviewImageUrl(account?.profile_img_url);
+    set({
+      account,
+      profilePreviewImageUrl: account?.profile_img_url?.trim() ?? null,
+    });
+  },
 
-  setAuth: (token, account) =>
+  setAuth: (token, account) => {
+    persistProfilePreviewImageUrl(account?.profile_img_url);
     set({
       accessToken: token,
       account: account,
+      profilePreviewImageUrl: account?.profile_img_url?.trim() ?? null,
       isAuthenticated: true,
       authBootstrapStatus: 'ready',
-    }),
+    });
+  },
 
   clearAuth: () => {
+    persistProfilePreviewImageUrl(null);
     set({
       accessToken: null,
       account: null,
+      profilePreviewImageUrl: null,
       isAuthenticated: false,
     });
   },
@@ -82,3 +123,5 @@ export const clearLegacyAuthStorage = () => {
 // 하위 호환성을 위한 export (점진적 교체용)
 export const clearAuthTokens = () => useAuthStore.getState().clearAuth();
 export const clearAuthPersistedStorage = clearLegacyAuthStorage;
+export const getPersistedProfilePreviewImageUrl =
+  readPersistedProfilePreviewImageUrl;

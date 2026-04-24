@@ -13,6 +13,29 @@ const AUTH_BOOTSTRAP_SKIP_PATHS = new Set([
   `/${ROUTES.LEGACY_AUTH_CALLBACK}`,
 ]);
 
+let authBootstrapPromise: Promise<void> | null = null;
+
+const runAuthBootstrap = async () => {
+  const { access_token: accessToken } = await refreshAccessToken();
+  useAuthStore.getState().setAccessToken(accessToken);
+  const profile = await getCurrentUserProfile();
+  useAuthStore.getState().setAccount(profile);
+};
+
+const ensureAuthBootstrap = () => {
+  if (!authBootstrapPromise) {
+    authBootstrapPromise = runAuthBootstrap()
+      .catch(() => {
+        useAuthStore.getState().clearAuth();
+      })
+      .finally(() => {
+        authBootstrapPromise = null;
+      });
+  }
+
+  return authBootstrapPromise;
+};
+
 function useAuthBootstrap() {
   const location = useLocation();
   const authBootstrapStatus = useAuthStore(
@@ -46,36 +69,11 @@ function useAuthBootstrap() {
     let isMounted = true;
     store.setAuthBootstrapStatus('loading');
 
-    const bootstrapAuth = async () => {
-      try {
-        const { access_token: accessToken } = await refreshAccessToken();
-
-        if (!isMounted) {
-          return;
-        }
-
-        useAuthStore.getState().setAccessToken(accessToken);
-        const profile = await getCurrentUserProfile();
-
-        if (!isMounted) {
-          return;
-        }
-
-        useAuthStore.getState().setAccount(profile);
-      } catch {
-        if (!isMounted) {
-          return;
-        }
-
-        useAuthStore.getState().clearAuth();
-      } finally {
-        if (isMounted) {
-          useAuthStore.getState().setAuthBootstrapStatus('ready');
-        }
+    void ensureAuthBootstrap().finally(() => {
+      if (isMounted) {
+        useAuthStore.getState().setAuthBootstrapStatus('ready');
       }
-    };
-
-    void bootstrapAuth();
+    });
 
     return () => {
       isMounted = false;

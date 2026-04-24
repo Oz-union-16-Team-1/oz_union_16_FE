@@ -19,8 +19,14 @@ const HIDDEN_GUEST_ACTION_PATHS = new Set([
 
 const Header = ({ fixed = true }: HeaderProps) => {
   const location = useLocation();
+  const authBootstrapStatus = useAuthStore(
+    (state) => state.authBootstrapStatus,
+  );
   const isLoggedIn = useAuthStore((state) => Boolean(state.accessToken));
   const account = useAuthStore((state) => state.account);
+  const profilePreviewImageUrl = useAuthStore(
+    (state) => state.profilePreviewImageUrl,
+  );
   const setAccount = useAuthStore((state) => state.setAccount);
   const profileHydrationQuery = useCurrentUserProfileQuery(
     isLoggedIn && !account,
@@ -28,8 +34,18 @@ const Header = ({ fixed = true }: HeaderProps) => {
   const shouldHideGuestActions = HIDDEN_GUEST_ACTION_PATHS.has(
     location.pathname,
   );
+  const shouldDeferGuestActions =
+    !isLoggedIn && !shouldHideGuestActions && authBootstrapStatus !== 'ready';
+  const shouldDeferProfileMenu =
+    isLoggedIn &&
+    !account &&
+    (authBootstrapStatus !== 'ready' ||
+      profileHydrationQuery.isLoading ||
+      profileHydrationQuery.isFetching);
   const resolvedProfileImageUrl =
-    account?.profile_img_url ?? profileHydrationQuery.data?.profile_img_url;
+    account?.profile_img_url ??
+    profileHydrationQuery.data?.profile_img_url ??
+    profilePreviewImageUrl;
 
   useEffect(() => {
     if (profileHydrationQuery.data) {
@@ -56,7 +72,22 @@ const Header = ({ fixed = true }: HeaderProps) => {
 
         <div className="flex items-center gap-2 sm:gap-3">
           {!isLoggedIn ? (
-            shouldHideGuestActions ? null : (
+            shouldHideGuestActions ? null : shouldDeferGuestActions ? (
+              resolvedProfileImageUrl ? (
+                <div
+                  aria-hidden="true"
+                  className="h-10 w-10 overflow-hidden rounded-full border-2 border-white/8"
+                >
+                  <img
+                    src={resolvedProfileImageUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="h-9 w-44" aria-hidden="true" />
+              )
+            ) : (
               <>
                 <Link
                   to={`/${ROUTES.LOGIN}`}
@@ -75,6 +106,24 @@ const Header = ({ fixed = true }: HeaderProps) => {
                   </span>
                 </Link>
               </>
+            )
+          ) : shouldDeferProfileMenu ? (
+            resolvedProfileImageUrl ? (
+              <div
+                aria-hidden="true"
+                className="h-10 w-10 overflow-hidden rounded-full border-2 border-white/8"
+              >
+                <img
+                  src={resolvedProfileImageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-10 w-10 rounded-full border-2 border-white/8 bg-white/[0.04]"
+              />
             )
           ) : (
             <HeaderProfileMenu profileImageUrl={resolvedProfileImageUrl} />
