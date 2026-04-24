@@ -16,7 +16,7 @@ function FavoriteGameCardSkeleton({
           key={index}
           className="border-mypage-card bg-mypage-card overflow-hidden rounded-[22px] border"
         >
-          <div className="aspect-[3/4] animate-pulse bg-white/8" />
+          <div className="aspect-3/4 animate-pulse bg-white/8" />
           <div className="space-y-2 px-4 py-4">
             <div className="h-5 w-3/4 animate-pulse rounded-full bg-white/10" />
             <div className="h-4 w-full animate-pulse rounded-full bg-white/8" />

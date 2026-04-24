@@ -54,14 +54,14 @@ function AuthLayout({
 
         {withPanel ? (
           <section
-            className={`auth-layout-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
+            className={`auth-layout-panel w-full max-w-130 rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8 ${panelClassName}`}
           >
-            <div className={`mx-auto w-full max-w-[440px] ${contentClassName}`}>
+            <div className={`mx-auto w-full max-w-110 ${contentClassName}`}>
               {content}
             </div>
           </section>
         ) : (
-          <section className={`w-full max-w-[440px] ${contentClassName}`}>
+          <section className={`w-full max-w-110 ${contentClassName}`}>
             {content}
           </section>
         )}

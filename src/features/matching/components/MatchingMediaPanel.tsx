@@ -88,7 +88,7 @@ function MatchingMediaPanel({
           <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
             이 카드에서 볼 포인트
           </p>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/52">
+          <span className="rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/52">
             {stepLabel}
           </span>
         </div>
@@ -98,7 +98,7 @@ function MatchingMediaPanel({
         </p>
 
         <div className="mt-3.5 grid gap-2.5 sm:grid-cols-3">
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
+          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               평균 평점
             </p>
@@ -106,7 +106,7 @@ function MatchingMediaPanel({
               {formatMatchingCandidateRating(candidate.rating)}
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
+          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               미디어
             </p>
@@ -114,7 +114,7 @@ function MatchingMediaPanel({
               {candidate.trailer_url ? '유튜브 트레일러' : '이미지 미리보기'}
             </p>
           </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-3.5 py-3">
+          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
               장르 감각
             </p>

@@ -26,7 +26,7 @@ function MatchingGuideCards() {
       {guideCards.map(({ title, description, icon: Icon }) => (
         <article
           key={title}
-          className="rounded-[22px] border border-white/8 bg-white/[0.025] px-4 py-4 shadow-[0_18px_34px_rgba(0,0,0,0.16)]"
+          className="rounded-[22px] border border-white/8 bg-white/2.5 px-4 py-4 shadow-[0_18px_34px_rgba(0,0,0,0.16)]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9c1b1b]/35 bg-[#150909] text-[#e34141]">
             <Icon size={18} />

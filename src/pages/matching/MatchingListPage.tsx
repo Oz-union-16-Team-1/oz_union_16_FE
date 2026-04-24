@@ -53,23 +53,23 @@ function MatchingListPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <LazyHeader fixed />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.5rem] pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-[6.25rem] md:pb-14">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
         {authGate.accessStatus === 'loading' ? (
           <AuthGateStatusPanel
             title="인증 상태를 확인하는 중입니다."
             description="잠시만 기다려 주세요. 세션 확인 후 장르별 매칭 화면을 보여드릴게요."
             align="center"
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
           />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 시작할 수 있어요."
             description="로그인하면 장르를 고르고 트레일러를 보며 별점을 남긴 뒤, 취향에 맞는 추천 결과까지 바로 이어서 확인할 수 있어요."
             align="center"
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
           />
         ) : (
-          <section className="mx-auto max-w-[960px]">
+          <section className="mx-auto max-w-240">
             <div className="mb-7 text-center sm:mb-8">
               <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                 Matching
@@ -88,7 +88,7 @@ function MatchingListPage() {
                 <Link
                   key={genre.slug}
                   to={`/${ROUTES.MATCHING_LIST}/${genre.slug}`}
-                  className="group overflow-hidden rounded-[24px] border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)] transition hover:border-[#a31c1c]/65 hover:bg-[#111112]"
+                  className="group overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)] transition hover:border-[#a31c1c]/65 hover:bg-[#111112]"
                 >
                   <div className="relative overflow-hidden rounded-[18px]">
                     <img

@@ -16,7 +16,7 @@ function FavoriteGameCard({
 }: FavoriteGameCardProps) {
   return (
     <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover flex h-full flex-col overflow-hidden rounded-[22px] border transition duration-200">
-      <div className="bg-mypage-soft relative aspect-[3/4] overflow-hidden">
+      <div className="bg-mypage-soft relative aspect-3/4 overflow-hidden">
         <button
           type="button"
           onClick={() => onClick?.(game)}
@@ -34,7 +34,7 @@ function FavoriteGameCard({
               이미지 준비 중
             </div>
           )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/70 via-black/18 to-transparent" />
         </button>
         <div className="absolute top-3 right-3">
           <ActionButton
@@ -42,7 +42,7 @@ function FavoriteGameCard({
             variant="icon"
             aria-label={`${game.title} 찜 해제`}
             onClick={() => onFavoriteClick?.(game)}
-            className="hover:!border-login-primary hover:!bg-login-primary-hover !border-login-primary !bg-login-primary !text-white shadow-[0_10px_24px_rgba(0,0,0,0.38)] hover:!text-white focus-visible:ring-red-300/45"
+            className="hover:border-login-primary! hover:bg-login-primary-hover! border-login-primary! bg-login-primary! text-white! shadow-[0_10px_24px_rgba(0,0,0,0.38)] hover:text-white! focus-visible:ring-red-300/45"
           >
             <X size={15} strokeWidth={2.25} />
           </ActionButton>

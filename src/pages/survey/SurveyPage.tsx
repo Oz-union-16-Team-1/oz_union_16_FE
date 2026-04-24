@@ -19,12 +19,12 @@ function SurveyBackdrop() {
         {SURVEY_BACKDROP_ITEMS.map((game, index) => (
           <div
             key={`${game.gameId}-${index}`}
-            className="overflow-hidden rounded-[28px] border border-white/6 bg-white/[0.03] blur-[14px]"
+            className="overflow-hidden rounded-[28px] border border-white/6 bg-white/3 blur-[14px]"
           >
             <img
               src={game.thumbnailUrl ?? ''}
               alt={game.name}
-              className="h-full min-h-[180px] w-full scale-110 object-cover"
+              className="h-full min-h-45 w-full scale-110 object-cover"
             />
           </div>
         ))}
@@ -71,13 +71,13 @@ function SurveyPage() {
       <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
       <LazyHeader fixed />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-[100dvh] md:max-h-[100dvh] md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
         {authGate.accessStatus === 'loading' ? (
           <AuthGateStatusPanel
             title="인증 상태를 확인하는 중입니다."
             description="잠시만 기다려 주세요. 세션 확인 후 설문 화면을 이어서 보여드릴게요."
             align="center"
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
           />
         ) : canAccessSurvey ? (
           <SurveyChatPanel />
@@ -86,7 +86,7 @@ function SurveyPage() {
             title="로그인 후 설문을 시작할 수 있어요."
             description="로그인하면 취향을 바탕으로 질문을 이어가고, 설문이 끝난 뒤 바로 추천 결과까지 확인할 수 있어요."
             align="center"
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
           />
         )}
       </main>

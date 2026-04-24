@@ -2,7 +2,7 @@ import { HeartOff } from 'lucide-react';
 
 function FavoriteGamesEmptyState() {
   return (
-    <div className="border-mypage-divider bg-mypage-card flex min-h-64 flex-col items-center justify-center rounded-[24px] border border-dashed px-6 py-10 text-center">
+    <div className="border-mypage-divider bg-mypage-card flex min-h-64 flex-col items-center justify-center rounded-3xl border border-dashed px-6 py-10 text-center">
       <span className="bg-mypage-soft mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full text-white/80">
         <HeartOff size={24} />
       </span>
