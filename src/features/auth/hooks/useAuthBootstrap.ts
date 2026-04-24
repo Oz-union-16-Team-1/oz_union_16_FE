@@ -5,7 +5,6 @@ import { shouldSkipAuthBootstrapPath } from '../../../constants/routeResolver';
 import { isMockServiceWorkerEnabled } from '../../../lib/env';
 import {
   clearLegacyAuthStorage,
-  selectAuthSessionState,
   useAuthStore,
 } from '../../../store/useAuthStore';
 import { hasMockRefreshToken } from '../api/auth';
@@ -31,7 +30,9 @@ const ensureAuthBootstrap = (): Promise<void> => {
 
 function useAuthBootstrap() {
   const location = useLocation();
-  const { authBootstrapStatus } = useAuthStore(selectAuthSessionState);
+  const authBootstrapStatus = useAuthStore(
+    (state) => state.authBootstrapStatus,
+  );
   const hasBootstrappedRef = useRef(false);
 
   useEffect(() => {
