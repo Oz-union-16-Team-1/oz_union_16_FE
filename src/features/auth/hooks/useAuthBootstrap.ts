@@ -7,7 +7,7 @@ import {
   clearLegacyAuthStorage,
   useAuthStore,
 } from '../../../store/useAuthStore';
-import { hasMockRefreshToken } from '../api/auth';
+import { hasMockRefreshToken } from '../api/auth.session.helper';
 import {
   restoreAuthSession,
   setAuthBootstrapLoading,

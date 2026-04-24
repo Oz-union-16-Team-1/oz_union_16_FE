@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
-} from '../../../features/auth/api/auth';
+} from '../../../features/auth/api/auth.error.handler';
 import { authKeys } from '../../../features/auth/api/queryKeys';
 import {
   useConfirmProfileImageMutation,

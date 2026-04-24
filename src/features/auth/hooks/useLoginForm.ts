@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { api } from '../../../api/axios';
 import { ROUTES } from '../../../constants/routes';
 import { mockServiceWorkerEnabled } from '../../../lib/env';
-import { resolveLoginApiError } from '../api/auth';
+import { resolveLoginApiError } from '../api/auth.error.handler';
 import { useLoginMutation } from '../api/useAuthApi';
 import { AUTH_SESSION_EXPIRED_NOTICE_MESSAGE } from '../constants/session';
 import type { LoginRequest } from '../types/auth';
