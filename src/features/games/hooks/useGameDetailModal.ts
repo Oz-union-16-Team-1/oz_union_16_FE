@@ -122,8 +122,9 @@ export const useGameDetailModal = (game: GameListItem) => {
 
       return mergeGameDetail(previousDetail, incomingDetail);
     },
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     retry: false,
   });
