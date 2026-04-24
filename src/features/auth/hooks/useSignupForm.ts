@@ -6,7 +6,7 @@ import { ROUTES } from '../../../constants/routes';
 import {
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
-} from '../api/auth';
+} from '../api/auth.error.handler';
 import {
   useCheckIdDuplicateMutation,
   useCheckNicknameDuplicateMutation,
