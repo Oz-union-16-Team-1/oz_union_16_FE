@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { ChevronDown, ChevronRight, Heart, Star } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
@@ -23,10 +23,16 @@ import {
 } from '../../features/games/queryCache';
 import type { GameListItem } from '../../features/games/types';
 import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
-import type { MatchResultItem } from '../../features/matching/types';
+import type {
+  MatchResultItem,
+  MatchResultResponse,
+} from '../../features/matching/types';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
-import type { SurveyResultItem } from '../../features/survey/types/survey';
+import type {
+  SurveyResultItem,
+  SurveyResultResponse,
+} from '../../features/survey/types/survey';
 
 const FALLBACK_BACKDROP_ITEMS = [
   {
@@ -76,6 +82,7 @@ const LIKE_ERROR_MESSAGE =
   '좋아요 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const LIKE_LOGIN_REQUIRED_MESSAGE = '로그인 후 좋아요를 사용할 수 있어요.';
 const FEEDBACK_MESSAGE_DURATION_MS = 3000;
+const LOAD_MORE_SCROLL_STEP_FALLBACK = 124;
 
 const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
   if (!value || typeof value !== 'object') {
@@ -264,6 +271,8 @@ function RecommendationListPage() {
   );
   const recommendationScrollRef = useRef<HTMLDivElement | null>(null);
   const loadMoreScrollTopRef = useRef<number | null>(null);
+  const loadMoreWindowScrollYRef = useRef<number | null>(null);
+  const loadMoreStepOffsetRef = useRef<number>(LOAD_MORE_SCROLL_STEP_FALLBACK);
   const detailListScrollTopRef = useRef<number | null>(null);
   const detailWindowScrollYRef = useRef<number>(0);
   const queryClient = useQueryClient();
@@ -282,14 +291,8 @@ function RecommendationListPage() {
     isMatchSource && canAccessPage,
   );
   const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;
-  const {
-    data,
-    error,
-    isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    hasNextPage,
-  } = activeQuery;
+  const { error, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    activeQuery;
 
   const surveyItems =
     surveyResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
@@ -298,12 +301,6 @@ function RecommendationListPage() {
   const recommendationItems = (isMatchSource ? matchItems : surveyItems).map(
     normalizeResultItem,
   );
-  const totalCount = data?.pages[0]?.count ?? 0;
-  const visibleResultLimit = 15;
-  const cappedTotalCount =
-    totalCount > 0
-      ? Math.min(totalCount, visibleResultLimit)
-      : Math.min(recommendationItems.length, visibleResultLimit);
   const recommendationHighlights =
     getRecommendationHighlights(recommendationItems);
   const errorMessage = error ? extractApiErrorMessage(error) : null;
@@ -315,6 +312,44 @@ function RecommendationListPage() {
       recommendationItems.length === 0,
     );
 
+  useLayoutEffect(() => {
+    if (!canAccessPage) {
+      return;
+    }
+
+    if (isMatchSource) {
+      queryClient.setQueryData<{
+        pages: MatchResultResponse[];
+        pageParams: unknown[];
+      }>(['match-results'], (currentData) =>
+        currentData
+          ? {
+              ...currentData,
+              pages: currentData.pages.slice(0, 1),
+              pageParams: currentData.pageParams.slice(0, 1),
+            }
+          : currentData,
+      );
+
+      return;
+    }
+
+    if (isSurveySource) {
+      queryClient.setQueryData<{
+        pages: SurveyResultResponse[];
+        pageParams: unknown[];
+      }>(['survey-results'], (currentData) =>
+        currentData
+          ? {
+              ...currentData,
+              pages: currentData.pages.slice(0, 1),
+              pageParams: currentData.pageParams.slice(0, 1),
+            }
+          : currentData,
+      );
+    }
+  }, [canAccessPage, isMatchSource, isSurveySource, queryClient]);
+
   useEffect(() => {
     if (loadMoreScrollTopRef.current === null) {
       return;
@@ -324,11 +359,28 @@ function RecommendationListPage() {
 
     if (!scrollContainer) {
       loadMoreScrollTopRef.current = null;
+      loadMoreWindowScrollYRef.current = null;
       return;
     }
 
-    scrollContainer.scrollTop = loadMoreScrollTopRef.current;
-    loadMoreScrollTopRef.current = null;
+    window.requestAnimationFrame(() => {
+      if (
+        typeof window !== 'undefined' &&
+        loadMoreWindowScrollYRef.current !== null
+      ) {
+        window.scrollTo({
+          top: loadMoreWindowScrollYRef.current,
+          behavior: 'auto',
+        });
+      }
+
+      scrollContainer.scrollTop =
+        (loadMoreScrollTopRef.current ?? scrollContainer.scrollTop) +
+        loadMoreStepOffsetRef.current;
+      loadMoreScrollTopRef.current = null;
+      loadMoreWindowScrollYRef.current = null;
+      loadMoreStepOffsetRef.current = LOAD_MORE_SCROLL_STEP_FALLBACK;
+    });
   }, [recommendationItems.length]);
 
   const handleOpenDetail = (item: RecommendationDisplayItem) => {
@@ -367,7 +419,20 @@ function RecommendationListPage() {
 
     if (scrollContainer) {
       loadMoreScrollTopRef.current = scrollContainer.scrollTop;
+      const firstRow = scrollContainer.querySelector('article');
+      loadMoreStepOffsetRef.current =
+        firstRow instanceof HTMLElement
+          ? Math.max(
+              80,
+              Math.min(
+                Math.round(firstRow.getBoundingClientRect().height * 0.82),
+                160,
+              ),
+            )
+          : LOAD_MORE_SCROLL_STEP_FALLBACK;
     }
+    loadMoreWindowScrollYRef.current =
+      typeof window !== 'undefined' ? window.scrollY : null;
 
     void fetchNextPage();
   };
@@ -534,38 +599,20 @@ function RecommendationListPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mx-auto w-full max-w-245">
-          <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
-                게임 추천 리스트
-              </h1>
-              <p className="mt-4 max-w-155 text-sm leading-7 break-keep text-white/58 sm:text-base">
-                {isMatchSource
-                  ? '장르별 매칭에서 남긴 선호도 평가를 바탕으로 정리된 추천 결과예요.'
-                  : '설문에서 드러난 취향을 바탕으로, 플레이 스타일에 맞는 게임들을 한눈에 살펴볼 수 있게 정리했어요.'}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                {recommendationHighlights.map((highlight) => (
-                  <span
-                    key={highlight}
-                    className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
-                  >
-                    {highlight}
-                  </span>
-                ))}
-              </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
+              게임 추천 리스트
+            </h1>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              {recommendationHighlights.map((highlight) => (
+                <span
+                  key={highlight}
+                  className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
+                >
+                  {highlight}
+                </span>
+              ))}
             </div>
-
-            <aside className="rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.88),rgba(9,9,10,0.92))] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-              <p className="mt-5 text-[34px] font-semibold tracking-[-0.04em] text-white">
-                {cappedTotalCount > 0 ? cappedTotalCount : '...'}
-              </p>
-              <p className="mt-2 text-sm leading-6 break-keep text-white/52">
-                {isMatchSource
-                  ? '현재 매칭 평가를 기준으로 정리된 추천 결과예요.'
-                  : '현재 설문 응답을 기준으로 정리된 추천 결과예요.'}
-              </p>
-            </aside>
           </div>
 
           {authGate.accessStatus === 'loading' ? (
@@ -611,28 +658,13 @@ function RecommendationListPage() {
             </section>
           ) : (
             <section className="overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
-              <div className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
-                <div className="flex flex-col gap-3 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-sm leading-6 break-keep text-white/56">
-                      {isMatchSource
-                        ? '장르별 매칭에서 수집한 선호도 평가를 바탕으로 정리된 결과예요.'
-                        : '마음에 드는 게임을 비교해보고, 더보기로 결과를 이어서 확인해보세요.'}
-                    </p>
-                  </div>
-
-                  <div className="inline-flex w-fit items-center rounded-full border border-white/8 bg-white/3 px-4 py-2 text-xs text-white/48">
-                    {cappedTotalCount > 0
-                      ? `${cappedTotalCount}개의 추천 결과`
-                      : '추천 결과를 정리하고 있어요'}
-                  </div>
-                </div>
-                {likeFeedbackMessage ? (
-                  <p className="mt-4 text-sm leading-6 break-keep text-[#ffc2c2]">
+              {likeFeedbackMessage ? (
+                <div className="border-b border-white/8 px-4 py-4 sm:px-6 lg:px-7">
+                  <p className="text-sm leading-6 break-keep text-[#ffc2c2]">
                     {likeFeedbackMessage}
                   </p>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
 
               {isLoading ? (
                 <div className="px-4 py-14 text-center text-white/65 sm:px-6 lg:px-7">
@@ -672,19 +704,24 @@ function RecommendationListPage() {
                       type="button"
                       onClick={handleLoadMore}
                       disabled={isFetchingNextPage}
-                      className="flex w-full flex-col items-center justify-center gap-1 border-t border-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/3 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
+                      className="flex w-full flex-col items-center justify-center gap-1.5 border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.03))] px-4 py-4 text-sm font-medium text-white/82 transition hover:bg-white/4 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
                     >
                       <span>
                         {isFetchingNextPage
                           ? '추천 결과를 불러오는 중입니다...'
                           : '더보기'}
                       </span>
-                      {!isFetchingNextPage ? (
-                        <ChevronDown
-                          size={18}
-                          className="translate-y-px text-white/56"
-                        />
-                      ) : null}
+                      <div className="flex flex-col items-center gap-0.5">
+                        {!isFetchingNextPage ? (
+                          <ChevronDown
+                            size={18}
+                            className="translate-y-px text-white/56"
+                          />
+                        ) : null}
+                        <span className="text-[11px] font-normal tracking-[0.14em] text-white/38 uppercase">
+                          {isFetchingNextPage ? 'Loading' : 'More Below'}
+                        </span>
+                      </div>
                     </button>
                   ) : null}
                 </>
