@@ -34,6 +34,18 @@ const validGenders: AuthGender[] = ['M', 'W'];
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
 const createRefreshToken = (loginId: string) => `mock-refresh-token-${loginId}`;
+const parseLoginIdFromRefreshToken = (refreshToken: string) => {
+  const normalizedRefreshToken = refreshToken.trim();
+  const refreshTokenPrefix = 'mock-refresh-token-';
+
+  if (!normalizedRefreshToken.startsWith(refreshTokenPrefix)) {
+    return null;
+  }
+
+  const loginId = normalizedRefreshToken.slice(refreshTokenPrefix.length);
+
+  return loginId || null;
+};
 const MOCK_S3_HOST = 'https://mock-s3.oz-union-16.com';
 let refreshSessionLoginId: string | null = null;
 let pendingSocialLoginId: string | null = null;
@@ -351,8 +363,17 @@ const loginHandlers = [
     });
   }),
 
-  http.post(`${AUTH_BASE_PATH}/token/refresh`, async () => {
-    const loginId = pendingSocialLoginId ?? refreshSessionLoginId;
+  http.post(`${AUTH_BASE_PATH}/token/refresh`, async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as {
+      refresh_token?: string;
+    } | null;
+    const requestRefreshToken =
+      typeof body?.refresh_token === 'string' ? body.refresh_token.trim() : '';
+    const loginIdFromRefreshToken = requestRefreshToken
+      ? parseLoginIdFromRefreshToken(requestRefreshToken)
+      : null;
+    const loginId =
+      pendingSocialLoginId ?? loginIdFromRefreshToken ?? refreshSessionLoginId;
 
     if (!loginId) {
       return HttpResponse.json(

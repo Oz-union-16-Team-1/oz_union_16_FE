@@ -13,6 +13,7 @@ export interface LoginResponse {
 
 export interface RefreshAccessTokenResponse {
   access_token: string;
+  refresh_token?: string | null;
 }
 
 export interface LogoutResponse {
