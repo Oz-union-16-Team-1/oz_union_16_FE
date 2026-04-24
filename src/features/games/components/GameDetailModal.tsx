@@ -1,13 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ToastMessage from '../../../components/mypage/ToastMessage';
-import { authKeys } from '../../auth/api/queryKeys';
-import type { LikedGamesResponse } from '../../auth/types/auth';
-import { useAuthStore } from '../../../store/useAuthStore';
-import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
-import { gamesKeys, syncGameLikeStateInQueryCache } from '../queryCache';
+import {
+  DETAIL_LOADING_TEXT,
+  formatDetailField,
+  normalizeMeaningfulText,
+  normalizeMeaningfulTextList,
+} from '../detailUtils';
+import { useGameDetailModal } from '../hooks/useGameDetailModal';
 import type { GameDetail, GameListItem } from '../types';
 
 type GameDetailModalProps = {
@@ -30,13 +30,8 @@ const formatDetailRating = (rating: number | null) =>
 const formatNullableText = (value: string | null | undefined) =>
   value?.trim() ? value : 'N/A';
 
-const LOGIN_REQUIRED_MESSAGE = '로그인 후 찜하기를 사용할 수 있어요.';
-const LIKE_ERROR_MESSAGE =
-  '찜하기 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
-const TOAST_DURATION_MS = 3000;
-const DETAIL_REFRESH_INTERVAL_MS = 10_000;
 
 const toYouTubeEmbedUrl = (url: string): string | null => {
   const match = url.match(
@@ -49,149 +44,36 @@ const resolveEmbedUrl = (
   embedUrl: string | null,
   videoUrl: string | null,
 ): string | null => embedUrl ?? (videoUrl ? toYouTubeEmbedUrl(videoUrl) : null);
-const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Array.isArray((value as Partial<LikedGamesResponse>).results);
-};
-const getLikeErrorMessage = (error: unknown) => {
-  if (error instanceof AxiosError) {
-    if (error.response?.status === 401) {
-      return LOGIN_REQUIRED_MESSAGE;
-    }
-
-    if (error.response?.status === 404) {
-      return DETAIL_NOT_FOUND_MESSAGE;
-    }
-  }
-
-  return LIKE_ERROR_MESSAGE;
-};
 
 const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const queryClient = useQueryClient();
-  const [likeState, setLikeState] = useState<{
-    gameId: number;
-    isLiked: boolean | null;
-    likeCount: number;
-  } | null>(null);
-  const [toast, setToast] = useState<{
-    message: string;
-    tone: 'error';
-  } | null>(null);
   const [failedImageUrlsByGameId, setFailedImageUrlsByGameId] = useState<
     Record<number, string[]>
   >({});
+  const {
+    clearToast,
+    detail,
+    detailQuery,
+    handleToggleLike,
+    hasResolvedDetail,
+    isLikePending,
+    isLiked,
+    likeCount,
+    likeLabel,
+    toast,
+  } = useGameDetailModal(game);
 
-  const detailQuery = useQuery({
-    queryKey: gamesKeys.detail(game.gameId),
-    queryFn: () => getGameDetail(game.gameId),
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchInterval: (query) =>
-      query.state.status === 'error' ? false : DETAIL_REFRESH_INTERVAL_MS,
-    retry: false,
-  });
-
-  const likeMutation = useMutation({
-    mutationFn: (nextLiked: boolean) =>
-      nextLiked ? likeGame(game.gameId) : unlikeGame(game.gameId),
-    onMutate: () => {
-      setToast(null);
-    },
-    onSuccess: (response) => {
-      const nextLikeState = {
-        gameId: response.gameId,
-        isLiked: response.isLiked,
-        likeCount: response.likeCount,
-      };
-
-      setLikeState(nextLikeState);
-      syncGameLikeStateInQueryCache(queryClient, {
-        gameId: response.gameId,
-        isLiked: response.isLiked,
-        likeCount: response.likeCount,
-      });
-
-      queryClient.setQueriesData<LikedGamesResponse>(
-        { queryKey: authKeys.likedGames() },
-        (current) => {
-          if (!isLikedGamesResponse(current)) {
-            return current;
-          }
-
-          const currentLikedGames = current as LikedGamesResponse;
-
-          if (response.isLiked) {
-            const alreadyExists = currentLikedGames.results.some(
-              (likedGame) => likedGame.game_id === response.gameId,
-            );
-
-            if (alreadyExists) {
-              return current;
-            }
-
-            const nextLikedGame = {
-              game_id: response.gameId,
-              game_title: (detail?.title ?? game.name).trim() || 'N/A',
-              thumbnail_url: detail?.coverImageUrl ?? game.thumbnailUrl,
-              genres: detail?.genres?.length ? detail.genres : game.genres,
-              liked_at: new Date().toISOString(),
-            };
-
-            return {
-              ...currentLikedGames,
-              count: currentLikedGames.count + 1,
-              results: [nextLikedGame, ...currentLikedGames.results],
-            };
-          }
-
-          const nextResults = currentLikedGames.results.filter(
-            (likedGame) => likedGame.game_id !== response.gameId,
-          );
-
-          if (nextResults.length === currentLikedGames.results.length) {
-            return current;
-          }
-
-          return {
-            ...currentLikedGames,
-            count: Math.max(0, currentLikedGames.count - 1),
-            results: nextResults,
-          };
-        },
-      );
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
-      });
-    },
-    onError: (error) => {
-      setToast({
-        message: getLikeErrorMessage(error),
-        tone: 'error',
-      });
-    },
-  });
-
-  const detail = detailQuery.data;
-  const title = detail?.title ?? game.name;
-  const genres = detail?.genres.length ? detail.genres : game.genres;
+  const detailTitle = normalizeMeaningfulText(detail?.title);
+  const listTitle = normalizeMeaningfulText(game.name);
+  const title = detailTitle ?? listTitle ?? 'N/A';
+  const detailGenres = normalizeMeaningfulTextList(detail?.genres);
+  const listGenres = normalizeMeaningfulTextList(game.genres);
+  const genres =
+    detailGenres.length > 0
+      ? detailGenres
+      : listGenres.length > 0
+        ? listGenres
+        : ['N/A'];
   const genreLabel = genres.length > 0 ? genres.join(', ') : 'N/A';
-  const activeLikeState = likeState?.gameId === game.gameId ? likeState : null;
-  const currentLiked =
-    activeLikeState?.isLiked ??
-    detail?.isLiked ??
-    (typeof game.isLiked === 'boolean' ? game.isLiked : null);
-  const isLiked = currentLiked === true;
-  const likeLabel = isLiked ? '찜하기 취소' : '찜하기';
-  const likeCount = Math.max(
-    0,
-    activeLikeState?.likeCount ?? detail?.likeCount ?? 0,
-  );
-  const hasAccessToken = Boolean(accessToken);
   const failedImageUrls = failedImageUrlsByGameId[game.gameId] ?? [];
   const imageCandidates = [detail?.coverImageUrl, game.thumbnailUrl].filter(
     (url): url is string => Boolean(url),
@@ -203,43 +85,30 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     detail?.promoEmbedUrl?.trim() || null,
     promoVideoUrl,
   );
+  const descriptionField = formatDetailField(
+    detail?.description,
+    hasResolvedDetail,
+  );
   const detailRows = [
-    { label: '게임 출시일', value: formatNullableText(detail?.releaseDate) },
-    { label: '게임 개발사', value: formatNullableText(detail?.developer) },
-    { label: '게임 배급사', value: formatNullableText(detail?.publisher) },
+    {
+      label: '게임 출시일',
+      value: formatDetailField(detail?.releaseDate, hasResolvedDetail),
+    },
+    {
+      label: '게임 개발사',
+      value: formatDetailField(detail?.developer, hasResolvedDetail),
+    },
+    {
+      label: '게임 배급사',
+      value: formatDetailField(detail?.publisher, hasResolvedDetail),
+    },
   ];
   const externalLinks = EXTERNAL_LINK_LABELS.map(({ key, label }) => ({
     label,
     url: detail?.externalLinks[key],
   })).filter((link): link is { label: string; url: string } =>
-    Boolean(link.url?.trim() && link.url.trim() !== 'N/A'),
+    Boolean(normalizeMeaningfulText(link.url)),
   );
-
-  const handleToggleLike = () => {
-    if (!hasAccessToken) {
-      setToast({
-        message: LOGIN_REQUIRED_MESSAGE,
-        tone: 'error',
-      });
-      return;
-    }
-
-    likeMutation.mutate(!isLiked);
-  };
-
-  useEffect(() => {
-    if (!toast) {
-      return undefined;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setToast(null);
-    }, TOAST_DURATION_MS);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [toast]);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -281,7 +150,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         <ToastMessage
           message={toast.message}
           tone={toast.tone}
-          onClose={() => setToast(null)}
+          onClose={clearToast}
           variant="absoluteTopCenter"
         />
       ) : null}
@@ -357,9 +226,9 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     type="button"
                     aria-label={likeLabel}
                     aria-pressed={isLiked}
-                    aria-disabled={likeMutation.isPending}
+                    aria-disabled={isLikePending}
                     title={likeLabel}
-                    disabled={likeMutation.isPending}
+                    disabled={isLikePending}
                     onClick={handleToggleLike}
                     className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12] disabled:cursor-wait disabled:opacity-70 ${
                       isLiked
@@ -391,7 +260,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                   </span>
                 </p>
                 <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
-                  {detailQuery.isLoading
+                  {descriptionField === DETAIL_LOADING_TEXT
                     ? '상세 정보를 불러오는 중입니다.'
                     : formatNullableText(detail?.description)}
                 </p>
@@ -427,7 +296,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                       {title} 관련 영상 페이지로 이동합니다.
                     </p>
                   </a>
-                ) : (
+                ) : hasResolvedDetail ? (
                   <div className="px-4 text-center">
                     <PlayCircle
                       aria-hidden="true"
@@ -438,6 +307,19 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     </p>
                     <p className="mt-2 text-xs text-white/45 sm:text-sm">
                       제공된 영상 정보가 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="px-4 text-center">
+                    <PlayCircle
+                      aria-hidden="true"
+                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                    />
+                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
+                      프로모션 영상을 불러오는 중입니다.
+                    </p>
+                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                      영상 정보를 확인하고 있습니다.
                     </p>
                   </div>
                 )}
@@ -474,8 +356,10 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                           </a>
                         ))}
                       </div>
-                    ) : (
+                    ) : hasResolvedDetail ? (
                       'N/A'
+                    ) : (
+                      DETAIL_LOADING_TEXT
                     )}
                   </dd>
                 </div>
