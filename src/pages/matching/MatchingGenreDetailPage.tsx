@@ -1,7 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import Header from '../../components/common/Header';
@@ -43,9 +49,10 @@ const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
 
 function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const authGate = useAuthGate({ allowMockBypass: true });
+  const authGate = useAuthGate();
   const canAccessPage = authGate.accessStatus === 'authorized';
   const isValidGenreSlug = genreSlug ? isMatchingGenreSlug(genreSlug) : false;
   const genre = genreSlug ? getMatchingGenreBySlug(genreSlug) : undefined;
@@ -124,6 +131,19 @@ function MatchingGenreDetailPage() {
   const submitErrorMessage = submitMatchResponsesMutation.error
     ? extractApiErrorMessage(submitMatchResponsesMutation.error)
     : null;
+
+  if (authGate.accessStatus === 'unauthorized') {
+    return (
+      <Navigate
+        to={`/${ROUTES.LOGIN}`}
+        replace
+        state={{
+          noticeMessage: '로그인 후 매칭을 진행할 수 있어요.',
+          redirectTo: `${location.pathname}${location.search}`,
+        }}
+      />
+    );
+  }
 
   const syncLikedGamesCache = () => {
     queryClient.setQueriesData<LikedGamesResponse>(
@@ -238,8 +258,9 @@ function MatchingGenreDetailPage() {
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 진행할 수 있어요."
-            description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 환경에서 MSW를 켜두면 로그인 없이도 매칭 흐름을 확인할 수 있어요."
+            description="로그인하면 장르를 고르고 트레일러를 보며 별점을 남긴 뒤, 취향에 맞는 추천 결과까지 바로 이어서 확인할 수 있어요."
             className="mx-auto max-w-[760px] sm:py-12"
+            align="center"
           />
         ) : matchCandidatesQuery.isLoading ? (
           <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
@@ -312,7 +333,7 @@ function MatchingGenreDetailPage() {
                 <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
                   트레일러와 분위기를 보며 {totalGamesLabel}에 별점을
                   남겨보세요. 좋아요는 마음에 든 게임을 표시해 두고
-                  마이페이지에서도 다시 확인할 수 있게 함께 저장돼요.
+                  마이페이지에서 다시 확인할 수 있게 함께 저장돼요.
                 </p>
               </div>
 
@@ -411,11 +432,6 @@ function MatchingGenreDetailPage() {
 
                     {isLastCard ? (
                       <div className="mt-auto pt-5">
-                        <p className="mx-auto mb-2.5 w-full max-w-[420px] text-center text-sm leading-6 break-keep text-white/42">
-                          {totalSteps}개 게임의 선호도 평가가 모두 준비되면
-                          제출할 수 있어요.
-                        </p>
-
                         <div className="flex flex-wrap items-end justify-between gap-3">
                           <button
                             type="button"

@@ -46,6 +46,8 @@ const Header = ({ fixed = true }: HeaderProps) => {
     account?.profile_img_url ??
     profileHydrationQuery.data?.profile_img_url ??
     profilePreviewImageUrl;
+  const shouldShowDeferredGuestPreview =
+    shouldDeferGuestActions && Boolean(resolvedProfileImageUrl);
 
   useEffect(() => {
     if (profileHydrationQuery.data) {
@@ -72,7 +74,7 @@ const Header = ({ fixed = true }: HeaderProps) => {
 
         <div className="flex items-center gap-2 sm:gap-3">
           {!isLoggedIn ? (
-            shouldHideGuestActions ? null : shouldDeferGuestActions ? (
+            shouldHideGuestActions ? null : shouldShowDeferredGuestPreview ? (
               resolvedProfileImageUrl ? (
                 <div
                   aria-hidden="true"
@@ -84,9 +86,7 @@ const Header = ({ fixed = true }: HeaderProps) => {
                     className="h-full w-full object-cover"
                   />
                 </div>
-              ) : (
-                <div className="h-9 w-44" aria-hidden="true" />
-              )
+              ) : null
             ) : (
               <>
                 <Link
