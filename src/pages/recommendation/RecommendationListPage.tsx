@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { ChevronDown, ChevronRight, Heart, Sparkles, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, Heart, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -263,7 +263,9 @@ function RecommendationListPage() {
     null,
   );
   const recommendationScrollRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreAnchorOffsetRef = useRef<number | null>(null);
+  const loadMoreScrollTopRef = useRef<number | null>(null);
+  const detailListScrollTopRef = useRef<number | null>(null);
+  const detailWindowScrollYRef = useRef<number>(0);
   const queryClient = useQueryClient();
   const source = searchParams.get('source');
   const legacySessionId = searchParams.get('session_id');
@@ -314,33 +316,57 @@ function RecommendationListPage() {
     );
 
   useEffect(() => {
-    if (loadMoreAnchorOffsetRef.current === null) {
+    if (loadMoreScrollTopRef.current === null) {
       return;
     }
 
     const scrollContainer = recommendationScrollRef.current;
 
     if (!scrollContainer) {
-      loadMoreAnchorOffsetRef.current = null;
+      loadMoreScrollTopRef.current = null;
       return;
     }
 
-    const nextScrollTop =
-      scrollContainer.scrollHeight - loadMoreAnchorOffsetRef.current;
-    scrollContainer.scrollTop = Math.max(0, nextScrollTop);
-    loadMoreAnchorOffsetRef.current = null;
+    scrollContainer.scrollTop = loadMoreScrollTopRef.current;
+    loadMoreScrollTopRef.current = null;
   }, [recommendationItems.length]);
 
   const handleOpenDetail = (item: RecommendationDisplayItem) => {
+    detailListScrollTopRef.current =
+      recommendationScrollRef.current?.scrollTop ?? null;
+    detailWindowScrollYRef.current =
+      typeof window !== 'undefined' ? window.scrollY : 0;
     setSelectedGame(toGameListItem(item));
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedGame(null);
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: detailWindowScrollYRef.current,
+        behavior: 'auto',
+      });
+
+      if (
+        recommendationScrollRef.current &&
+        detailListScrollTopRef.current !== null
+      ) {
+        recommendationScrollRef.current.scrollTop =
+          detailListScrollTopRef.current;
+      }
+    });
   };
 
   const handleLoadMore = () => {
     const scrollContainer = recommendationScrollRef.current;
 
     if (scrollContainer) {
-      loadMoreAnchorOffsetRef.current =
-        scrollContainer.scrollHeight - scrollContainer.scrollTop;
+      loadMoreScrollTopRef.current = scrollContainer.scrollTop;
     }
 
     void fetchNextPage();
@@ -510,17 +536,13 @@ function RecommendationListPage() {
         <section className="mx-auto w-full max-w-245">
           <div className="mb-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
             <div>
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-white/45 uppercase backdrop-blur-md">
-                <Sparkles size={13} />
-                AI Curated
-              </div>
-              <h1 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
+              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
                 게임 추천 리스트
               </h1>
               <p className="mt-4 max-w-155 text-sm leading-7 break-keep text-white/58 sm:text-base">
                 {isMatchSource
-                  ? '장르별 매칭에서 남긴 별점과 좋아요를 바탕으로 정리된 추천 결과예요. 마음에 드는 게임은 좋아요로 표시해 두고 마이페이지에서도 다시 확인할 수 있어요.'
-                  : '설문에서 드러난 취향을 바탕으로, 지금 바로 플레이하고 싶어질 만한 게임들을 차분하게 정리해뒀어요.'}
+                  ? '장르별 매칭에서 남긴 선호도 평가를 바탕으로 정리된 추천 결과예요.'
+                  : '설문에서 드러난 취향을 바탕으로, 플레이 스타일에 맞는 게임들을 한눈에 살펴볼 수 있게 정리했어요.'}
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5">
                 {recommendationHighlights.map((highlight) => (
@@ -535,9 +557,6 @@ function RecommendationListPage() {
             </div>
 
             <aside className="rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.88),rgba(9,9,10,0.92))] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-              <p className="text-[11px] font-medium tracking-[0.22em] text-white/34 uppercase">
-                Summary
-              </p>
               <p className="mt-5 text-[34px] font-semibold tracking-[-0.04em] text-white">
                 {cappedTotalCount > 0 ? cappedTotalCount : '...'}
               </p>
@@ -595,10 +614,7 @@ function RecommendationListPage() {
               <div className="px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
                 <div className="flex flex-col gap-3 border-b border-white/8 pb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[11px] font-medium tracking-[0.22em] text-white/34 uppercase">
-                      Refined For You
-                    </p>
-                    <p className="mt-3 text-sm leading-6 break-keep text-white/56">
+                    <p className="text-sm leading-6 break-keep text-white/56">
                       {isMatchSource
                         ? '장르별 매칭에서 수집한 선호도 평가를 바탕으로 정리된 결과예요.'
                         : '마음에 드는 게임을 비교해보고, 더보기로 결과를 이어서 확인해보세요.'}
@@ -682,7 +698,7 @@ function RecommendationListPage() {
         <GameDetailModal
           key={selectedGame.gameId}
           game={selectedGame}
-          onClose={() => setSelectedGame(null)}
+          onClose={handleCloseDetail}
         />
       ) : null}
     </div>
