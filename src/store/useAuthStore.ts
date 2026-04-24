@@ -126,24 +126,6 @@ export const clearLegacyAuthStorage = () => {
   LEGACY_KEYS.forEach((key) => window.localStorage.removeItem(key));
 };
 
-export const selectAuthSessionState = (
-  state: AuthState,
-): AuthSessionStateSnapshot => {
-  const isAuthReady = state.authBootstrapStatus === 'ready';
-  const accessStatus = !isAuthReady
-    ? 'loading'
-    : state.isAuthenticated
-      ? 'authenticated'
-      : 'unauthenticated';
-
-  return {
-    isAuthenticated: state.isAuthenticated,
-    isAuthReady,
-    authBootstrapStatus: state.authBootstrapStatus,
-    accessStatus,
-  };
-};
-
 // 하위 호환성을 위한 export (점진적 교체용)
 export const clearAuthTokens = () => useAuthStore.getState().clearAuth();
 export const clearAuthPersistedStorage = clearLegacyAuthStorage;
