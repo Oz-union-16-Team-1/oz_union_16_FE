@@ -22,9 +22,15 @@ type SupportChatStoreState = {
   isSubmitting: boolean;
   routeContext: SupportChatRouteContext;
   bootstrapConversation: (routeContext?: SupportChatRouteContext) => void;
-  resetConversation: (routeContext?: SupportChatRouteContext) => void;
+  resetConversation: (
+    routeContext?: SupportChatRouteContext,
+    options?: {
+      isOpen?: boolean;
+      hasBootstrapped?: boolean;
+    },
+  ) => void;
   openPanel: () => void;
-  closePanel: () => void;
+  closeAndResetConversation: (routeContext?: SupportChatRouteContext) => void;
   togglePanel: () => void;
   setRouteContext: (routeContext: SupportChatRouteContext) => void;
   setSessionId: (sessionId: number | null) => void;
@@ -97,15 +103,19 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
         routeContext,
       });
     },
-    resetConversation: (routeContext = get().routeContext) =>
+    resetConversation: (routeContext = get().routeContext, options = {}) =>
       set({
         ...initialState,
-        hasBootstrapped: true,
-        isOpen: true,
+        hasBootstrapped: options.hasBootstrapped ?? true,
+        isOpen: options.isOpen ?? true,
         routeContext,
       }),
     openPanel: () => set({ isOpen: true }),
-    closePanel: () => set({ isOpen: false }),
+    closeAndResetConversation: (routeContext = get().routeContext) =>
+      set({
+        ...initialState,
+        routeContext,
+      }),
     togglePanel: () => set((state) => ({ isOpen: !state.isOpen })),
     setRouteContext: (routeContext) => set({ routeContext }),
     setSessionId: (sessionId) => set({ sessionId }),
