@@ -24,7 +24,6 @@ interface MatchingStoreState {
     candidates: MatchingCandidateItem[],
   ) => void;
   setRating: (gameId: number, rating: MatchingRatingValue) => void;
-  toggleLiked: (gameId: number) => void;
   goNext: () => void;
   goPrevious: () => void;
   resetFlow: () => void;
@@ -53,7 +52,6 @@ const createEvaluationMap = (
         ? previous
         : {
             rating: null,
-            isLiked: candidate.is_liked,
           };
 
       return [candidate.game_id, nextValue];
@@ -112,29 +110,11 @@ export const useMatchingStore = create<MatchingStoreState>((set) => ({
         [gameId]: {
           ...(state.evaluationsByGameId[gameId] ?? {
             rating: null,
-            isLiked: false,
           }),
           rating,
         },
       },
     })),
-  toggleLiked: (gameId) =>
-    set((state) => {
-      const currentValue = state.evaluationsByGameId[gameId] ?? {
-        rating: null,
-        isLiked: false,
-      };
-
-      return {
-        evaluationsByGameId: {
-          ...state.evaluationsByGameId,
-          [gameId]: {
-            ...currentValue,
-            isLiked: !currentValue.isLiked,
-          },
-        },
-      };
-    }),
   goNext: () =>
     set((state) => ({
       currentIndex:

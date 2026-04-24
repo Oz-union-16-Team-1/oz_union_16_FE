@@ -60,7 +60,6 @@ export type MatchingRatingValue = 1 | 2 | 3 | 4 | 5;
 
 export interface MatchingEvaluationValue {
   rating: MatchingRatingValue | null;
-  isLiked: boolean;
 }
 
 export type MatchingEvaluationsByGameId = Record<

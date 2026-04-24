@@ -234,6 +234,9 @@ export const matchingHandlers = [
     }
 
     const candidates = matchingMockCandidatesByGenreId[genreId];
+    const currentLikedGameIds = getMockLikedGameIdsForAuthorization(
+      request.headers.get('Authorization'),
+    );
 
     if (!candidates) {
       return getErrorResponse(404, '해당 장르의 게임을 찾을 수 없습니다.');
@@ -251,7 +254,7 @@ export const matchingHandlers = [
         genres: candidate.genres,
         trailer_url: candidate.trailer_url,
         rating: candidate.rating,
-        is_liked: candidate.is_liked,
+        is_liked: currentLikedGameIds.has(candidate.game_id),
       })),
     });
   }),
