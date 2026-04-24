@@ -11,7 +11,7 @@ import {
   useChangePasswordMutation,
   useDeleteAccountMutation,
 } from '../../../features/auth/api/useAuthApi';
-import { clearAuthTokens } from '../../../utils/auth';
+import { clearAuthSession } from '../../../features/auth/utils/sessionManager';
 import type {
   PasswordChangeFieldName,
   PasswordChangeValues,
@@ -268,7 +268,7 @@ function useMyPageSecurity({ onToast }: UseMyPageSecurityOptions) {
         password: trimmedPassword,
       });
 
-      clearAuthTokens();
+      clearAuthSession();
       navigate(`/${ROUTES.LOGIN}`, {
         replace: true,
         state: {

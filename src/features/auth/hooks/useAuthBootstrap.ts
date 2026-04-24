@@ -1,38 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router';
 
-import { ROUTES } from '../../../constants/routes';
+import { shouldSkipAuthBootstrapPath } from '../../../constants/routeResolver';
 import { isMockServiceWorkerEnabled } from '../../../lib/env';
 import {
   clearLegacyAuthStorage,
+  selectAuthSessionState,
   useAuthStore,
 } from '../../../store/useAuthStore';
+import { hasMockRefreshToken } from '../api/auth';
 import {
-  getCurrentUserProfile,
-  hasMockRefreshToken,
-  refreshAccessToken,
-} from '../api/auth';
-
-const AUTH_BOOTSTRAP_SKIP_PATHS = new Set([
-  `/${ROUTES.AUTH_CALLBACK}`,
-  `/${ROUTES.LEGACY_AUTH_CALLBACK}`,
-]);
+  restoreAuthSession,
+  setAuthBootstrapLoading,
+  setAuthBootstrapReady,
+} from '../utils/sessionManager';
 
 let authBootstrapPromise: Promise<void> | null = null;
 
-const runAuthBootstrap = async () => {
-  const { access_token: accessToken } = await refreshAccessToken();
-  useAuthStore.getState().setAccessToken(accessToken);
-  const profile = await getCurrentUserProfile();
-  useAuthStore.getState().setAccount(profile);
-};
-
-const ensureAuthBootstrap = () => {
+const ensureAuthBootstrap = (): Promise<void> => {
   if (!authBootstrapPromise) {
-    authBootstrapPromise = runAuthBootstrap()
-      .catch(() => {
-        useAuthStore.getState().clearAuth();
-      })
+    authBootstrapPromise = restoreAuthSession()
+      .then(() => undefined)
       .finally(() => {
         authBootstrapPromise = null;
       });
@@ -43,9 +31,7 @@ const ensureAuthBootstrap = () => {
 
 function useAuthBootstrap() {
   const location = useLocation();
-  const authBootstrapStatus = useAuthStore(
-    (state) => state.authBootstrapStatus,
-  );
+  const { authBootstrapStatus } = useAuthStore(selectAuthSessionState);
   const hasBootstrappedRef = useRef(false);
 
   useEffect(() => {
@@ -62,26 +48,26 @@ function useAuthBootstrap() {
     const store = useAuthStore.getState();
 
     if (store.accessToken) {
-      store.setAuthBootstrapStatus('ready');
+      setAuthBootstrapReady();
       return;
     }
 
-    if (AUTH_BOOTSTRAP_SKIP_PATHS.has(location.pathname)) {
-      store.setAuthBootstrapStatus('ready');
+    if (shouldSkipAuthBootstrapPath(location.pathname)) {
+      setAuthBootstrapReady();
       return;
     }
 
     if (isMockServiceWorkerEnabled() && !hasMockRefreshToken()) {
-      store.setAuthBootstrapStatus('ready');
+      setAuthBootstrapReady();
       return;
     }
 
     let isMounted = true;
-    store.setAuthBootstrapStatus('loading');
+    setAuthBootstrapLoading();
 
     void ensureAuthBootstrap().finally(() => {
       if (isMounted) {
-        useAuthStore.getState().setAuthBootstrapStatus('ready');
+        setAuthBootstrapReady();
       }
     });
 

@@ -15,7 +15,6 @@ import AuthLayout from '../components/layout/AuthLayout';
 import ToastMessage from '../components/mypage/ToastMessage';
 import { ROUTES } from '../constants/routes';
 import {
-  getCurrentUserProfile,
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
 } from '../features/auth/api/auth';
@@ -26,12 +25,12 @@ import {
   useSignupMutation,
 } from '../features/auth/api/useAuthApi';
 import type { AuthGender, SignupRequest } from '../features/auth/types/auth';
+import { hydrateAuthSessionFromAccessToken } from '../features/auth/utils/sessionManager';
 import { resolveAuthFeedbackVisibility } from '../features/auth/utils/feedbackPriority';
 import {
   focusFieldByName,
   getFirstErrorFieldName,
 } from '../features/auth/utils/focusField';
-import { setAccessToken, setAuthAccount } from '../utils/auth';
 
 type SignupFormValues = Omit<SignupRequest, 'gender'> & {
   gender: AuthGender | '';
@@ -458,9 +457,7 @@ function SignupPage() {
         password: payload.password,
       });
 
-      setAccessToken(loginResponse.access_token);
-      const profile = await getCurrentUserProfile();
-      setAuthAccount(profile);
+      await hydrateAuthSessionFromAccessToken(loginResponse.access_token);
       navigate(ROUTES.HOME);
     } catch {
       navigate(`/${ROUTES.LOGIN}`, {

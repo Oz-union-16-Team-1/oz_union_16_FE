@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
-import { ROUTES } from './constants/routes';
+import { isLoginPath } from './constants/routeResolver';
+import { ROUTE_PATHS } from './constants/routes';
 import {
   AUTH_SESSION_EXPIRED_EVENT,
   AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
@@ -21,8 +22,8 @@ function App() {
       const noticeMessage =
         customEvent.detail?.noticeMessage ||
         AUTH_SESSION_EXPIRED_NOTICE_MESSAGE;
-      const loginPath = `/${ROUTES.LOGIN}`;
-      const shouldReplace = location.pathname === loginPath;
+      const loginPath = ROUTE_PATHS.LOGIN;
+      const shouldReplace = isLoginPath(location.pathname);
 
       navigate(loginPath, {
         replace: shouldReplace,

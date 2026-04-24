@@ -16,18 +16,15 @@ import {
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
 } from '../components/auth/authSharedStyles';
 import { ROUTES } from '../constants/routes';
-import {
-  getCurrentUserProfile,
-  resolveLoginApiError,
-} from '../features/auth/api/auth';
+import { resolveLoginApiError } from '../features/auth/api/auth';
 import { AUTH_SESSION_EXPIRED_NOTICE_MESSAGE } from '../features/auth/constants/session';
 import { useLoginMutation } from '../features/auth/api/useAuthApi';
 import type { LoginRequest } from '../features/auth/types/auth';
+import { hydrateAuthSessionFromAccessToken } from '../features/auth/utils/sessionManager';
 import { resolveAuthFeedbackVisibility } from '../features/auth/utils/feedbackPriority';
 import { focusFieldByName } from '../features/auth/utils/focusField';
 import { getSocialCallbackErrorMessage } from '../features/auth/utils/socialAuth';
 import { mockServiceWorkerEnabled } from '../lib/env';
-import { useAuthStore } from '../store/useAuthStore';
 
 type LoginFieldName = keyof LoginRequest;
 type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
@@ -84,9 +81,6 @@ const resolveMockAccounts = (
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const setAccessToken = useAuthStore((state) => state.setAccessToken);
-  const setAccount = useAuthStore((state) => state.setAccount);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const loginMutation = useLoginMutation();
   const [mockAccounts, setMockAccounts] = useState<DevMockLoginAccount[]>([]);
   const [isMockPanelOpen, setIsMockPanelOpen] = useState(false);
@@ -293,9 +287,11 @@ function LoginPage() {
       password: formValues.password.trim(),
     };
 
+    let accessToken: string;
+
     try {
       const response = await loginMutation.mutateAsync(payload);
-      setAccessToken(response.access_token);
+      accessToken = response.access_token;
     } catch (error) {
       const resolvedError = resolveLoginApiError(error, payload);
 
@@ -306,12 +302,9 @@ function LoginPage() {
     }
 
     try {
-      // [Refactor] #94: Access Token 메모리 저장 후 현재 사용자 프로필을 동기화합니다.
-      const profile = await getCurrentUserProfile();
-      setAccount(profile);
+      await hydrateAuthSessionFromAccessToken(accessToken);
       navigate(ROUTES.HOME);
     } catch {
-      clearAuth();
       setFormMessage(
         '로그인 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
       );

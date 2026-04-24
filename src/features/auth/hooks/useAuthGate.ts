@@ -1,5 +1,5 @@
 import { isMockServiceWorkerEnabled } from '../../../lib/env';
-import { useAuthStore } from '../../../store/useAuthStore';
+import useAuthSessionState from './useAuthSessionState';
 
 type UseAuthGateOptions = {
   allowMockBypass?: boolean;
@@ -19,18 +19,16 @@ export type UseAuthGateResult = {
 
 function useAuthGate(options: UseAuthGateOptions = {}): UseAuthGateResult {
   const { allowMockBypass = false } = options;
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const authBootstrapStatus = useAuthStore(
-    (state) => state.authBootstrapStatus,
-  );
-  const isAuthReady = authBootstrapStatus === 'ready';
+  const { isAuthenticated, authBootstrapStatus, isAuthReady, accessStatus } =
+    useAuthSessionState();
   const isMockMode = isMockServiceWorkerEnabled();
   const canBypassAuth = allowMockBypass && isMockMode;
   const canAccessAuthenticatedRoute =
-    canBypassAuth || (isAuthReady && isAuthenticated);
-  const needsAuthCheck = !canBypassAuth && !isAuthReady;
-  const shouldRedirectToLogin = !needsAuthCheck && !canAccessAuthenticatedRoute;
-  const accessStatus = needsAuthCheck
+    canBypassAuth || accessStatus === 'authenticated';
+  const needsAuthCheck = !canBypassAuth && accessStatus === 'loading';
+  const shouldRedirectToLogin =
+    !canBypassAuth && accessStatus === 'unauthenticated';
+  const resolvedAccessStatus = needsAuthCheck
     ? 'loading'
     : canAccessAuthenticatedRoute
       ? 'authorized'
@@ -45,7 +43,7 @@ function useAuthGate(options: UseAuthGateOptions = {}): UseAuthGateResult {
     canAccessAuthenticatedRoute,
     needsAuthCheck,
     shouldRedirectToLogin,
-    accessStatus,
+    accessStatus: resolvedAccessStatus,
   };
 }
 

@@ -14,8 +14,8 @@ import {
   useUploadFileToS3Mutation,
 } from '../../../features/auth/api/useAuthApi';
 import type { CurrentUserProfileResponse } from '../../../features/auth/types/auth';
-import { setAuthAccount } from '../../../utils/auth';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { syncAuthAccount } from '../../../features/auth/utils/sessionManager';
 import type { MyPageToastPayload } from '../types';
 import { toGenderLabel } from '../utils';
 
@@ -42,7 +42,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
 
   useEffect(() => {
     if (profileQuery.data) {
-      setAuthAccount(profileQuery.data);
+      syncAuthAccount(profileQuery.data);
     }
   }, [profileQuery.data]);
 
@@ -90,7 +90,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
       );
 
       if (previousProfile) {
-        setAuthAccount({
+        syncAuthAccount({
           ...previousProfile,
           profile_img_url: presignedResponse.img_url,
         });
@@ -116,7 +116,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
       );
 
       if (previousProfile) {
-        setAuthAccount({
+        syncAuthAccount({
           ...previousProfile,
           profile_img_url: confirmedProfileImageUrl,
         });
@@ -133,7 +133,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
           authKeys.me(),
           previousProfile,
         );
-        setAuthAccount(previousProfile);
+        syncAuthAccount(previousProfile);
         void queryClient.invalidateQueries({ queryKey: authKeys.me() });
       }
 
