@@ -26,7 +26,7 @@ const toneClassNames: Record<
   surface: {
     error: 'border-red-500/20 bg-red-500/10 text-red-300',
     success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
-    muted: 'border-white/12 bg-white/[0.03] text-white/70',
+    muted: 'border-white/12 bg-white/3 text-white/70',
   },
   inline: {
     error: 'text-red-400',

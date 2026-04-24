@@ -227,9 +227,9 @@ function MatchingGenreDetailPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.12),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <LazyHeader fixed />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1120px] px-4 pt-[5.25rem] pb-8 sm:px-6 sm:pt-[5.6rem] sm:pb-10 md:px-8 md:pt-[5.9rem] md:pb-12">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-21 pb-8 sm:px-6 sm:pt-[5.6rem] sm:pb-10 md:px-8 md:pt-[5.9rem] md:pb-12">
         {!genre || !isValidGenreSlug ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
+          <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
               Matching
             </p>
@@ -242,7 +242,7 @@ function MatchingGenreDetailPage() {
             </p>
             <Link
               to={`/${ROUTES.MATCHING_LIST}`}
-              className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+              className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
             >
               <ChevronLeft size={16} />
               장르 선택으로 돌아가기
@@ -253,21 +253,21 @@ function MatchingGenreDetailPage() {
             title="인증 상태를 확인하는 중입니다."
             description="잠시만 기다려 주세요. 세션 확인 후 매칭 화면을 불러옵니다."
             align="center"
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
           />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 진행할 수 있어요."
             description="로그인하면 장르를 고르고 트레일러를 보며 별점을 남긴 뒤, 취향에 맞는 추천 결과까지 바로 이어서 확인할 수 있어요."
-            className="mx-auto max-w-[760px] sm:py-12"
+            className="mx-auto max-w-190 sm:py-12"
             align="center"
           />
         ) : matchCandidatesQuery.isLoading ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
+          <section className="survey-panel mx-auto max-w-190 px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
             매칭 후보 게임을 불러오는 중입니다...
           </section>
         ) : matchCandidatesQuery.error ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
+          <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
               Matching
             </p>
@@ -281,13 +281,13 @@ function MatchingGenreDetailPage() {
               <button
                 type="button"
                 onClick={() => void matchCandidatesQuery.refetch()}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
               >
                 다시 시도
               </button>
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
               >
                 <ChevronLeft size={16} />
                 장르 선택으로 돌아가기
@@ -295,7 +295,7 @@ function MatchingGenreDetailPage() {
             </div>
           </section>
         ) : candidates.length === 0 ? (
-          <section className="survey-panel mx-auto max-w-[760px] px-6 py-10 sm:px-8 sm:py-12">
+          <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
               이 장르에 준비된 후보 게임이 아직 없어요.
             </h1>
@@ -304,7 +304,7 @@ function MatchingGenreDetailPage() {
             </p>
             <Link
               to={`/${ROUTES.MATCHING_LIST}`}
-              className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+              className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
             >
               <ChevronLeft size={16} />
               다른 장르 보기
@@ -315,14 +315,14 @@ function MatchingGenreDetailPage() {
             <div className="pointer-events-none absolute top-[4.85rem] left-1/2 z-20 w-screen -translate-x-1/2 pr-[clamp(1rem,5vw,20rem)] pl-[clamp(0.35rem,3vw,20rem)] sm:top-[5.15rem] md:top-[5.35rem]">
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
-                className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
+                className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-4 py-2 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
               >
                 <ChevronLeft size={16} />
                 다른 장르 보기
               </Link>
             </div>
 
-            <section className="mx-auto max-w-[960px]">
+            <section className="mx-auto max-w-240">
               <div className="text-center">
                 <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                   {safeIndex + 1} / {totalSteps} 단계
@@ -373,7 +373,7 @@ function MatchingGenreDetailPage() {
                         className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] ${
                           currentEvaluation.isLiked
                             ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
-                            : 'border-white/10 bg-white/[0.03] text-white/54 hover:border-white/20 hover:text-white/80'
+                            : 'border-white/10 bg-white/3 text-white/54 hover:border-white/20 hover:text-white/80'
                         }`}
                       >
                         <Heart
@@ -386,10 +386,10 @@ function MatchingGenreDetailPage() {
                     </div>
 
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-white/46">
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
+                      <span className="rounded-full border border-white/8 bg-white/3 px-3 py-1.5">
                         장르 {currentCandidate.genres.join(' · ')}
                       </span>
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
+                      <span className="rounded-full border border-white/8 bg-white/3 px-3 py-1.5">
                         평균 평점{' '}
                         {formatMatchingCandidateRating(currentCandidate.rating)}
                       </span>
@@ -412,7 +412,7 @@ function MatchingGenreDetailPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3.5">
+                    <div className="mt-5 rounded-[20px] border border-white/8 bg-white/3 px-4 py-3.5">
                       <p className="text-sm leading-7 break-keep text-white/64">
                         {isLastCard
                           ? currentEvaluation.rating === null
@@ -437,7 +437,7 @@ function MatchingGenreDetailPage() {
                             type="button"
                             onClick={goPrevious}
                             disabled={!canGoPrevious}
-                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
+                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/2 disabled:text-white/28"
                           >
                             <ChevronLeft size={16} />
                             이전
@@ -467,7 +467,7 @@ function MatchingGenreDetailPage() {
                           type="button"
                           onClick={goPrevious}
                           disabled={!canGoPrevious}
-                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/[0.02] disabled:text-white/28"
+                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/2 disabled:text-white/28"
                         >
                           <ChevronLeft size={16} />
                           이전

@@ -15,8 +15,8 @@ const roleMeta = {
     contentClassName: 'flex-row',
     textClassName: 'text-left',
     bubbleClassName:
-      'bg-white/[0.04] text-white border border-white/8 rounded-[24px] rounded-tl-md shadow-[0_18px_40px_rgba(0,0,0,0.28)]',
-    iconClassName: 'bg-white/[0.05] text-[#ff4d4d]',
+      'bg-white/4 text-white border border-white/8 rounded-[24px] rounded-tl-md shadow-[0_18px_40px_rgba(0,0,0,0.28)]',
+    iconClassName: 'bg-white/5 text-[#ff4d4d]',
   },
   user: {
     icon: UserRound,

@@ -33,7 +33,7 @@ const Header = ({ fixed = true }: HeaderProps) => {
   const profilePlaceholder = (
     <div
       aria-hidden="true"
-      className="h-10 w-10 rounded-full border-2 border-white/8 bg-white/[0.04]"
+      className="h-10 w-10 rounded-full border-2 border-white/8 bg-white/4"
     />
   );
   const guestActionsPlaceholder = (

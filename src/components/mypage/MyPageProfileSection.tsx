@@ -205,7 +205,7 @@ function MyPageProfileSection({
                   </button>
                   <button
                     type="button"
-                    className="bg-login-primary rounded-full px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#dd0d14] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-login-primary hover:bg-login-primary-hover rounded-full px-3 py-1.5 text-xs font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => {
                       void handleNicknameSave();
                     }}

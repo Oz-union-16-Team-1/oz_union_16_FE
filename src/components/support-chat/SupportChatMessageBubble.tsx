@@ -48,7 +48,7 @@ function SupportChatMessageBubble({ message }: SupportChatMessageBubbleProps) {
         ) : null}
 
         <div
-          className={`min-w-0 rounded-[24px] px-4 py-3.5 ${meta.bodyClassName}`}
+          className={`min-w-0 rounded-3xl px-4 py-3.5 ${meta.bodyClassName}`}
         >
           {isTyping ? (
             <SupportChatTypingIndicator />

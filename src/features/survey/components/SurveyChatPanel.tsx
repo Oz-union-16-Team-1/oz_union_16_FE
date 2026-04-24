@@ -492,9 +492,9 @@ function SurveyChatPanel() {
   const guardrailLauncher =
     shouldShowGuardrailPanel && typeof document !== 'undefined'
       ? createPortal(
-          <div className="pointer-events-none fixed bottom-6 left-2 z-[95] hidden lg:block">
+          <div className="pointer-events-none fixed bottom-6 left-2 z-95 hidden lg:block">
             {isGuardrailPanelOpen ? (
-              <aside className="pointer-events-auto mb-3 ml-3 w-[300px] rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(8,8,9,0.94))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.26)] backdrop-blur-xl">
+              <aside className="pointer-events-auto mb-3 ml-3 w-75 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(8,8,9,0.94))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.26)] backdrop-blur-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-semibold tracking-[0.18em] text-[#ff8a8a] uppercase">
@@ -505,13 +505,13 @@ function SurveyChatPanel() {
                     </h3>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/64">
+                    <span className="rounded-full border border-white/10 bg-white/4 px-2.5 py-1 text-[11px] font-medium text-white/64">
                       {guardrailStatusLabel}
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsGuardrailPanelOpen(false)}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/58 transition hover:bg-white/[0.06] hover:text-white"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/3 text-white/58 transition hover:bg-white/6 hover:text-white"
                       aria-label="개발용 가드레일 패널 닫기"
                     >
                       <X size={14} />
@@ -525,15 +525,15 @@ function SurveyChatPanel() {
                   비게임 질문 3회 누적 시 5분 제한을 적용합니다.
                 </p>
 
-                <div className="mt-3 rounded-[18px] border border-white/8 bg-white/[0.03] px-3 py-3">
+                <div className="mt-3 rounded-[18px] border border-white/8 bg-white/3 px-3 py-3">
                   <p className="text-[11px] font-semibold tracking-[0.18em] text-white/42 uppercase">
                     허용 키워드
                   </p>
-                  <div className="mt-2 flex max-h-[132px] flex-wrap gap-1.5 overflow-y-auto pr-1">
+                  <div className="mt-2 flex max-h-33 flex-wrap gap-1.5 overflow-y-auto pr-1">
                     {GAME_RELATED_KEYWORDS.map((keyword) => (
                       <span
                         key={keyword}
-                        className="rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/72"
+                        className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] font-medium text-white/72"
                       >
                         {keyword}
                       </span>
@@ -574,7 +574,7 @@ function SurveyChatPanel() {
               type="button"
               onClick={handleReset}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RotateCcw size={16} />
               설문 초기화
@@ -587,11 +587,11 @@ function SurveyChatPanel() {
         <div className="survey-panel flex h-full min-h-0 flex-col overflow-hidden border-white/6 bg-[linear-gradient(180deg,rgba(12,12,14,0.86),rgba(7,7,8,0.94))]">
           <div
             ref={viewportRef}
-            className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-[1.125rem] md:px-6"
+            className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-4.5 md:px-6"
           >
             {!messages.length && isSubmitting ? (
               <div className="flex w-full justify-start">
-                <div className="rounded-3xl border border-white/8 bg-white/[0.04] px-4 py-3.5 text-sm text-white/60">
+                <div className="rounded-3xl border border-white/8 bg-white/4 px-4 py-3.5 text-sm text-white/60">
                   AI가 첫 질문을 준비하고 있습니다...
                 </div>
               </div>
@@ -631,7 +631,7 @@ function SurveyChatPanel() {
             {recommendationReady ? (
               <div className="flex w-full justify-center pt-2">
                 {isRecommendationButtonDisabled ? (
-                  <div className="max-w-[520px] rounded-[26px] border border-white/8 bg-white/[0.025] px-5 py-4 text-center text-sm leading-6 break-keep text-white/58">
+                  <div className="max-w-130 rounded-[26px] border border-white/8 bg-white/2.5 px-5 py-4 text-center text-sm leading-6 break-keep text-white/58">
                     추천 결과는 준비되었지만 현재 설문 제한 상태에서는 바로
                     이동할 수 없어요. 설문 초기화 후 다시 진행해 주세요.
                   </div>
@@ -639,7 +639,7 @@ function SurveyChatPanel() {
                   <button
                     type="button"
                     onClick={handleMoveToRecommendation}
-                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:translate-y-[-1px] hover:brightness-105"
+                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:-translate-y-px hover:brightness-105"
                   >
                     추천 결과 바로 보기
                     <ChevronRight size={16} />
@@ -651,7 +651,7 @@ function SurveyChatPanel() {
 
           <div className="border-t border-white/8 px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
             <form ref={formRef} onSubmit={handleSubmit}>
-              <label className="relative block h-[60px] overflow-hidden rounded-full border border-white/10 bg-[#0e0e10] transition focus-within:border-[#b42525] focus-within:bg-[#121214]">
+              <label className="relative block h-15 overflow-hidden rounded-full border border-white/10 bg-[#0e0e10] transition focus-within:border-[#b42525] focus-within:bg-[#121214]">
                 <textarea
                   ref={textareaRef}
                   rows={1}
@@ -659,12 +659,12 @@ function SurveyChatPanel() {
                   onChange={(event) => setInputValue(event.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder={inputPlaceholder}
-                  className="h-full min-h-full w-full resize-none overflow-hidden bg-transparent py-[17px] pr-[5.8rem] pl-4 text-[15px] leading-6 text-white outline-none placeholder:text-white/26 sm:pl-5"
+                  className="h-full min-h-full w-full resize-none overflow-hidden bg-transparent py-4.25 pr-[5.8rem] pl-4 text-[15px] leading-6 text-white outline-none placeholder:text-white/26 sm:pl-5"
                   disabled={isTextareaDisabled}
                 />
                 {isChatTemporarilyBlocked ? (
                   <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="inline-flex h-[46px] min-w-[62px] items-center justify-center rounded-full border border-[#6f2525] bg-[#170b0b] px-2.5 text-sm font-semibold text-[#ffb4b4]">
+                    <div className="inline-flex h-11.5 min-w-15.5 items-center justify-center rounded-full border border-[#6f2525] bg-[#170b0b] px-2.5 text-sm font-semibold text-[#ffb4b4]">
                       {formatRemainingBlockTime(remainingBlockTimeMs)}
                     </div>
                   </div>
@@ -680,7 +680,7 @@ function SurveyChatPanel() {
                             ? '응답 생성 중'
                             : '메시지 보내기'
                       }
-                      className="inline-flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] text-white shadow-[0_14px_30px_rgba(139,0,0,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+                      className="inline-flex h-11.5 w-11.5 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] text-white shadow-[0_14px_30px_rgba(139,0,0,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <SendHorizontal size={16} />
                     </button>
