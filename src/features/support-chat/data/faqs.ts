@@ -2,6 +2,7 @@ import type {
   SupportChatQuickAction,
   SupportChatRouteContext,
 } from '../types/supportChat';
+import { ROUTE_PATHS } from '@/constants/routes';
 
 type SupportFaqEntry = {
   id: string;
@@ -84,6 +85,6 @@ export const buildSupportChatFallbackMessage = (
   `${routeContext.pageLabel} 화면과 관련된 문의를 도와드릴 수 있어요.\n현재 챗봇은 고객센터 FAQ 기반으로 동작하고 있습니다. 아래 예시 질문을 눌러주시거나, 문의 내용을 조금 더 구체적으로 적어주시면 비슷한 도움말을 안내해 드릴게요.`;
 
 export const createDefaultRouteContext = (): SupportChatRouteContext => ({
-  pathname: '/',
+  pathname: ROUTE_PATHS.HOME,
   pageLabel: '현재',
 });

@@ -1,29 +1,12 @@
-import {
-  type MutableRefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router';
 
 import type { SupportChatPanelProps } from '@/components/support-chat/SupportChatPanel';
-import {
-  extractSupportChatErrorMessage,
-  streamChatbotResponse,
-} from '@/features/support-chat/api/chatbot';
-import { useSendChatbotMessageMutation } from '@/features/support-chat/api/useSupportChatApi';
 import { SUPPORT_CHAT_QUICK_ACTIONS } from '@/features/support-chat/data/faqs';
 import { useSupportChatStore } from '@/features/support-chat/store/useSupportChatStore';
+import useSupportChatConversation from './useSupportChatConversation';
+import useSupportChatPanelState from './useSupportChatPanelState';
 import { getSupportChatRouteContext } from '../utils/routeContext';
-
-const AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX = 72;
-const SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE =
-  '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
-
-const isRecoverableSessionError = (message: string) =>
-  message.includes('session_id') || message.includes('유효하지 않은');
 
 type UseSupportChatResult = {
   panelProps: SupportChatPanelProps;
@@ -35,12 +18,7 @@ type UseSupportChatResult = {
 
 export const useSupportChat = (): UseSupportChatResult => {
   const location = useLocation();
-  const [inputValue, setInputValue] = useState('');
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const streamAbortRef = useRef<AbortController | null>(null);
-  const lastHandledMessageCursorRef = useRef<string | null>(null);
 
   const routeContext = useMemo(
     () => getSupportChatRouteContext(location.pathname),
@@ -73,81 +51,6 @@ export const useSupportChat = (): UseSupportChatResult => {
     removeMessage,
   } = useSupportChatStore();
 
-  const messageUpdateCursor = useMemo(() => {
-    const latestMessage = messages.at(-1);
-
-    return `${messages.length}:${latestMessage?.id ?? 'none'}:${latestMessage?.content.length ?? 0}:${isSubmitting ? 1 : 0}:${showQuickActions ? 1 : 0}`;
-  }, [isSubmitting, messages, showQuickActions]);
-
-  const sendMessageMutation = useSendChatbotMessageMutation();
-
-  const abortStreamingResponse = useCallback(
-    (resetSubmitting = false) => {
-      if (streamAbortRef.current) {
-        streamAbortRef.current.abort();
-        streamAbortRef.current = null;
-      }
-
-      if (resetSubmitting) {
-        setSubmitting(false);
-      }
-    },
-    [setSubmitting],
-  );
-
-  const isNearBottom = useCallback((viewport: HTMLDivElement) => {
-    const distanceFromBottom =
-      viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-
-    return distanceFromBottom <= AUTO_SCROLL_NEAR_BOTTOM_THRESHOLD_PX;
-  }, []);
-
-  const scrollViewportToBottom = useCallback(
-    (behavior: ScrollBehavior) => {
-      const viewport = viewportRef.current;
-
-      if (!viewport) {
-        return;
-      }
-
-      viewport.scrollTo({
-        top: viewport.scrollHeight,
-        behavior,
-      });
-      setPinnedToBottom(true);
-      setHasUnreadMessages(false);
-    },
-    [setPinnedToBottom],
-  );
-
-  const appendAssistantErrorMessage = useCallback(
-    (message: string) => {
-      const trimmedMessage = message.trim();
-
-      if (!trimmedMessage) {
-        return;
-      }
-
-      hideQuickActions();
-      appendAssistantMessage(trimmedMessage);
-    },
-    [appendAssistantMessage, hideQuickActions],
-  );
-
-  const handleClosePanel = useCallback(() => {
-    abortStreamingResponse(true);
-    closePanel();
-  }, [abortStreamingResponse, closePanel]);
-
-  const handleTogglePanel = useCallback(() => {
-    if (isOpen) {
-      handleClosePanel();
-      return;
-    }
-
-    togglePanel();
-  }, [handleClosePanel, isOpen, togglePanel]);
-
   useEffect(() => {
     if (!hasBootstrapped) {
       bootstrapConversation(routeContext);
@@ -157,261 +60,58 @@ export const useSupportChat = (): UseSupportChatResult => {
     setRouteContext(routeContext);
   }, [bootstrapConversation, hasBootstrapped, routeContext, setRouteContext]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClosePanel();
-      }
-    };
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement)?.closest('.support-chat-fab')
-      ) {
-        handleClosePanel();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    window.addEventListener('mousedown', handleOutsideClick);
-
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, [handleClosePanel, isOpen]);
-
-  useEffect(
-    () => () => {
-      abortStreamingResponse(true);
-    },
-    [abortStreamingResponse],
-  );
-
-  useEffect(() => {
-    if (!isOpen) {
-      if (streamAbortRef.current) {
-        abortStreamingResponse(true);
-      }
-
-      setHasUnreadMessages(false);
-      setPinnedToBottom(true);
-      return;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      scrollViewportToBottom('auto');
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [
+  const {
+    inputValue,
+    setInputValue,
+    handleSubmit,
+    handleQuickActionSelect,
+    handleReset,
     abortStreamingResponse,
-    isOpen,
-    scrollViewportToBottom,
-    setPinnedToBottom,
-  ]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const viewport = viewportRef.current;
-
-    if (!viewport) {
-      return;
-    }
-
-    const handleViewportScroll = () => {
-      const nearBottom = isNearBottom(viewport);
-      setPinnedToBottom(nearBottom);
-
-      if (nearBottom) {
-        setHasUnreadMessages(false);
-      }
-    };
-
-    handleViewportScroll();
-    viewport.addEventListener('scroll', handleViewportScroll, {
-      passive: true,
-    });
-
-    return () => {
-      viewport.removeEventListener('scroll', handleViewportScroll);
-    };
-  }, [isNearBottom, isOpen, setPinnedToBottom]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      lastHandledMessageCursorRef.current = messageUpdateCursor;
-      return;
-    }
-
-    const hasNewIncomingUpdate =
-      lastHandledMessageCursorRef.current !== messageUpdateCursor;
-    lastHandledMessageCursorRef.current = messageUpdateCursor;
-
-    if (!hasNewIncomingUpdate) {
-      return;
-    }
-
-    if (isPinnedToBottom) {
-      const frameId = window.requestAnimationFrame(() => {
-        scrollViewportToBottom('auto');
-      });
-
-      return () => {
-        window.cancelAnimationFrame(frameId);
-      };
-    }
-
-    setHasUnreadMessages(true);
-  }, [isOpen, isPinnedToBottom, messageUpdateCursor, scrollViewportToBottom]);
-
-  const handleReset = useCallback(() => {
-    abortStreamingResponse(true);
-    setInputValue('');
-    setHasUnreadMessages(false);
-    setPinnedToBottom(true);
-    resetConversation(routeContext);
-  }, [
-    abortStreamingResponse,
-    resetConversation,
+  } = useSupportChatConversation({
     routeContext,
+    sessionId,
+    isSubmitting,
+    appendUserMessage,
+    appendAssistantMessage,
+    beginAssistantMessage,
+    appendAssistantChunk,
+    finalizeAssistantMessage,
+    removeMessage,
+    hideQuickActions,
+    resetConversation,
+    setSessionId,
+    setSubmitting,
     setPinnedToBottom,
-  ]);
+    setHasUnreadMessages,
+  });
 
-  const submitMessage = useCallback(
-    async (message: string) => {
-      const trimmedMessage = message.trim();
-
-      if (trimmedMessage.length < 2) {
-        appendAssistantErrorMessage(SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE);
-        return;
-      }
-
-      if (isSubmitting) {
-        return;
-      }
-
-      const assistantPlaceholderMessageId = crypto.randomUUID();
-
-      hideQuickActions();
-      appendUserMessage(trimmedMessage);
-      beginAssistantMessage(assistantPlaceholderMessageId);
-      setSubmitting(true);
-
-      try {
-        let response;
-
-        try {
-          response = await sendMessageMutation.mutateAsync({
-            message: trimmedMessage,
-            session_id: sessionId ?? undefined,
-          });
-        } catch (requestError) {
-          const errorMessage = extractSupportChatErrorMessage(requestError);
-
-          if (sessionId && isRecoverableSessionError(errorMessage)) {
-            setSessionId(null);
-            response = await sendMessageMutation.mutateAsync({
-              message: trimmedMessage,
-            });
-          } else {
-            throw requestError;
-          }
-        }
-
-        setSessionId(response.session_id);
-
-        const abortController = new AbortController();
-        streamAbortRef.current = abortController;
-
-        await streamChatbotResponse({
-          sessionId: response.session_id,
-          signal: abortController.signal,
-          onEvent: (event) => {
-            if (event.type === 'chunk') {
-              appendAssistantChunk(
-                assistantPlaceholderMessageId,
-                event.content,
-              );
-            }
-
-            if (event.type === 'complete') {
-              finalizeAssistantMessage(assistantPlaceholderMessageId);
-              setSubmitting(false);
-            }
-          },
-        });
-      } catch (requestError) {
-        removeMessage(assistantPlaceholderMessageId);
-        const errorMessage = extractSupportChatErrorMessage(requestError);
-
-        if (errorMessage) {
-          appendAssistantErrorMessage(errorMessage);
-        }
-
-        setSubmitting(false);
-      } finally {
-        streamAbortRef.current = null;
-      }
-    },
-    [
-      appendAssistantChunk,
-      appendAssistantErrorMessage,
-      appendUserMessage,
-      beginAssistantMessage,
-      finalizeAssistantMessage,
-      hideQuickActions,
-      isSubmitting,
-      removeMessage,
-      sendMessageMutation,
-      sessionId,
-      setSessionId,
-      setSubmitting,
-    ],
-  );
-
-  const handleSubmit = useCallback(async () => {
-    if (!inputValue.trim()) {
-      appendAssistantErrorMessage(SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE);
-      return;
-    }
-
-    const nextValue = inputValue;
-    setInputValue('');
-    await submitMessage(nextValue);
-  }, [appendAssistantErrorMessage, inputValue, submitMessage]);
-
-  const handleQuickActionSelect = useCallback(
-    async (label: string) => {
-      await submitMessage(label);
-    },
-    [submitMessage],
-  );
-
-  const showJumpToLatestButton =
-    isOpen && hasUnreadMessages && !isPinnedToBottom;
-  const liveStatusMessage = showJumpToLatestButton
-    ? '새 메시지가 도착했습니다. 새 메시지 확인 버튼을 누르면 최신 메시지로 이동합니다.'
-    : isSubmitting
-      ? '챗봇이 응답을 작성 중입니다.'
-      : null;
+  const {
+    panelRef,
+    viewportRef,
+    handleClosePanel,
+    handleTogglePanel,
+    showJumpToLatestButton,
+    liveStatusMessage,
+    scrollViewportToBottom,
+  } = useSupportChatPanelState({
+    isOpen,
+    isSubmitting,
+    isPinnedToBottom,
+    showQuickActions,
+    messages,
+    closePanel,
+    togglePanel,
+    setPinnedToBottom,
+    hasUnreadMessages,
+    setHasUnreadMessages,
+    abortStreamingResponse,
+  });
 
   return {
     panelProps: {
       isOpen,
-      panelRef: panelRef as MutableRefObject<HTMLDivElement | null>,
-      viewportRef: viewportRef as MutableRefObject<HTMLDivElement | null>,
+      panelRef,
+      viewportRef,
       routeContext,
       messages,
       quickActions: showQuickActions
@@ -429,7 +129,7 @@ export const useSupportChat = (): UseSupportChatResult => {
         scrollViewportToBottom('smooth');
       },
       onQuickActionSelect: handleQuickActionSelect,
-      onInputChange: setInputValue,
+      onInputChange: (value) => setInputValue(value),
       onSubmit: handleSubmit,
     },
     launcherProps: {
