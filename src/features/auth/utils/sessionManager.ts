@@ -1,6 +1,7 @@
 import { useAuthStore } from '../../../store/useAuthStore';
 import {
   AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
+  AUTH_SESSION_RESTORE_FAILED_NOTICE_MESSAGE,
   createAuthSessionExpiredEvent,
   type AuthSessionExpiredDetail,
 } from '../constants/session';
@@ -37,6 +38,16 @@ export const clearAuthSession = () => {
   setAuthBootstrapReady();
 };
 
+const hasSessionRestoreHint = () => {
+  const store = useAuthStore.getState();
+
+  return Boolean(
+    store.isAuthenticated ||
+    store.account ||
+    store.profilePreviewImageUrl?.trim().length,
+  );
+};
+
 export const hydrateAuthSessionFromAccessToken = async (
   accessToken: string,
 ) => {
@@ -68,7 +79,17 @@ export const restoreAuthSession = async () => {
     const accessToken = await refreshStoredAccessToken();
     return await hydrateAuthSessionFromAccessToken(accessToken);
   } catch (error) {
+    const shouldNotifySessionRestoreFailure = hasSessionRestoreHint();
+
     clearAuthSession();
+
+    if (shouldNotifySessionRestoreFailure) {
+      notifyAuthSessionExpired({
+        noticeMessage: AUTH_SESSION_RESTORE_FAILED_NOTICE_MESSAGE,
+        source: 'refresh',
+      });
+    }
+
     throw error;
   }
 };
