@@ -2,6 +2,12 @@ import type { GameDetail } from './types';
 
 export const DETAIL_LOADING_TEXT = '불러오는 중';
 
+/** 게임 상세 데이터를 신선(fresh)으로 간주하는 시간 */
+export const GAME_DETAIL_STALE_TIME = 1000 * 60 * 5; // 5분
+
+/** 비활성 상태의 게임 상세 캐시를 GC하기까지 대기 시간 */
+export const GAME_DETAIL_GC_TIME = 1000 * 60 * 30; // 30분
+
 const hasMeaningfulText = (
   value: string | null | undefined,
 ): value is string => {

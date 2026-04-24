@@ -33,6 +33,101 @@ const formatNullableText = (value: string | null | undefined) =>
 const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
 
+const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
+  const title = normalizeMeaningfulText(game.name) ?? 'N/A';
+  const listGenres = normalizeMeaningfulTextList(game.genres);
+  const genreLabel = listGenres.length > 0 ? listGenres.join(', ') : null;
+
+  return (
+    <>
+      {/* 상단: 커버 이미지 + 기본 정보 */}
+      <div className="grid gap-5 px-5 pt-5 pb-6 sm:grid-cols-[216px_minmax(0,1fr)] sm:px-7 sm:pt-7">
+        {/* 커버 이미지: 리스트 썸네일로 즉시 표시 */}
+        <div className="relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] sm:w-54">
+          {game.thumbnailUrl ? (
+            <img
+              src={game.thumbnailUrl}
+              alt={title}
+              className="h-full w-full object-cover opacity-50"
+            />
+          ) : (
+            <div className="h-full w-full animate-pulse bg-white/8" />
+          )}
+        </div>
+
+        {/* 텍스트 영역 */}
+        <div className="min-w-0 sm:pr-12">
+          {/* 제목 (리스트에서 알고 있는 값) + 찜하기 버튼 스켈레톤 */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 pr-10 sm:items-center sm:pr-0">
+            <h2
+              id="game-detail-modal-title"
+              className="min-w-0 truncate text-2xl leading-tight font-bold sm:text-3xl"
+              title={title}
+            >
+              {title}
+            </h2>
+            <div className="h-10 w-[4.5rem] shrink-0 animate-pulse rounded-md bg-white/8" />
+          </div>
+
+          {/* 장르: 리스트 값으로 즉시 표시, 없으면 스켈레톤 */}
+          {genreLabel ? (
+            <p className="mt-3 text-sm text-white/65">{genreLabel}</p>
+          ) : (
+            <div className="mt-3 h-4 w-1/3 animate-pulse rounded bg-white/8" />
+          )}
+
+          {/* 평점: 리스트에서 알고 있는 값 */}
+          <p className="mt-2 text-sm text-white/70">
+            평점 기준{' '}
+            <span className="font-semibold text-[#ff4b55]">
+              {typeof game.rating === 'number'
+                ? `${game.rating.toFixed(1)}점`
+                : 'N/A'}
+            </span>
+          </p>
+
+          {/* 설명 스켈레톤 */}
+          <div className="mt-5 space-y-2">
+            <div className="h-4 w-full animate-pulse rounded bg-white/8" />
+            <div className="h-4 w-4/5 animate-pulse rounded bg-white/8" />
+          </div>
+        </div>
+      </div>
+
+      {/* 하단: 영상 + 상세 정보 테이블 */}
+      <div className="px-5 pb-6 sm:px-7 sm:pb-7">
+        {/* 영상 영역 스켈레톤 */}
+        <div className="aspect-video min-h-44 animate-pulse overflow-hidden rounded-lg border border-[#5a1115]/70 bg-[#2a1711] sm:min-h-72" />
+
+        {/* 상세 정보 행 */}
+        <dl className="mt-6 divide-y divide-white/10 border-y border-white/10">
+          {['게임 출시일', '게임 개발사', '게임 배급사'].map((label) => (
+            <div
+              key={label}
+              className="grid gap-1 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4"
+            >
+              <dt className="text-white/65">{label}</dt>
+              <dd>
+                <div className="h-4 w-28 animate-pulse rounded bg-white/8" />
+              </dd>
+            </div>
+          ))}
+          <div className="grid items-center gap-3 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
+            <dt className="text-white/65">외부 링크</dt>
+            <dd>
+              <div className="flex flex-wrap gap-2">
+                <div className="h-10 w-22 animate-pulse rounded-md bg-white/8" />
+                <div className="h-10 w-14 animate-pulse rounded-md bg-white/8" />
+                <div className="h-10 w-24 animate-pulse rounded-md bg-white/8" />
+              </div>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </>
+  );
+};
+
 const toYouTubeEmbedUrl = (url: string): string | null => {
   const match = url.match(
     /(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
@@ -171,12 +266,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         </button>
 
         {detailQuery.isPending ? (
-          <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
-            <p className="mt-4 text-sm text-white/50">
-              게임 정보를 불러오는 중입니다.
-            </p>
-          </div>
+          <GameDetailModalSkeleton game={game} />
         ) : detailQuery.isError ? (
           <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
             <h2
