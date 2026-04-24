@@ -1,15 +1,13 @@
 import { Search } from 'lucide-react';
 import { Link } from 'react-router';
 
-const CTA_PENDING_MESSAGE = '준비 중입니다.';
-
 type MainRecommendationCtaProps = {
   icon: typeof Search;
   iconLabel: string;
   title: string;
   description: string;
   buttonLabel: string;
-  to?: string;
+  to: string;
 };
 
 const MainRecommendationCta = ({
@@ -39,20 +37,9 @@ const MainRecommendationCta = ({
       <p className="mt-5 max-w-xl text-sm leading-6 text-white/70 sm:text-base lg:mt-3 lg:text-[15px] lg:leading-6">
         {description}
       </p>
-      {to ? (
-        <Link to={to} className={`${actionClassName} lg:mt-5`}>
-          {buttonLabel}
-        </Link>
-      ) : (
-        <button
-          type="button"
-          onClick={() => window.alert(CTA_PENDING_MESSAGE)}
-          title="준비 중입니다."
-          className={`${actionClassName} lg:mt-5`}
-        >
-          {buttonLabel}
-        </button>
-      )}
+      <Link to={to} className={`${actionClassName} lg:mt-5`}>
+        {buttonLabel}
+      </Link>
     </article>
   );
 };
