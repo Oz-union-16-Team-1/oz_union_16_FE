@@ -70,6 +70,12 @@ export interface UpdateUserInfoRequest {
   profile_img_url?: string;
 }
 
+export interface UpdateUserInfoResponse {
+  nickname?: CurrentUserProfileResponse['nickname'];
+  profile_img_url?: CurrentUserProfileResponse['profile_img_url'];
+  detail: string;
+}
+
 export interface ProfileImagePresignedUrlRequest {
   file_name: string;
   content_type: string;

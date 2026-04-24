@@ -24,14 +24,17 @@ import {
 import { authKeys } from './queryKeys';
 import type {
   ConfirmProfileImageRequest,
+  CurrentUserProfileResponse,
   LikedGamesResponse,
   LikedGamesRequest,
   ProfileImagePresignedUrlRequest,
+  UpdateUserInfoResponse,
   UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
 import { syncGameLikeStateInQueryCache } from '../../games/queryCache';
 import { syncAuthAccount } from '../utils/sessionManager';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
 
@@ -183,10 +186,42 @@ export const useUpdateUserInfoMutation = () => {
     mutationKey: authKeys.updateUserInfo(),
     mutationFn: (payload: UpdateUserInfoRequest) => updateUserInfo(payload),
     onSuccess: (data) => {
-      queryClient.setQueryData(authKeys.me(), data);
-      syncAuthAccount(data);
+      const cachedProfile =
+        queryClient.getQueryData<CurrentUserProfileResponse>(authKeys.me()) ??
+        useAuthStore.getState().account;
+
+      if (!cachedProfile) {
+        void queryClient.invalidateQueries({ queryKey: authKeys.me() });
+        return;
+      }
+
+      const nextProfile: CurrentUserProfileResponse = {
+        ...cachedProfile,
+        ...mergeUpdatedUserInfo(cachedProfile, data),
+      };
+
+      queryClient.setQueryData(authKeys.me(), nextProfile);
+      syncAuthAccount(nextProfile);
     },
   });
+};
+
+const mergeUpdatedUserInfo = (
+  currentProfile: CurrentUserProfileResponse,
+  response: UpdateUserInfoResponse,
+): Partial<CurrentUserProfileResponse> => {
+  const nextProfile: Partial<CurrentUserProfileResponse> = {};
+
+  if (typeof response.nickname === 'string') {
+    nextProfile.nickname = response.nickname;
+  }
+
+  if (response.profile_img_url !== undefined) {
+    nextProfile.profile_img_url =
+      response.profile_img_url ?? currentProfile.profile_img_url ?? null;
+  }
+
+  return nextProfile;
 };
 
 export const useCheckIdDuplicateMutation = () =>
