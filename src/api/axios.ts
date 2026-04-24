@@ -5,13 +5,12 @@ import axios, {
 } from 'axios';
 
 import { logAxiosError } from './logApiError';
-import { refreshAccessToken } from '../features/auth/api/auth';
-import {
-  AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
-  createAuthSessionExpiredEvent,
-} from '../features/auth/constants/session';
 import { apiBaseUrl } from '../lib/env';
 import { useAuthStore } from '../store/useAuthStore';
+import {
+  expireAuthSession,
+  refreshStoredAccessToken,
+} from '../features/auth/utils/sessionManager';
 
 /**
  * [Refactor] 인증 아키텍처 업데이트 (#94)
@@ -38,28 +37,11 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
 
 let refreshAccessTokenPromise: Promise<string> | null = null;
 
-const clearAuthAndNotifySessionExpired = () => {
-  useAuthStore.getState().clearAuth();
-
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      createAuthSessionExpiredEvent({
-        noticeMessage: AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
-        source: 'refresh',
-      }),
-    );
-  }
-};
-
 const getRefreshedAccessToken = async () => {
   if (!refreshAccessTokenPromise) {
-    refreshAccessTokenPromise = refreshAccessToken()
-      .then(({ access_token }) => {
-        useAuthStore.getState().setAccessToken(access_token);
-        return access_token;
-      })
+    refreshAccessTokenPromise = refreshStoredAccessToken()
       .catch((refreshError) => {
-        clearAuthAndNotifySessionExpired();
+        expireAuthSession();
 
         if (refreshError instanceof AxiosError) {
           logAxiosError(refreshError, 'auth-refresh');

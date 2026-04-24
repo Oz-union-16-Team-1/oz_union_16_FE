@@ -31,7 +31,7 @@ import type {
   UploadFileToS3Request,
 } from '../types/auth';
 import { syncGameLikeStateInQueryCache } from '../../games/queryCache';
-import { setAuthAccount } from '../../../utils/auth';
+import { syncAuthAccount } from '../utils/sessionManager';
 
 export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
 
@@ -184,7 +184,7 @@ export const useUpdateUserInfoMutation = () => {
     mutationFn: (payload: UpdateUserInfoRequest) => updateUserInfo(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(authKeys.me(), data);
-      setAuthAccount(data);
+      syncAuthAccount(data);
     },
   });
 };

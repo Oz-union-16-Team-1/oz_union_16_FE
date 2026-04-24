@@ -9,6 +9,7 @@ import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
  */
 
 export type AuthBootstrapStatus = 'idle' | 'loading' | 'ready';
+export type AuthAccessStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 const AUTH_PROFILE_PREVIEW_STORAGE_KEY = 'auth-profile-preview-image-url';
 
@@ -51,6 +52,13 @@ interface AuthState {
   setAuthBootstrapStatus: (status: AuthBootstrapStatus) => void;
 }
 
+export type AuthSessionStateSnapshot = {
+  isAuthenticated: boolean;
+  isAuthReady: boolean;
+  authBootstrapStatus: AuthBootstrapStatus;
+  accessStatus: AuthAccessStatus;
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   account: null,
@@ -62,7 +70,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       accessToken: token,
       isAuthenticated: !!token,
-      authBootstrapStatus: 'ready',
     }),
 
   setAccount: (account) => {
@@ -80,7 +87,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       account: account,
       profilePreviewImageUrl: account?.profile_img_url?.trim() ?? null,
       isAuthenticated: true,
-      authBootstrapStatus: 'ready',
     });
   },
 
@@ -118,6 +124,24 @@ export const clearLegacyAuthStorage = () => {
   ];
 
   LEGACY_KEYS.forEach((key) => window.localStorage.removeItem(key));
+};
+
+export const selectAuthSessionState = (
+  state: AuthState,
+): AuthSessionStateSnapshot => {
+  const isAuthReady = state.authBootstrapStatus === 'ready';
+  const accessStatus = !isAuthReady
+    ? 'loading'
+    : state.isAuthenticated
+      ? 'authenticated'
+      : 'unauthenticated';
+
+  return {
+    isAuthenticated: state.isAuthenticated,
+    isAuthReady,
+    authBootstrapStatus: state.authBootstrapStatus,
+    accessStatus,
+  };
 };
 
 // 하위 호환성을 위한 export (점진적 교체용)

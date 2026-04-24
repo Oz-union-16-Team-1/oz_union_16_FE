@@ -2,9 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
-import { clearAuthTokens } from '../../../utils/auth';
 import { authKeys } from '../api/queryKeys';
 import { useLogoutMutation } from '../api/useAuthApi';
+import { clearAuthSession } from '../utils/sessionManager';
 
 function useLogoutAction() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ function useLogoutAction() {
       // Invalid or expired tokens should not keep the UI in a logged-in state.
     }
 
-    clearAuthTokens();
+    clearAuthSession();
     await queryClient.cancelQueries({ queryKey: authKeys.all });
     queryClient.removeQueries({ queryKey: authKeys.all });
     navigate(ROUTES.HOME, { replace: true });

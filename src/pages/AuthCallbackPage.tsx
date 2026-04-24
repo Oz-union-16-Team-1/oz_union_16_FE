@@ -3,16 +3,15 @@ import { useLocation, useNavigate } from 'react-router';
 
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
-import {
-  extractAuthApiErrorMessage,
-  getCurrentUserProfile,
-  refreshAccessToken,
-} from '../features/auth/api/auth';
+import { extractAuthApiErrorMessage } from '../features/auth/api/auth';
 import {
   clearPendingSocialAuthProvider,
   getSocialCallbackErrorMessage,
 } from '../features/auth/utils/socialAuth';
-import { useAuthStore } from '../store/useAuthStore';
+import {
+  clearAuthSession,
+  restoreAuthSession,
+} from '../features/auth/utils/sessionManager';
 
 const DEFAULT_REFRESH_ERROR_MESSAGE =
   '세션을 확인하지 못했습니다. 다시 로그인해 주세요.';
@@ -20,7 +19,6 @@ const DEFAULT_REFRESH_ERROR_MESSAGE =
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setAuth, clearAuth } = useAuthStore();
   const handledSearchRef = useRef<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     '소셜 로그인 세션을 확인하는 중입니다.',
@@ -40,7 +38,7 @@ function AuthCallbackPage() {
       const callbackErrorMessage = getSocialCallbackErrorMessage(searchParams);
 
       if (callbackErrorMessage) {
-        clearAuth();
+        clearAuthSession();
         clearPendingSocialAuthProvider();
         navigate(`/${ROUTES.LOGIN}`, {
           replace: true,
@@ -50,16 +48,12 @@ function AuthCallbackPage() {
       }
 
       try {
-        const { access_token: accessToken } = await refreshAccessToken();
-        useAuthStore.getState().setAccessToken(accessToken);
-
-        const profile = await getCurrentUserProfile();
+        await restoreAuthSession();
 
         if (!isMounted) {
           return;
         }
 
-        setAuth(accessToken, profile);
         clearPendingSocialAuthProvider();
         navigate(ROUTES.HOME, { replace: true });
       } catch (error) {
@@ -67,7 +61,6 @@ function AuthCallbackPage() {
           return;
         }
 
-        clearAuth();
         clearPendingSocialAuthProvider();
         setStatusMessage(DEFAULT_REFRESH_ERROR_MESSAGE);
 
@@ -87,7 +80,7 @@ function AuthCallbackPage() {
     return () => {
       isMounted = false;
     };
-  }, [location.search, navigate, setAuth, clearAuth]);
+  }, [location.search, navigate]);
 
   return (
     <AuthLayout
