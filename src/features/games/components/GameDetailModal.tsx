@@ -170,7 +170,14 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
           <X aria-hidden="true" className="h-5 w-5" />
         </button>
 
-        {detailQuery.isError ? (
+        {detailQuery.isPending ? (
+          <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
+            <p className="mt-4 text-sm text-white/50">
+              게임 정보를 불러오는 중입니다.
+            </p>
+          </div>
+        ) : detailQuery.isError ? (
           <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
             <h2
               id="game-detail-modal-title"
