@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 
 import profileImg from '../../assets/프로필 이미지.png';
-import { ROUTES } from '../../constants/routes';
+import { isMyPagePath } from '../../constants/routeResolver';
+import { ROUTE_PATHS } from '../../constants/routes';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
 
 const PROFILE_MENU_ID = 'header-profile-menu';
@@ -16,7 +17,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { logout, isPending } = useLogoutAction();
   const location = useLocation();
-  const isMyPage = location.pathname === `/${ROUTES.MY_PAGE}`;
+  const isMyPage = isMyPagePath(location.pathname);
   const trimmedProfileImageUrl = profileImageUrl?.trim() || null;
   const resolvedProfileImageUrl = trimmedProfileImageUrl || profileImg;
 
@@ -87,7 +88,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
           className="bg-mypage-panel border-mypage-panel shadow-mypage-float absolute top-[calc(100%+0.85rem)] right-0 z-50 w-40 overflow-hidden rounded-2xl border p-2 backdrop-blur-xl"
         >
           <Link
-            to={`/${ROUTES.MY_PAGE}`}
+            to={ROUTE_PATHS.MY_PAGE}
             role="menuitem"
             aria-current={isMyPage ? 'page' : undefined}
             onClick={() => setIsOpen(false)}

@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { ROUTE_PATHS } from '../../../constants/routes';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { mockGameDetails } from '../../games/mockGameDetails';
 import { mockTopGames } from '../../games/mockGames';
@@ -28,7 +29,7 @@ import type {
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
 
 const mockUsers = createMockUserMap();
-const AUTH_CALLBACK_PATH = '/callback';
+const AUTH_CALLBACK_PATH = ROUTE_PATHS.AUTH_CALLBACK;
 
 const validGenders: AuthGender[] = ['M', 'W'];
 
