@@ -87,16 +87,23 @@ const formatRemainingBlockTime = (remainingMs: number) => {
   return `${String(minutes).padStart(1, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-function SurveyChatPanel() {
+type SurveyChatPanelProps = {
+  isHistoryView?: boolean;
+};
+
+function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const navigate = useNavigate();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
   const lastMessageCountRef = useRef(0);
+  const hasResolvedEntryCompletionStateRef = useRef(false);
   const [inputValue, setInputValue] = useState('');
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [isGuardrailPanelOpen, setIsGuardrailPanelOpen] = useState(false);
+  const [enteredWithCompletedSurvey, setEnteredWithCompletedSurvey] =
+    useState(false);
 
   const {
     sessionId,
@@ -163,6 +170,10 @@ function SurveyChatPanel() {
       ? '제한 종료'
       : `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`;
   const inputPlaceholder = useMemo(() => {
+    if (isHistoryView && recommendationReady) {
+      return '완료된 설문 기록을 다시 보고 있어요.';
+    }
+
     if (isChatTemporarilyBlocked) {
       return '반복된 이상행동으로 인해 5분간 채팅이 정지됩니다.';
     }
@@ -176,7 +187,34 @@ function SurveyChatPanel() {
     }
 
     return '취향과 관련된 게임 이야기를 입력해 주세요.';
-  }, [hasExpiredChatBlock, isChatTemporarilyBlocked, recommendationReady]);
+  }, [
+    hasExpiredChatBlock,
+    isChatTemporarilyBlocked,
+    isHistoryView,
+    recommendationReady,
+  ]);
+  const recommendationButtonLabel =
+    isHistoryView || enteredWithCompletedSurvey
+      ? '추천 결과로 돌아가기'
+      : '추천 결과 바로 보기';
+
+  useEffect(() => {
+    if (hasResolvedEntryCompletionStateRef.current) {
+      return;
+    }
+
+    if (
+      !hasBootstrapped &&
+      !sessionId &&
+      messages.length === 0 &&
+      !recommendationReady
+    ) {
+      return;
+    }
+
+    hasResolvedEntryCompletionStateRef.current = true;
+    setEnteredWithCompletedSurvey(recommendationReady && messages.length > 0);
+  }, [hasBootstrapped, messages.length, recommendationReady, sessionId]);
 
   useEffect(() => {
     if (!isChatTemporarilyBlocked) {
@@ -641,7 +679,7 @@ function SurveyChatPanel() {
                     onClick={handleMoveToRecommendation}
                     className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(150,0,0,0.32)] transition hover:-translate-y-px hover:brightness-105"
                   >
-                    추천 결과 바로 보기
+                    {recommendationButtonLabel}
                     <ChevronRight size={16} />
                   </button>
                 )}

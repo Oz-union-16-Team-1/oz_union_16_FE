@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Navigate, useLocation, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
@@ -36,10 +36,19 @@ function SurveyBackdrop() {
 
 function SurveyPage() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const authGate = useAuthGate();
   const canAccessSurvey = authGate.accessStatus === 'authorized';
   const account = useAuthStore((state) => state.account);
   const syncOwnerKey = useSurveyStore((state) => state.syncOwnerKey);
+  const messages = useSurveyStore((state) => state.messages);
+  const recommendationReady = useSurveyStore(
+    (state) => state.recommendationReady,
+  );
+  const isHistoryMode = searchParams.get('mode') === 'history';
+  const [enteredWithCompletedSurvey] = useState(
+    () => recommendationReady && messages.length > 0,
+  );
   const surveyOwnerKey = account?.login_id
     ? `survey-user:${account.login_id}`
     : authGate.isAuthenticated
@@ -51,6 +60,12 @@ function SurveyPage() {
   useEffect(() => {
     syncOwnerKey(surveyOwnerKey);
   }, [surveyOwnerKey, syncOwnerKey]);
+  const shouldRedirectCompletedEntry =
+    canAccessSurvey &&
+    !isHistoryMode &&
+    enteredWithCompletedSurvey &&
+    recommendationReady &&
+    messages.length > 0;
 
   if (authGate.accessStatus === 'unauthorized') {
     return (
@@ -62,6 +77,12 @@ function SurveyPage() {
           redirectTo: `${location.pathname}${location.search}`,
         }}
       />
+    );
+  }
+
+  if (shouldRedirectCompletedEntry) {
+    return (
+      <Navigate to={`/${ROUTES.RECOMMENDATION_LIST}?source=survey`} replace />
     );
   }
 
@@ -80,7 +101,7 @@ function SurveyPage() {
             className="mx-auto max-w-190 sm:py-12"
           />
         ) : canAccessSurvey ? (
-          <SurveyChatPanel />
+          <SurveyChatPanel isHistoryView={isHistoryMode} />
         ) : (
           <AuthGateStatusPanel
             title="로그인 후 설문을 시작할 수 있어요."
