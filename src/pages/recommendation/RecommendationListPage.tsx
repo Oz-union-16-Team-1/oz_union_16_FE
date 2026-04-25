@@ -1,8 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { ChevronDown, ChevronRight, Heart, Star } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  RotateCcw,
+  Star,
+} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
@@ -27,8 +33,10 @@ import type {
   MatchResultItem,
   MatchResultResponse,
 } from '../../features/matching/types';
+import { useResetSurveyMutation } from '../../features/survey/api/useSurveyApi';
 import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../features/survey/api/survey';
+import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
 import type {
   SurveyResultItem,
   SurveyResultResponse,
@@ -261,6 +269,7 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 }
 
 function RecommendationListPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const [pendingLikeGameId, setPendingLikeGameId] = useState<number | null>(
@@ -276,6 +285,17 @@ function RecommendationListPage() {
   const detailListScrollTopRef = useRef<number | null>(null);
   const detailWindowScrollYRef = useRef<number>(0);
   const queryClient = useQueryClient();
+  const surveySessionId = useSurveyStore((state) => state.sessionId);
+  const surveyRecommendationReady = useSurveyStore(
+    (state) => state.recommendationReady,
+  );
+  const hydrateInitialSession = useSurveyStore(
+    (state) => state.hydrateInitialSession,
+  );
+  const clearModerationState = useSurveyStore(
+    (state) => state.clearModerationState,
+  );
+  const resetSurveyState = useSurveyStore((state) => state.resetSurveyState);
   const source = searchParams.get('source');
   const legacySessionId = searchParams.get('session_id');
   const isMatchSource = source === 'match';
@@ -290,6 +310,7 @@ function RecommendationListPage() {
   const matchResultsQuery = useMatchResultsInfinite(
     isMatchSource && canAccessPage,
   );
+  const resetSurveyMutation = useResetSurveyMutation();
   const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;
   const { error, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
     activeQuery;
@@ -311,6 +332,8 @@ function RecommendationListPage() {
       errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
       recommendationItems.length === 0,
     );
+  const shouldShowSurveyActions =
+    isSurveySource && canAccessPage && surveyRecommendationReady;
 
   useLayoutEffect(() => {
     if (!canAccessPage) {
@@ -435,6 +458,40 @@ function RecommendationListPage() {
       typeof window !== 'undefined' ? window.scrollY : null;
 
     void fetchNextPage();
+  };
+
+  const handleViewPreviousSurvey = () => {
+    navigate(`/${ROUTES.SURVEY}?mode=history`);
+  };
+
+  const handleResetSurvey = async () => {
+    if (resetSurveyMutation.isPending) {
+      return;
+    }
+
+    setLikeFeedbackMessage(null);
+
+    if (!surveySessionId) {
+      clearModerationState();
+      resetSurveyState();
+      queryClient.removeQueries({ queryKey: ['survey-results'] });
+      navigate(`/${ROUTES.SURVEY}`);
+      return;
+    }
+
+    try {
+      const response = await resetSurveyMutation.mutateAsync({
+        session_id: surveySessionId,
+      });
+
+      setSelectedGame(null);
+      clearModerationState();
+      hydrateInitialSession(response);
+      queryClient.removeQueries({ queryKey: ['survey-results'] });
+      navigate(`/${ROUTES.SURVEY}`);
+    } catch (requestError) {
+      setLikeFeedbackMessage(extractApiErrorMessage(requestError));
+    }
   };
 
   useEffect(() => {
@@ -600,18 +657,45 @@ function RecommendationListPage() {
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
         <section className="mx-auto w-full max-w-245">
           <div className="mb-8">
-            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
-              게임 추천 리스트
-            </h1>
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              {recommendationHighlights.map((highlight) => (
-                <span
-                  key={highlight}
-                  className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
-                >
-                  {highlight}
-                </span>
-              ))}
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
+                  게임 추천 리스트
+                </h1>
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  {recommendationHighlights.map((highlight) => (
+                    <span
+                      key={highlight}
+                      className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
+                    >
+                      {highlight}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {shouldShowSurveyActions ? (
+                <div className="flex flex-wrap items-center gap-2.5 md:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleViewPreviousSurvey}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6"
+                  >
+                    이전 설문 보기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleResetSurvey()}
+                    disabled={resetSurveyMutation.isPending}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RotateCcw size={16} />
+                    {resetSurveyMutation.isPending
+                      ? '설문 초기화 중...'
+                      : '설문 초기화'}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
