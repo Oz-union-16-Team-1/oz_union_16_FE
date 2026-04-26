@@ -98,16 +98,13 @@ function MatchingListPage() {
                       alt={genre.title}
                       className="aspect-[16/8.4] w-full object-cover transition duration-300 group-hover:scale-[1.025] group-hover:brightness-110"
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,8,0.18),rgba(6,6,8,0.72))]" />
-                    <p className="absolute top-3.5 left-3.5 text-[10px] font-medium tracking-[0.2em] text-white/76 uppercase">
-                      {genre.subtitle}
-                    </p>
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,8,0.1),rgba(6,6,8,0.28)_34%,rgba(6,6,8,0.86))]" />
                     <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-3">
                       <div>
                         <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-white">
                           {genre.title}
                         </h2>
-                        <p className="mt-1.5 max-w-[24ch] text-[13px] leading-5 break-keep text-white/72">
+                        <p className="mt-1.5 max-w-[24ch] text-[13px] leading-5 font-medium break-keep text-white/86 [text-shadow:0_1px_10px_rgba(0,0,0,0.65)]">
                           {genre.description}
                         </p>
                       </div>

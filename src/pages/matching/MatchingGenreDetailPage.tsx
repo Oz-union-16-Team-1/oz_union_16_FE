@@ -119,7 +119,6 @@ function MatchingGenreDetailPage() {
 
   const displayCandidates = candidates;
   const totalSteps = displayCandidates.length;
-  const totalGamesLabel = `${totalSteps}개의 게임`;
   const safeIndex =
     totalSteps > 0 ? Math.min(currentIndex, totalSteps - 1) : currentIndex;
   const currentCandidate = displayCandidates[safeIndex];
@@ -361,14 +360,9 @@ function MatchingGenreDetailPage() {
                 <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[40px]">
                   매칭 과정을 따라가세요
                 </h1>
-                <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
-                  트레일러와 분위기를 보며 {totalGamesLabel}에 별점을
-                  남겨보세요. 좋아요는 마음에 든 게임을 표시해 두고
-                  마이페이지에서 다시 확인할 수 있게 함께 저장돼요.
-                </p>
               </div>
 
-              <div className="mt-7">
+              <div className="mt-6">
                 <MatchingGuideCards />
               </div>
 
