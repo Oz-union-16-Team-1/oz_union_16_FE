@@ -1,4 +1,6 @@
 import { api } from '../../../api/axios';
+import { isMockServiceWorkerEnabled } from '../../../lib/env';
+import { getMatchingMockCandidatesSnapshot } from '../mocks/runtime';
 import type {
   MatchingApiCandidateItem,
   MatchingApiCandidatesResponse,
@@ -25,22 +27,38 @@ const normalizeMatchCandidate = (item: MatchingApiCandidateItem) => ({
 });
 
 export const getMatchCandidates = async (genreId: number) => {
-  const response = await api.get<MatchingApiCandidatesResponse>(
-    `${MATCHING_BASE_PATH}/candidates`,
-    {
-      params: {
-        genre_id: genreId,
-      },
-    },
-  );
+  const getMockFallback = () => getMatchingMockCandidatesSnapshot(genreId);
 
-  return {
-    genre_id: response.data.genre_id,
-    count: response.data.count,
-    results: Array.isArray(response.data.results)
+  try {
+    const response = await api.get<MatchingApiCandidatesResponse>(
+      `${MATCHING_BASE_PATH}/candidates`,
+      {
+        params: {
+          genre_id: genreId,
+        },
+      },
+    );
+
+    const results = Array.isArray(response.data.results)
       ? response.data.results.map(normalizeMatchCandidate)
-      : [],
-  } satisfies MatchingCandidatesResponse;
+      : [];
+
+    if (isMockServiceWorkerEnabled() && results.length === 0) {
+      return getMockFallback();
+    }
+
+    return {
+      genre_id: response.data.genre_id,
+      count: response.data.count,
+      results,
+    } satisfies MatchingCandidatesResponse;
+  } catch (error) {
+    if (!isMockServiceWorkerEnabled()) {
+      throw error;
+    }
+
+    return getMockFallback();
+  }
 };
 
 export const getMatchingGenreImage = async (genreId: number) => {
