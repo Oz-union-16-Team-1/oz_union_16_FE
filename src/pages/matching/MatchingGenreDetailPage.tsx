@@ -201,8 +201,18 @@ function MatchingGenreDetailPage() {
       nextIsLiked: boolean;
     }) =>
       nextIsLiked ? likeGame(candidate.game_id) : unlikeGame(candidate.game_id),
-    onMutate: () => {
+    onMutate: async ({ candidate, nextIsLiked }) => {
       setLikeFeedbackMessage(null);
+
+      updateLikedGamesCache(candidate, nextIsLiked);
+      syncGameLikeStateInQueryCache(queryClient, {
+        gameId: candidate.game_id,
+        isLiked: nextIsLiked,
+      });
+
+      return {
+        gameId: candidate.game_id,
+      };
     },
     onSuccess: (response, variables) => {
       updateLikedGamesCache(variables.candidate, response.isLiked);
@@ -217,6 +227,21 @@ function MatchingGenreDetailPage() {
     },
     onError: (error) => {
       setLikeFeedbackMessage(getMatchingLikeErrorMessage(error));
+      void queryClient.invalidateQueries({
+        queryKey: authKeys.likedGames(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['match-candidates'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['survey-results'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['match-results'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['games'],
+      });
     },
   });
 
