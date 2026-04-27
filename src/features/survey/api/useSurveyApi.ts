@@ -1,5 +1,11 @@
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 
+import { shouldRetryApiQuery } from '../../../api/queryRetry';
+import {
+  getPaginatedCount,
+  getPaginatedLoadedCount,
+  getPaginatedNext,
+} from '../../../utils/paginatedResults';
 import {
   continueSurveyChat,
   getSurveyResults,
@@ -33,15 +39,14 @@ export const useSurveyResultsInfinite = (enabled = true) =>
         page_size: 5,
       }),
     getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = allPages.reduce(
-        (count, page) => count + page.results.length,
-        0,
-      );
+      const loadedCount = getPaginatedLoadedCount(allPages);
+      const totalCount = getPaginatedCount(lastPage, 15);
 
-      if (loadedCount >= 15) {
+      if (loadedCount >= totalCount) {
         return undefined;
       }
 
-      return lastPage.next;
+      return getPaginatedNext(lastPage);
     },
+    retry: shouldRetryApiQuery,
   });

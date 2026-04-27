@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useLayoutEffect } from 'react';
 import { useSearchParams } from 'react-router';
 
+import { getPaginatedResults } from '../../../utils/paginatedResults';
 import { useMatchResultsInfinite } from '../../matching/api/useMatchingApi';
 import type { MatchResultResponse } from '../../matching/types';
 import { useSurveyResultsInfinite } from '../../survey/api/useSurveyApi';
@@ -38,22 +40,34 @@ export const useRecommendationResultsSource = ({
     activeQuery;
 
   const surveyItems =
-    surveyResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
+    surveyResultsQuery.data?.pages.flatMap((page) =>
+      getPaginatedResults(page),
+    ) ?? [];
   const matchItems =
-    matchResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
+    matchResultsQuery.data?.pages.flatMap((page) =>
+      getPaginatedResults(page),
+    ) ?? [];
   const recommendationItems = (isMatchSource ? matchItems : surveyItems).map(
     normalizeRecommendationItem,
   );
   const recommendationHighlights =
     getRecommendationHighlights(recommendationItems);
-  const errorMessage = error ? extractApiErrorMessage(error) : null;
+  const isResultNotFound =
+    error instanceof AxiosError && error.response?.status === 404;
+  const errorMessage =
+    error && !isResultNotFound ? extractApiErrorMessage(error) : null;
+  const emptyStateMessage =
+    isResultNotFound && isMatchSource
+      ? '매칭 추천 결과가 아직 없습니다. 먼저 매칭 평가를 완료해 주세요.'
+      : isResultNotFound && isSurveySource
+        ? '설문 추천 결과가 아직 준비되지 않았습니다. 설문을 먼저 완료해 주세요.'
+        : isMatchSource
+          ? '매칭 추천 결과가 아직 없습니다.'
+          : '추천 결과가 아직 없습니다.';
   const shouldShowMatchEntryCta =
     isMatchSource &&
     !isLoading &&
-    Boolean(
-      errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
-      recommendationItems.length === 0,
-    );
+    (isResultNotFound || recommendationItems.length === 0);
 
   useLayoutEffect(() => {
     if (!canAccessPage) {
@@ -99,6 +113,8 @@ export const useRecommendationResultsSource = ({
     recommendationItems,
     recommendationHighlights,
     errorMessage,
+    emptyStateMessage,
+    isResultNotFound,
     shouldShowMatchEntryCta,
     error,
     isLoading,

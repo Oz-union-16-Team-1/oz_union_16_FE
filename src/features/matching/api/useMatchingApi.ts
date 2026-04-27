@@ -5,6 +5,12 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 
+import { shouldRetryApiQuery } from '../../../api/queryRetry';
+import {
+  getPaginatedCount,
+  getPaginatedLoadedCount,
+  getPaginatedNext,
+} from '../../../utils/paginatedResults';
 import {
   getMatchCandidates,
   getMatchingGenreImage,
@@ -21,6 +27,7 @@ export const useMatchCandidatesQuery = (
     enabled: genreId !== null && enabled,
     queryFn: () => getMatchCandidates(genreId!),
     staleTime: 60_000,
+    retry: shouldRetryApiQuery,
   });
 
 export const useMatchingGenreImageQuery = (
@@ -63,15 +70,14 @@ export const useMatchResultsInfinite = (enabled = true) =>
         page_size: 5,
       }),
     getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = allPages.reduce(
-        (count, page) => count + page.results.length,
-        0,
-      );
+      const loadedCount = getPaginatedLoadedCount(allPages);
+      const totalCount = getPaginatedCount(lastPage, 15);
 
-      if (loadedCount >= 15) {
+      if (loadedCount >= totalCount) {
         return undefined;
       }
 
-      return lastPage.next;
+      return getPaginatedNext(lastPage);
     },
+    retry: shouldRetryApiQuery,
   });

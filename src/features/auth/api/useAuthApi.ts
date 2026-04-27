@@ -5,6 +5,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
+import { shouldRetryApiQuery } from '../../../api/queryRetry';
+import {
+  getPaginatedCount,
+  getPaginatedLoadedCount,
+} from '../../../utils/paginatedResults';
 import {
   checkIdDuplicate,
   checkNicknameDuplicate,
@@ -90,17 +95,16 @@ export const useLikedGamesInfiniteQuery = (
     staleTime: 60_000,
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
-      const loadedGameCount = allPages.reduce(
-        (count, page) => count + page.results.length,
-        0,
-      );
+      const loadedGameCount = getPaginatedLoadedCount(allPages);
+      const totalCount = getPaginatedCount(lastPage, loadedGameCount);
 
-      if (loadedGameCount >= lastPage.count) {
+      if (loadedGameCount >= totalCount) {
         return undefined;
       }
 
       return allPages.length + 1;
     },
+    retry: shouldRetryApiQuery,
   });
 
 export const useUnlikeLikedGameMutation = () => {
