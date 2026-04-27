@@ -7,14 +7,14 @@ function FavoriteGameCardSkeleton({
 }: FavoriteGameCardSkeletonProps) {
   return (
     <div
-      className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 2xl:grid-cols-4"
+      className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4"
       aria-live="polite"
       aria-busy="true"
     >
       {Array.from({ length: count }).map((_, index) => (
         <article
           key={index}
-          className="border-mypage-card bg-mypage-card overflow-hidden rounded-[22px] border"
+          className="border-mypage-card bg-mypage-card box-border min-w-0 overflow-hidden rounded-[22px] border"
         >
           <div className="aspect-3/4 animate-pulse bg-white/8" />
           <div className="space-y-2 px-4 py-4">
