@@ -41,14 +41,15 @@ function SurveyPage() {
   const canAccessSurvey = authGate.accessStatus === 'authorized';
   const account = useAuthStore((state) => state.account);
   const syncOwnerKey = useSurveyStore((state) => state.syncOwnerKey);
+  const storedOwnerKey = useSurveyStore((state) => state.ownerKey);
   const messages = useSurveyStore((state) => state.messages);
   const recommendationReady = useSurveyStore(
     (state) => state.recommendationReady,
   );
   const isHistoryMode = searchParams.get('mode') === 'history';
-  const [enteredWithCompletedSurvey] = useState(
-    () => recommendationReady && messages.length > 0,
-  );
+  const [enteredWithCompletedSurvey, setEnteredWithCompletedSurvey] = useState<
+    boolean | null
+  >(null);
   const surveyOwnerKey = account?.login_id
     ? `survey-user:${account.login_id}`
     : authGate.isAuthenticated
@@ -60,10 +61,35 @@ function SurveyPage() {
   useEffect(() => {
     syncOwnerKey(surveyOwnerKey);
   }, [surveyOwnerKey, syncOwnerKey]);
+  useEffect(() => {
+    if (enteredWithCompletedSurvey !== null) {
+      return undefined;
+    }
+
+    if (storedOwnerKey !== surveyOwnerKey) {
+      return undefined;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setEnteredWithCompletedSurvey(
+        (current) => current ?? (recommendationReady && messages.length > 0),
+      );
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [
+    enteredWithCompletedSurvey,
+    messages.length,
+    recommendationReady,
+    storedOwnerKey,
+    surveyOwnerKey,
+  ]);
   const shouldRedirectCompletedEntry =
     canAccessSurvey &&
     !isHistoryMode &&
-    enteredWithCompletedSurvey &&
+    enteredWithCompletedSurvey === true &&
     recommendationReady &&
     messages.length > 0;
 
