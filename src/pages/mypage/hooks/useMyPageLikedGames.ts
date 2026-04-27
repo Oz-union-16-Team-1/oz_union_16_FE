@@ -16,6 +16,7 @@ import type {
 } from '../../../features/auth/types/auth';
 import type { MyPageToastPayload } from '../types';
 import { toFavoriteGameListItem, toFavoriteGamePreview } from '../utils';
+import { getPaginatedResults } from '../../../utils/paginatedResults';
 
 type UseMyPageLikedGamesOptions = {
   enabled: boolean;
@@ -49,7 +50,7 @@ function useMyPageLikedGames({
   const likedGameResults = useMemo(() => {
     const pages = resolvedLikedGamesData?.pages ?? [];
 
-    return pages.flatMap((page) => page.results);
+    return pages.flatMap((page) => getPaginatedResults(page));
   }, [resolvedLikedGamesData]);
   const favoriteGames = useMemo(() => {
     const deduplicatedGames = new Map<number, LikedGameItemResponse>();

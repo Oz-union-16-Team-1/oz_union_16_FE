@@ -7,6 +7,11 @@ import { useDebouncedValue } from '../../../features/games/hooks/useDebouncedVal
 import { gamesKeys } from '../../../features/games/queryCache';
 import { normalizeSearchText } from '../../../features/games/search';
 import type { GameListItem } from '../../../features/games/types';
+import {
+  getPaginatedCount,
+  getPaginatedLoadedCount,
+  getPaginatedResults,
+} from '../../../utils/paginatedResults';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_RESULT_PAGE_SIZE = 20;
@@ -56,12 +61,10 @@ export const useMainPageGames = (): MainPageGamesState => {
         pageSize: SEARCH_RESULT_PAGE_SIZE,
       }),
     getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = allPages.reduce(
-        (count, page) => count + page.results.length,
-        0,
-      );
+      const loadedCount = getPaginatedLoadedCount(allPages);
+      const totalCount = getPaginatedCount(lastPage, loadedCount);
 
-      if (loadedCount >= lastPage.count) {
+      if (loadedCount >= totalCount) {
         return undefined;
       }
 
@@ -72,7 +75,9 @@ export const useMainPageGames = (): MainPageGamesState => {
   });
 
   const games = isSearchMode
-    ? (searchGamesQuery.data?.pages.flatMap((page) => page.results) ?? [])
+    ? (searchGamesQuery.data?.pages.flatMap((page) =>
+        getPaginatedResults(page),
+      ) ?? [])
     : (topGamesQuery.data ?? []);
   const isGamesLoading = isSearchMode
     ? searchGamesQuery.isLoading
