@@ -6,6 +6,7 @@ type AuthInputFieldMessageTone = 'success' | 'muted';
 type AuthInputFieldProps = {
   id: string;
   label: string;
+  labelAction?: ReactNode;
   errorMessage?: string;
   helperMessage?: string;
   helperMessageTone?: AuthInputFieldMessageTone;
@@ -18,6 +19,7 @@ type AuthInputFieldProps = {
 function AuthInputField({
   id,
   label,
+  labelAction,
   errorMessage,
   helperMessage,
   helperMessageTone = 'muted',
@@ -38,12 +40,15 @@ function AuthInputField({
 
   return (
     <div className={`space-y-2 ${containerClassName} sm:space-y-2.5`}>
-      <label
-        htmlFor={id}
-        className="text-login-label block text-sm font-medium"
-      >
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label
+          htmlFor={id}
+          className="text-login-label block min-w-0 text-sm font-medium"
+        >
+          {label}
+        </label>
+        {labelAction ? <div className="shrink-0">{labelAction}</div> : null}
+      </div>
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <InputControl
           id={id}

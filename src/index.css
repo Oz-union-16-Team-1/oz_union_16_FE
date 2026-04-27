@@ -17,20 +17,20 @@
   --color-header-shadow-depth: rgba(0, 0, 0, 0.32);
 
   --color-login-page: #000000;
-  --color-login-field: #1a1a1a;
-  --color-login-field-border: #262626;
+  --color-login-field: #202227;
+  --color-login-field-border: rgba(255, 255, 255, 0.12);
   --color-login-divider: #262626;
   --color-login-divider-line: #3a3a3a;
   --color-login-divider-text: #a3a3a3;
   --color-login-helper: #a3a3a3;
   --color-login-outline: rgba(255, 255, 255, 0.12);
-  --color-login-label: #8f8f8f;
-  --color-login-muted: #676767;
-  --color-login-google: #1a1a1a;
-  --color-login-google-border: #1a1a1a;
-  --color-login-kakao: #fee500;
+  --color-login-label: #a8a8ae;
+  --color-login-muted: #7f828a;
+  --color-login-google: #dcdde1;
+  --color-login-google-border: rgba(255, 255, 255, 0.16);
+  --color-login-kakao: #d6c33d;
   --color-login-kakao-text: #000000;
-  --color-login-naver: #03c75a;
+  --color-login-naver: #2fa05f;
   --color-login-primary: #f20f17;
   --color-login-primary-hover: #dd0d14;
   --color-auth-panel: rgba(12, 12, 14, 0.88);
