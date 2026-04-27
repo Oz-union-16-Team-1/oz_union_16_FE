@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 
 import { extractAuthApiErrorMessage } from '../../../features/auth/api/auth';
 import {
@@ -6,9 +7,13 @@ import {
   useLikedGamesInfiniteQuery,
   useUnlikeLikedGameMutation,
 } from '../../../features/auth/api/useAuthApi';
+import { authKeys } from '../../../features/auth/api/queryKeys';
 import type { GameListItem } from '../../../features/games/types';
 import type { FavoriteGamePreview } from '../../../features/mypage/types';
-import type { LikedGameItemResponse } from '../../../features/auth/types/auth';
+import type {
+  LikedGameItemResponse,
+  LikedGamesResponse,
+} from '../../../features/auth/types/auth';
 import type { MyPageToastPayload } from '../types';
 import { toFavoriteGameListItem, toFavoriteGamePreview } from '../utils';
 
@@ -23,6 +28,7 @@ function useMyPageLikedGames({
   onOpenGameDetail,
   onToast,
 }: UseMyPageLikedGamesOptions) {
+  const queryClient = useQueryClient();
   const likedGamesQuery = useLikedGamesInfiniteQuery(
     enabled,
     DEFAULT_LIKED_GAMES_PAGE_SIZE,
@@ -32,11 +38,19 @@ function useMyPageLikedGames({
     useState<FavoriteGamePreview | null>(null);
   const favoriteGamesScrollRef = useRef<HTMLDivElement | null>(null);
   const favoriteGamesLoadMoreRef = useRef<HTMLDivElement | null>(null);
+  const cachedLikedGamesData = queryClient.getQueryData<
+    InfiniteData<LikedGamesResponse>
+  >(
+    authKeys.likedGamesInfinite({
+      page_size: DEFAULT_LIKED_GAMES_PAGE_SIZE,
+    }),
+  );
+  const resolvedLikedGamesData = likedGamesQuery.data ?? cachedLikedGamesData;
   const likedGameResults = useMemo(() => {
-    const pages = likedGamesQuery.data?.pages ?? [];
+    const pages = resolvedLikedGamesData?.pages ?? [];
 
     return pages.flatMap((page) => page.results);
-  }, [likedGamesQuery.data]);
+  }, [resolvedLikedGamesData]);
   const favoriteGames = useMemo(() => {
     const deduplicatedGames = new Map<number, LikedGameItemResponse>();
 
@@ -46,14 +60,14 @@ function useMyPageLikedGames({
 
     return [...deduplicatedGames.values()].map(toFavoriteGamePreview);
   }, [likedGameResults]);
+  const immediateFavoriteCount =
+    resolvedLikedGamesData?.pages?.[0]?.count ?? favoriteGames.length;
   const hasFavoriteGamesNextPage = Boolean(likedGamesQuery.hasNextPage);
   const isFavoriteGamesFetchNextPageError =
     likedGamesQuery.isFetchNextPageError;
   const isFavoriteGamesFetchingNextPage = likedGamesQuery.isFetchingNextPage;
   const fetchNextFavoriteGamesPage = likedGamesQuery.fetchNextPage;
   const refetchFavoriteGames = likedGamesQuery.refetch;
-  const favoriteCount =
-    likedGamesQuery.data?.pages?.[0]?.count ?? favoriteGames.length;
   const isFavoriteGamesLoading =
     likedGamesQuery.isLoading && !favoriteGames.length;
   const isFavoriteGamesError = likedGamesQuery.isError && !favoriteGames.length;
@@ -130,7 +144,7 @@ function useMyPageLikedGames({
     favoriteGamesScrollRef,
     favoriteGamesLoadMoreRef,
     favoriteGames,
-    favoriteCount,
+    favoriteCount: immediateFavoriteCount,
     isFavoriteGamesLoading,
     isFavoriteGamesError,
     hasFavoriteGamesNextPage,

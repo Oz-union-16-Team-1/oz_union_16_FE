@@ -15,7 +15,7 @@ function FavoriteGameCard({
   onFavoriteClick,
 }: FavoriteGameCardProps) {
   return (
-    <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover flex h-full flex-col overflow-hidden rounded-[22px] border transition duration-200">
+    <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover box-border flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border transition duration-200">
       <div className="bg-mypage-soft relative aspect-3/4 overflow-hidden">
         <button
           type="button"
@@ -52,7 +52,7 @@ function FavoriteGameCard({
       <button
         type="button"
         onClick={() => onClick?.(game)}
-        className="flex flex-1 flex-col gap-2 px-4 py-4 text-left"
+        className="flex min-w-0 flex-1 flex-col gap-2 px-4 py-4 text-left"
       >
         <h3 className="line-clamp-1 text-base/6 font-semibold text-white sm:text-lg/7">
           {game.title}

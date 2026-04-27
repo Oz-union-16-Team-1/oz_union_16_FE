@@ -30,9 +30,7 @@ function MyPageAccountDangerZone({
       <section className="mt-8 flex flex-col items-center justify-center gap-3 pb-2 text-center">
         <div className="text-mypage-muted flex items-center gap-2 text-sm/6">
           <ShieldAlert size={16} />
-          <span>
-            더 이상 서비스를 이용하지 않으려면 회원탈퇴를 진행할 수 있습니다.
-          </span>
+          <span>현재 비밀번호를 확인한 뒤 회원탈퇴를 진행할 수 있습니다.</span>
         </div>
         <AuthButton
           type="button"
@@ -46,12 +44,12 @@ function MyPageAccountDangerZone({
 
       <ConfirmModal
         open={isDeleteModalOpen}
-        title="회원탈퇴 하시겠습니까?"
+        title="현재 비밀번호 확인 후 회원탈퇴"
         description={
           <div className="space-y-3">
             <p>
-              탈퇴를 진행하면 현재 로그인 세션이 종료되고, 로그인 화면으로
-              이동합니다.
+              현재 비밀번호를 확인한 뒤 탈퇴가 진행되며, 완료되면 로그인
+              화면으로 이동합니다.
             </p>
             <div className="space-y-2">
               <label

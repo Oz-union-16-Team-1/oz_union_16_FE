@@ -33,7 +33,10 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
   const uploadFileToS3Mutation = useUploadFileToS3Mutation();
   const confirmProfileImageMutation = useConfirmProfileImageMutation();
   const storedAccount = useAuthStore((state) => state.account);
-  const resolvedProfile = profileQuery.data ?? storedAccount;
+  const cachedProfile = queryClient.getQueryData<CurrentUserProfileResponse>(
+    authKeys.me(),
+  );
+  const resolvedProfile = profileQuery.data ?? storedAccount ?? cachedProfile;
   const isProfileLoading = profileQuery.isLoading && !resolvedProfile;
   const isProfileImageUploading =
     profileImagePresignedUrlMutation.isPending ||

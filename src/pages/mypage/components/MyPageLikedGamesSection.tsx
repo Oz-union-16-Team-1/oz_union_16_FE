@@ -46,7 +46,7 @@ function MyPageLikedGamesSection({
 
   return (
     <>
-      <section className="bg-mypage-panel border-mypage-panel shadow-mypage-float mt-8 rounded-[28px] border px-4 py-5 backdrop-blur-xl sm:mt-10 sm:px-6 sm:py-6">
+      <section className="bg-mypage-panel border-mypage-panel shadow-mypage-float mt-8 box-border rounded-[28px] border px-4 py-5 backdrop-blur-xl sm:mt-10 sm:px-6 sm:py-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="bg-mypage-accent-soft text-login-primary inline-flex h-11 w-11 items-center justify-center rounded-full">
@@ -70,13 +70,13 @@ function MyPageLikedGamesSection({
 
         <div
           ref={favoriteGamesScrollRef}
-          className="mypage-scrollbar mt-5 h-[23rem] overflow-y-auto pr-1 sm:h-[25rem] lg:h-[25rem]"
+          className="mypage-scrollbar mt-5 box-border h-[20rem] max-w-full overflow-y-auto pr-1 sm:h-[21.75rem] lg:h-[22.25rem]"
         >
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
           ) : favoriteCount > 0 ? (
             <div>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
                 {favoriteGames.map((game) => (
                   <FavoriteGameCard
                     key={game.gameId}

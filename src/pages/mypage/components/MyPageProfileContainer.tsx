@@ -9,7 +9,6 @@ import PasswordChangePanel, {
 type MyPageProfileContainerProps = {
   nickname: string;
   name: string;
-  email: string | null;
   genderLabel: string;
   profileImageUrl?: string | null;
   isProfileLoading: boolean;
@@ -38,7 +37,6 @@ type MyPageProfileContainerProps = {
 function MyPageProfileContainer({
   nickname,
   name,
-  email,
   genderLabel,
   profileImageUrl,
   isProfileLoading,
@@ -64,7 +62,6 @@ function MyPageProfileContainer({
     <MyPageProfileSection
       nickname={nickname}
       name={name}
-      email={email}
       genderLabel={genderLabel}
       profileImageUrl={profileImageUrl}
       isProfileLoading={isProfileLoading}
