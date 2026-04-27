@@ -110,15 +110,15 @@ function AuthSocialLoginGroup({
       <SocialLoginButton
         label="Google로 로그인하기"
         icon={<GoogleIcon className={iconClassName} />}
-        className={`bg-login-google border-login-google border ${buttonSizeClassName.google}`}
-        labelClassName={`text-white ${buttonSizeClassName.label}`}
+        className={`bg-login-google border-login-google text-black shadow-[0_12px_24px_rgba(0,0,0,0.2)] hover:bg-[#e5e6ea] hover:brightness-[1.01] ${buttonSizeClassName.google}`}
+        labelClassName={`text-black ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('google')}
         disabled={Boolean(redirectingProvider)}
       />
       <SocialLoginButton
         label="카카오로 로그인하기"
         icon={<KakaoIcon className={iconClassName} />}
-        className={`bg-login-kakao ${buttonSizeClassName.kakao}`}
+        className={`bg-login-kakao border-[#9b8b2a]/40 shadow-[0_12px_24px_rgba(0,0,0,0.18)] hover:brightness-[1.03] ${buttonSizeClassName.kakao}`}
         labelClassName={`text-login-kakao-label ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('kakao')}
         disabled={Boolean(redirectingProvider)}
@@ -126,7 +126,7 @@ function AuthSocialLoginGroup({
       <SocialLoginButton
         label="네이버로 로그인하기"
         icon={<NaverIcon className={iconClassName} />}
-        className={`bg-login-naver ${buttonSizeClassName.naver}`}
+        className={`bg-login-naver border-[#2d7b52]/45 shadow-[0_12px_24px_rgba(0,0,0,0.18)] hover:brightness-[1.03] ${buttonSizeClassName.naver}`}
         labelClassName={`text-white ${buttonSizeClassName.label}`}
         onClick={() => handleSocialLogin('naver')}
         disabled={Boolean(redirectingProvider)}
