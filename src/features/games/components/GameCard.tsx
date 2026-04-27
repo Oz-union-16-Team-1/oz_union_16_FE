@@ -31,7 +31,7 @@ const GameCard = ({ game, onSelectGame }: GameCardProps) => {
           <img
             src={thumbnailUrl}
             alt={`${game.name} 썸네일`}
-            className="h-full w-full object-cover opacity-80 transition duration-300 group-hover:scale-105 group-hover:opacity-100"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
             loading="lazy"
             onError={() => setIsImageUnavailable(true)}
           />
@@ -40,7 +40,7 @@ const GameCard = ({ game, onSelectGame }: GameCardProps) => {
             이미지 N/A
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/58 via-black/12 to-transparent" />
       </div>
 
       <div className={GAME_CARD_BODY_CLASS}>

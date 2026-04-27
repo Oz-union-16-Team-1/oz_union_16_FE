@@ -182,6 +182,10 @@ export const extractApiErrorMessage = (error: unknown) => {
     return '요청을 처리하는 중 알 수 없는 오류가 발생했습니다.';
   }
 
+  if (!error.response) {
+    return '서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+
   const data = error.response?.data as ErrorResponseBody | undefined;
 
   if (typeof data?.detail === 'string') {

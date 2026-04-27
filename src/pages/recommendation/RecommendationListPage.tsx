@@ -181,6 +181,8 @@ function RecommendationListPage() {
     recommendationItems,
     recommendationHighlights,
     errorMessage,
+    emptyStateMessage,
+    isResultNotFound,
     shouldShowMatchEntryCta,
     error,
     isLoading,
@@ -325,15 +327,13 @@ function RecommendationListPage() {
                 <div className="px-4 py-14 text-center text-white/65 sm:px-6 lg:px-7">
                   추천 결과를 불러오는 중입니다...
                 </div>
-              ) : error ? (
+              ) : error && !isResultNotFound ? (
                 <div className="px-4 py-12 text-[#ffc2c2] sm:px-6 lg:px-7">
                   {errorMessage}
                 </div>
               ) : recommendationItems.length === 0 ? (
                 <div className="px-4 py-12 text-white/55 sm:px-6 lg:px-7">
-                  {isMatchSource
-                    ? '매칭 추천 결과가 아직 없습니다.'
-                    : '추천 결과가 아직 없습니다.'}
+                  {emptyStateMessage}
                 </div>
               ) : (
                 <>
