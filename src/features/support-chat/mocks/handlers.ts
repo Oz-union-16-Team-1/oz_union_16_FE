@@ -15,12 +15,11 @@ import type {
 const CHATBOT_BASE_PATH = '/api/v1/chatbot';
 
 type MockChatSession = {
-  id: number;
+  id: string;
   lastReply: string;
 };
 
-const chatSessions = new Map<number, MockChatSession>();
-let nextSessionId = 1;
+const chatSessions = new Map<string, MockChatSession>();
 
 const toJsonError = (status: number, message: string) =>
   HttpResponse.json(
@@ -43,7 +42,7 @@ const splitMessageIntoChunks = (message: string) => {
   return chunks;
 };
 
-const createStreamResponse = (sessionId: number, reply: string) => {
+const createStreamResponse = (sessionId: string, reply: string) => {
   const encoder = new TextEncoder();
   const chunks = splitMessageIntoChunks(reply);
 
@@ -99,8 +98,7 @@ export const supportChatHandlers = [
     }
 
     if (sessionId === undefined) {
-      sessionId = nextSessionId;
-      nextSessionId += 1;
+      sessionId = crypto.randomUUID();
     }
 
     const matchedEntry = findSupportFaqEntry(message);
@@ -122,9 +120,9 @@ export const supportChatHandlers = [
 
   http.get(`${CHATBOT_BASE_PATH}/stream`, async ({ request }) => {
     const url = new URL(request.url);
-    const sessionId = Number(url.searchParams.get('session_id'));
+    const sessionId = url.searchParams.get('session_id')?.trim() ?? '';
 
-    if (Number.isNaN(sessionId) || sessionId <= 0) {
+    if (!sessionId) {
       return toJsonError(400, '잘못된 session_id 입니다.');
     }
 

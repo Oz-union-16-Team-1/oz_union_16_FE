@@ -12,7 +12,7 @@ import type {
 } from '../types/supportChat';
 
 type SupportChatStoreState = {
-  sessionId: number | null;
+  sessionId: string | null;
   messages: SupportChatMessage[];
   quickActions: SupportChatQuickAction[];
   showQuickActions: boolean;
@@ -33,7 +33,7 @@ type SupportChatStoreState = {
   closeAndResetConversation: (routeContext?: SupportChatRouteContext) => void;
   togglePanel: () => void;
   setRouteContext: (routeContext: SupportChatRouteContext) => void;
-  setSessionId: (sessionId: number | null) => void;
+  setSessionId: (sessionId: string | null) => void;
   setPinnedToBottom: (isPinnedToBottom: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   hideQuickActions: () => void;
@@ -70,7 +70,7 @@ const capMessages = (messages: SupportChatMessage[]) =>
     : messages;
 
 const initialState = {
-  sessionId: null as number | null,
+  sessionId: null as string | null,
   messages: createInitialMessages(),
   quickActions: SUPPORT_CHAT_QUICK_ACTIONS,
   showQuickActions: true,

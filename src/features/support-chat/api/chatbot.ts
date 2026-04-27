@@ -100,13 +100,13 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
   }
 
   let parsed: {
-    session_id?: number;
+    session_id?: string;
     content?: string;
   };
 
   try {
     parsed = JSON.parse(dataLines.join('\n')) as {
-      session_id?: number;
+      session_id?: string;
       content?: string;
     };
   } catch (error) {
@@ -118,7 +118,7 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     return null;
   }
 
-  if (eventName === 'start' && typeof parsed.session_id === 'number') {
+  if (eventName === 'start' && typeof parsed.session_id === 'string') {
     return {
       type: 'start',
       sessionId: parsed.session_id,
@@ -132,7 +132,7 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     };
   }
 
-  if (eventName === 'complete' && typeof parsed.session_id === 'number') {
+  if (eventName === 'complete' && typeof parsed.session_id === 'string') {
     return {
       type: 'complete',
       sessionId: parsed.session_id,
@@ -147,7 +147,7 @@ export const streamChatbotResponse = async ({
   signal,
   onEvent,
 }: {
-  sessionId: number;
+  sessionId: string;
   signal?: AbortSignal;
   onEvent: (event: ChatbotStreamEvent) => void;
 }) => {
