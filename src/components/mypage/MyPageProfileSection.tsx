@@ -21,12 +21,6 @@ type MyPageProfileSectionProps = {
   children?: ReactNode;
 };
 
-type ProfileInfoRow = {
-  label: string;
-  value: string;
-  action?: ReactNode;
-};
-
 function MyPageProfileSection({
   nickname,
   name,
@@ -81,34 +75,6 @@ function MyPageProfileSection({
       setNicknameFieldError('');
     }
   };
-
-  const infoRows: ProfileInfoRow[] = [
-    {
-      label: '별명',
-      value: nickname,
-      action: !isNicknameEditMode ? (
-        <button
-          type="button"
-          className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white/88 transition hover:border-white/12 hover:bg-white/[0.08]"
-          onClick={() => {
-            setIsNicknameEditMode(true);
-            setNextNickname(nickname);
-            setNicknameFieldError('');
-          }}
-        >
-          수정
-        </button>
-      ) : null,
-    },
-    {
-      label: '사용자명',
-      value: name,
-    },
-    {
-      label: '성별',
-      value: genderLabel,
-    },
-  ];
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-white/8 bg-[#19191d] shadow-[0_28px_80px_rgba(0,0,0,0.32)]">
@@ -218,92 +184,104 @@ function MyPageProfileSection({
           </div>
 
           <div className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.035] px-4 py-4 sm:px-5 sm:py-5">
-            {isNicknameEditMode ? (
-              <div className="border-b border-white/7 pb-5">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="divide-y divide-white/7">
+              <div className="py-5 pt-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white/82">별명</p>
-                    <label htmlFor="profile-nickname" className="sr-only">
-                      닉네임
-                    </label>
-                    <div className="mt-3 max-w-xl">
-                      <InputControl
-                        id="profile-nickname"
-                        type="text"
-                        value={nextNickname}
-                        onChange={(event) => {
-                          setNextNickname(event.target.value);
-
-                          if (nicknameFieldError) {
-                            setNicknameFieldError('');
-                          }
-                        }}
-                        maxLength={20}
-                        disabled={isProfileUpdating}
-                        hasError={Boolean(nicknameFieldError)}
-                        className="h-12"
-                        placeholder="닉네임을 입력하세요"
-                      />
-                    </div>
-                    {nicknameFieldError ? (
-                      <p className="mt-2 pl-1 text-left text-sm/5 font-medium text-red-400">
-                        {nicknameFieldError}
+                    <p className="text-sm font-semibold text-white/76">별명</p>
+                    {!isNicknameEditMode ? (
+                      <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
+                        {nickname}
                       </p>
-                    ) : null}
+                    ) : (
+                      <>
+                        <label htmlFor="profile-nickname" className="sr-only">
+                          닉네임
+                        </label>
+                        <div className="mt-3 max-w-xl">
+                          <InputControl
+                            id="profile-nickname"
+                            type="text"
+                            value={nextNickname}
+                            onChange={(event) => {
+                              setNextNickname(event.target.value);
+
+                              if (nicknameFieldError) {
+                                setNicknameFieldError('');
+                              }
+                            }}
+                            maxLength={20}
+                            disabled={isProfileUpdating}
+                            hasError={Boolean(nicknameFieldError)}
+                            className="h-12"
+                            placeholder="닉네임을 입력하세요"
+                          />
+                        </div>
+                        {nicknameFieldError ? (
+                          <p className="mt-2 pl-1 text-left text-sm/5 font-medium text-red-400">
+                            {nicknameFieldError}
+                          </p>
+                        ) : null}
+                      </>
+                    )}
                   </div>
-                  <div className="flex gap-2 lg:pt-8">
-                    <button
-                      type="button"
-                      className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.08]"
-                      onClick={() => {
-                        setIsNicknameEditMode(false);
-                        setNextNickname(nickname);
-                        setNicknameFieldError('');
-                      }}
-                      disabled={isProfileUpdating}
-                    >
-                      취소
-                    </button>
-                    <button
-                      type="button"
-                      className="bg-login-primary hover:bg-login-primary-hover rounded-2xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => {
-                        void handleNicknameSave();
-                      }}
-                      disabled={isProfileUpdating}
-                    >
-                      {isProfileUpdating ? '저장 중...' : '저장'}
-                    </button>
+
+                  <div className="flex shrink-0 items-center gap-2 sm:min-w-[12rem] sm:justify-end">
+                    {!isNicknameEditMode ? (
+                      <button
+                        type="button"
+                        className="inline-flex cursor-pointer items-center rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/12 hover:bg-white/[0.08]"
+                        onClick={() => {
+                          setIsNicknameEditMode(true);
+                          setNextNickname(nickname);
+                          setNicknameFieldError('');
+                        }}
+                      >
+                        수정
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => {
+                            setIsNicknameEditMode(false);
+                            setNextNickname(nickname);
+                            setNicknameFieldError('');
+                          }}
+                          disabled={isProfileUpdating}
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          className="bg-login-primary hover:bg-login-primary-hover inline-flex cursor-pointer items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => {
+                            void handleNicknameSave();
+                          }}
+                          disabled={isProfileUpdating}
+                        >
+                          {isProfileUpdating ? '저장 중...' : '저장'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
-            ) : null}
 
-            <div className="divide-y divide-white/7">
-              {infoRows.map((row, index) => (
-                <div
-                  key={row.label}
-                  className={`flex items-center justify-between gap-4 py-5 ${
-                    index === 0 && isNicknameEditMode
-                      ? 'pt-5'
-                      : index === 0
-                        ? 'pt-1'
-                        : ''
-                  } ${index === infoRows.length - 1 ? 'pb-1' : ''}`}
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white/76">
-                      {row.label}
-                    </p>
-                    <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
-                      {row.value}
-                    </p>
-                  </div>
-                  {row.action ? (
-                    <div className="shrink-0">{row.action}</div>
-                  ) : null}
-                </div>
-              ))}
+              <div className="py-5">
+                <p className="text-sm font-semibold text-white/76">사용자명</p>
+                <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
+                  {name}
+                </p>
+              </div>
+
+              <div className="py-5 pb-1">
+                <p className="text-sm font-semibold text-white/76">성별</p>
+                <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
+                  {genderLabel}
+                </p>
+              </div>
             </div>
           </div>
 

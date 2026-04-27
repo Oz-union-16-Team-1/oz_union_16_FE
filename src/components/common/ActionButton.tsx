@@ -9,7 +9,7 @@ type ActionButtonProps = {
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 const baseClassName =
-  'inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex cursor-pointer items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60';
 
 const variantClassNames: Record<ActionButtonVariant, string> = {
   primary:
