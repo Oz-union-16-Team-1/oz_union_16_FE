@@ -1,6 +1,13 @@
 import { AxiosError } from 'axios';
 
 import { api } from '../../../api/axios';
+import { isMockServiceWorkerEnabled } from '../../../lib/env';
+import {
+  continueMockSurveyChat,
+  getMockSurveyResults,
+  resetMockSurveySession,
+  startMockSurveySession,
+} from '../mocks/runtime';
 import type {
   SurveyApiChatRequest,
   SurveyApiResetResponse,
@@ -136,45 +143,90 @@ export const normalizeSurveyResultResponse = (
 export const startSurveySession = async (
   payload: SurveySessionStartRequest,
 ): Promise<SurveySessionStartResponse> => {
-  const response = await api.post<SurveyApiSessionResponse>(
-    `${SURVEY_CHATBOT_BASE_PATH}/sessions`,
-    payload satisfies SurveyApiSessionStartRequest,
-  );
+  try {
+    const response = await api.post<SurveyApiSessionResponse>(
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions`,
+      payload satisfies SurveyApiSessionStartRequest,
+    );
 
-  return normalizeSurveySessionResponse(response.data);
+    return normalizeSurveySessionResponse(response.data);
+  } catch (error) {
+    if (!isMockServiceWorkerEnabled()) {
+      throw error;
+    }
+
+    return normalizeSurveySessionResponse(startMockSurveySession());
+  }
 };
 
 export const continueSurveyChat = async (
   payload: SurveyChatRequest,
 ): Promise<SurveyChatResponse> => {
-  const response = await api.post<SurveyApiSessionResponse>(
-    `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages`,
-    {
-      user_answer: payload.user_answer,
-    } satisfies SurveyApiChatRequest,
-  );
+  try {
+    const response = await api.post<SurveyApiSessionResponse>(
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages`,
+      {
+        user_answer: payload.user_answer,
+      } satisfies SurveyApiChatRequest,
+    );
 
-  return normalizeSurveySessionResponse(response.data);
+    return normalizeSurveySessionResponse(response.data);
+  } catch (error) {
+    if (!isMockServiceWorkerEnabled()) {
+      throw error;
+    }
+
+    return normalizeSurveySessionResponse(
+      continueMockSurveyChat({
+        session_id: payload.session_id,
+        user_answer: payload.user_answer,
+      }),
+    );
+  }
 };
 
 export const resetSurveySession = async (payload: SurveyResetRequest) => {
-  const response = await api.post<SurveyApiResetResponse>(
-    `${SURVEY_BASE_PATH}/sessions/reset`,
-    payload,
-  );
+  try {
+    const response = await api.post<SurveyApiResetResponse>(
+      `${SURVEY_BASE_PATH}/sessions/reset`,
+      payload,
+    );
 
-  return normalizeSurveyResetResponse(response.data);
+    return normalizeSurveyResetResponse(response.data);
+  } catch (error) {
+    if (!isMockServiceWorkerEnabled()) {
+      throw error;
+    }
+
+    return normalizeSurveyResetResponse(
+      resetMockSurveySession(payload.session_id),
+    );
+  }
 };
 
 export const getSurveyResults = async (query: SurveyResultQuery) => {
-  const response = await api.get<SurveyApiResultResponse>(
-    `${SURVEY_BASE_PATH}/result`,
-    {
-      params: query,
-    },
-  );
+  try {
+    const response = await api.get<SurveyApiResultResponse>(
+      `${SURVEY_BASE_PATH}/result`,
+      {
+        params: query,
+      },
+    );
 
-  return normalizeSurveyResultResponse(response.data);
+    return normalizeSurveyResultResponse(response.data);
+  } catch (error) {
+    if (!isMockServiceWorkerEnabled()) {
+      throw error;
+    }
+
+    return normalizeSurveyResultResponse(
+      getMockSurveyResults({
+        cursor: query.cursor ?? null,
+        pageSize: query.page_size,
+        sessionId: query.session_id ?? null,
+      }),
+    );
+  }
 };
 
 export const extractApiErrorMessage = (error: unknown) => {
