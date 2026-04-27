@@ -28,15 +28,19 @@ export const useResetSurveyMutation = () =>
     mutationFn: resetSurveySession,
   });
 
-export const useSurveyResultsInfinite = (enabled = true) =>
+export const useSurveyResultsInfinite = (
+  enabled = true,
+  sessionId?: string | null,
+) =>
   useInfiniteQuery({
-    queryKey: ['survey-results'],
+    queryKey: ['survey-results', sessionId ?? 'current'],
     initialPageParam: null as string | null,
     enabled,
     queryFn: ({ pageParam }) =>
       getSurveyResults({
         cursor: pageParam ?? undefined,
         page_size: 5,
+        session_id: sessionId ?? undefined,
       }),
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = getPaginatedLoadedCount(allPages);

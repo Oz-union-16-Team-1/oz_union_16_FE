@@ -114,12 +114,12 @@ export const syncGameLikeStateInQueryCache = (
         }
       : currentData;
 
-  queryClient.setQueryData<InfiniteData<LikeableResultPage>>(
-    ['survey-results'],
+  queryClient.setQueriesData<InfiniteData<LikeableResultPage>>(
+    { queryKey: ['survey-results'] },
     updateRecommendationPages,
   );
-  queryClient.setQueryData<InfiniteData<LikeableResultPage>>(
-    ['match-results'],
+  queryClient.setQueriesData<InfiniteData<LikeableResultPage>>(
+    { queryKey: ['match-results'] },
     updateRecommendationPages,
   );
 

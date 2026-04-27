@@ -86,6 +86,7 @@ export interface SurveyResultQuery {
   sort?: string;
   cursor?: string;
   page_size?: number;
+  session_id?: string;
 }
 
 export interface SurveyApiResultItem {

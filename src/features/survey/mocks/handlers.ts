@@ -206,11 +206,12 @@ export const surveyHandlers = [
     const pageSize = Number(
       url.searchParams.get('page_size') ?? DEFAULT_RECOMMENDATION_PAGE_SIZE,
     );
+    const requestedSessionId = url.searchParams.get('session_id');
     const recommendations = buildSurveyRecommendations(
       request.headers.get('authorization'),
     );
 
-    if (!latestCompletedSurveySessionId) {
+    if (!latestCompletedSurveySessionId && !requestedSessionId) {
       return getErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
     }
 

@@ -37,6 +37,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const sessionId = useSurveyStore((state) => state.sessionId);
   const messages = useSurveyStore((state) => state.messages);
   const progress = useSurveyStore((state) => state.progress);
+  const storedSessionId = useSurveyStore((state) => state.sessionId);
   const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
   const isSubmitting = useSurveyStore((state) => state.isSubmitting);
   const error = useSurveyStore((state) => state.error);
@@ -133,7 +134,10 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     }
 
     startTransition(() => {
-      navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=survey`);
+      const surveySessionQuery = storedSessionId
+        ? `?source=survey&session_id=${storedSessionId}`
+        : '?source=survey';
+      navigate(`/${ROUTES.RECOMMENDATION_LIST}${surveySessionQuery}`);
     });
   };
 

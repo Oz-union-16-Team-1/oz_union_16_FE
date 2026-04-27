@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router';
 import { getPaginatedResults } from '../../../utils/paginatedResults';
 import { useMatchResultsInfinite } from '../../matching/api/useMatchingApi';
 import type { MatchResultResponse } from '../../matching/types';
+import { useSurveyStore } from '../../survey/store/useSurveyStore';
 import { useSurveyResultsInfinite } from '../../survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../survey/api/survey';
 import type { SurveyResultResponse } from '../../survey/types/survey';
@@ -24,13 +25,17 @@ export const useRecommendationResultsSource = ({
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const source = searchParams.get('source');
-  const legacySessionId = searchParams.get('session_id');
+  const surveySessionIdFromUrl = searchParams.get('session_id');
+  const storedSurveySessionId = useSurveyStore((state) => state.sessionId);
   const isMatchSource = source === 'match';
   const isSurveySource =
-    source === 'survey' || (!source && Boolean(legacySessionId));
+    source === 'survey' || (!source && Boolean(surveySessionIdFromUrl));
+  const resolvedSurveySessionId =
+    surveySessionIdFromUrl ?? storedSurveySessionId;
 
   const surveyResultsQuery = useSurveyResultsInfinite(
     !isMatchSource && isSurveySource && canAccessPage,
+    resolvedSurveySessionId,
   );
   const matchResultsQuery = useMatchResultsInfinite(
     isMatchSource && canAccessPage,
@@ -92,10 +97,10 @@ export const useRecommendationResultsSource = ({
     }
 
     if (isSurveySource) {
-      queryClient.setQueryData<{
+      queryClient.setQueriesData<{
         pages: SurveyResultResponse[];
         pageParams: unknown[];
-      }>(['survey-results'], (currentData) =>
+      }>({ queryKey: ['survey-results'] }, (currentData) =>
         currentData
           ? {
               ...currentData,

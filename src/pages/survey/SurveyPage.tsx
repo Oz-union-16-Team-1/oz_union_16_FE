@@ -42,6 +42,7 @@ function SurveyPage() {
   const account = useAuthStore((state) => state.account);
   const syncOwnerKey = useSurveyStore((state) => state.syncOwnerKey);
   const storedOwnerKey = useSurveyStore((state) => state.ownerKey);
+  const surveySessionId = useSurveyStore((state) => state.sessionId);
   const messages = useSurveyStore((state) => state.messages);
   const recommendationReady = useSurveyStore(
     (state) => state.recommendationReady,
@@ -52,11 +53,17 @@ function SurveyPage() {
   >(null);
   const surveyOwnerKey = account?.login_id
     ? `survey-user:${account.login_id}`
-    : authGate.isAuthenticated
-      ? 'survey-user:authenticated'
-      : authGate.canBypassAuth
-        ? 'survey-user:mock'
-        : 'survey-user:guest';
+    : authGate.isAuthenticated &&
+        storedOwnerKey &&
+        storedOwnerKey !== 'survey-user:authenticated' &&
+        storedOwnerKey !== 'survey-user:guest' &&
+        storedOwnerKey !== 'survey-user:mock'
+      ? storedOwnerKey
+      : authGate.isAuthenticated
+        ? 'survey-user:authenticated'
+        : authGate.canBypassAuth
+          ? 'survey-user:mock'
+          : 'survey-user:guest';
 
   useEffect(() => {
     syncOwnerKey(surveyOwnerKey);
@@ -107,8 +114,14 @@ function SurveyPage() {
   }
 
   if (shouldRedirectCompletedEntry) {
+    const recommendationQuery = surveySessionId
+      ? `?source=survey&session_id=${encodeURIComponent(surveySessionId)}`
+      : '?source=survey';
     return (
-      <Navigate to={`/${ROUTES.RECOMMENDATION_LIST}?source=survey`} replace />
+      <Navigate
+        to={`/${ROUTES.RECOMMENDATION_LIST}${recommendationQuery}`}
+        replace
+      />
     );
   }
 
