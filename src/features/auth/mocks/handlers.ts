@@ -1000,7 +1000,6 @@ const gameLikeHandlers = [
 
     return HttpResponse.json({
       game_id: gameId,
-      is_liked: true,
       like_count: getCurrentLikeCount(gameId),
     } satisfies RawGameLikeResponse);
   }),
@@ -1036,7 +1035,6 @@ const gameLikeHandlers = [
 
     return HttpResponse.json({
       game_id: gameId,
-      is_liked: false,
       like_count: getCurrentLikeCount(gameId),
     } satisfies RawGameLikeResponse);
   }),
