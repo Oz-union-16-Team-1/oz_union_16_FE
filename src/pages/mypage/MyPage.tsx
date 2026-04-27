@@ -65,7 +65,6 @@ function MyPage() {
           <MyPageProfileContainer
             nickname={myPageProfile.profileNickname}
             name={myPageProfile.profileName}
-            email={myPageProfile.profileEmail}
             genderLabel={myPageProfile.profileGenderLabel}
             profileImageUrl={myPageProfile.profileImageUrl}
             isProfileLoading={myPageProfile.isProfileLoading}
