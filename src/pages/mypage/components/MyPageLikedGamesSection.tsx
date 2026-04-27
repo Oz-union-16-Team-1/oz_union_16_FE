@@ -70,13 +70,13 @@ function MyPageLikedGamesSection({
 
         <div
           ref={favoriteGamesScrollRef}
-          className="mypage-scrollbar mt-5 box-border h-[20rem] max-w-full overflow-y-auto pr-1 sm:h-[21.75rem] lg:h-[22.25rem]"
+          className="mypage-scrollbar mt-5 box-border max-w-full overflow-x-auto overflow-y-hidden pb-2"
         >
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
           ) : favoriteCount > 0 ? (
             <div>
-              <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+              <div className="flex min-w-max items-stretch gap-3 lg:gap-4">
                 {favoriteGames.map((game) => (
                   <FavoriteGameCard
                     key={game.gameId}
@@ -85,13 +85,15 @@ function MyPageLikedGamesSection({
                     onFavoriteClick={setSelectedFavoriteGame}
                   />
                 ))}
+                <div className="flex w-6 shrink-0 items-stretch">
+                  <div
+                    ref={favoriteGamesLoadMoreRef}
+                    aria-hidden="true"
+                    className="h-full w-px self-stretch"
+                  />
+                </div>
               </div>
               <div className="mt-5 flex flex-col items-center gap-2">
-                <div
-                  ref={favoriteGamesLoadMoreRef}
-                  aria-hidden="true"
-                  className="h-0.5 w-full"
-                />
                 {isFavoriteGamesFetchNextPageError ? (
                   <>
                     <p className="text-sm text-red-300">
@@ -115,7 +117,7 @@ function MyPageLikedGamesSection({
                   </p>
                 ) : hasFavoriteGamesNextPage ? (
                   <p className="text-mypage-muted text-sm">
-                    아래로 스크롤하면 찜 목록을 더 볼 수 있어요.
+                    오른쪽으로 스크롤하면 찜 목록을 더 볼 수 있어요.
                   </p>
                 ) : null}
               </div>
@@ -152,6 +154,7 @@ function MyPageLikedGamesSection({
         confirmLabel="예"
         cancelLabel="아니오"
         isPending={isUnlikePending}
+        align="center"
         onClose={() => setSelectedFavoriteGame(null)}
         onConfirm={() => {
           void handleFavoriteGameDeleteConfirm();

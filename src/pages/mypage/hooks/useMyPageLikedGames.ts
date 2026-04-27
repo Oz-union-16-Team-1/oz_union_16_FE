@@ -97,7 +97,7 @@ function useMyPageLikedGames({
       },
       {
         root: rootElement,
-        rootMargin: '0px 0px 160px 0px',
+        rootMargin: '0px 280px 0px 0px',
         threshold: 0.1,
       },
     );
