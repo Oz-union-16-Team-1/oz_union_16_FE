@@ -2,18 +2,6 @@ import type { MatchingCandidateItem } from '../types';
 
 type MatchingMediaPanelProps = {
   candidate: MatchingCandidateItem;
-  genreTitle: string;
-  stepLabel: string;
-};
-
-const formatMatchingCandidateRating = (rating: number | null) => {
-  if (typeof rating !== 'number') {
-    return 'N/A';
-  }
-
-  const normalizedRating = rating <= 5 ? rating * 20 : rating;
-
-  return `${normalizedRating.toFixed(1)}점`;
 };
 
 const getYoutubeEmbedUrl = (trailerUrl: string | null) => {
@@ -47,22 +35,13 @@ const getYoutubeEmbedUrl = (trailerUrl: string | null) => {
   return null;
 };
 
-function MatchingMediaPanel({
-  candidate,
-  genreTitle,
-  stepLabel,
-}: MatchingMediaPanelProps) {
+function MatchingMediaPanel({ candidate }: MatchingMediaPanelProps) {
   const embedUrl = getYoutubeEmbedUrl(candidate.trailer_url);
   const imageUrl = candidate.thumbnail_url;
-  const candidateSummary =
-    candidate.description?.trim() ||
-    `${genreTitle} 흐름에서 ${candidate.title}은 ${candidate.genres.join(
-      ' · ',
-    )} 감각을 대표하는 후보예요. 영상과 이미지를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`;
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-[26px] border border-white/8 bg-[#0d0d0f] shadow-[0_24px_48px_rgba(0,0,0,0.28)]">
-      <div className="relative aspect-[16/8.1] shrink-0">
+    <article className="h-full overflow-hidden rounded-[26px] border border-white/8 bg-[#0d0d0f] shadow-[0_24px_48px_rgba(0,0,0,0.28)]">
+      <div className="relative h-full min-h-[360px] sm:min-h-[420px]">
         {embedUrl ? (
           <iframe
             src={embedUrl}
@@ -82,47 +61,6 @@ function MatchingMediaPanel({
             미디어가 준비되지 않았습니다.
           </div>
         )}
-      </div>
-      <div className="flex flex-1 flex-col border-t border-white/8 bg-[linear-gradient(180deg,rgba(18,18,20,0.94),rgba(11,11,12,0.98))] px-5 py-4.5 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
-            이 카드에서 볼 포인트
-          </p>
-          <span className="rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/52">
-            {stepLabel}
-          </span>
-        </div>
-
-        <p className="mt-2.5 text-sm leading-6 break-keep text-white/62">
-          {candidateSummary}
-        </p>
-
-        <div className="mt-3.5 grid gap-2.5 sm:grid-cols-3">
-          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
-              평균 평점
-            </p>
-            <p className="mt-1.5 text-lg font-semibold text-white">
-              {formatMatchingCandidateRating(candidate.rating)}
-            </p>
-          </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
-              미디어
-            </p>
-            <p className="mt-1.5 text-sm font-medium text-white/78">
-              {candidate.trailer_url ? '유튜브 트레일러' : '이미지 미리보기'}
-            </p>
-          </div>
-          <div className="rounded-[18px] border border-white/8 bg-white/3 px-3.5 py-3">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-white/34 uppercase">
-              장르 감각
-            </p>
-            <p className="mt-1.5 text-sm font-medium text-white/78">
-              {candidate.genres[0] ?? genreTitle}
-            </p>
-          </div>
-        </div>
       </div>
     </article>
   );

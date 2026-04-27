@@ -23,7 +23,6 @@ import {
   useMatchCandidatesQuery,
   useSubmitMatchResponsesMutation,
 } from '../../features/matching/api/useMatchingApi';
-import MatchingGuideCards from '../../features/matching/components/MatchingGuideCards';
 import MatchingMediaPanel from '../../features/matching/components/MatchingMediaPanel';
 import MatchingRatingStars from '../../features/matching/components/MatchingRatingStars';
 import {
@@ -158,6 +157,13 @@ function MatchingGenreDetailPage() {
   const submitErrorMessage = submitMatchResponsesMutation.error
     ? extractApiErrorMessage(submitMatchResponsesMutation.error)
     : null;
+  const genreTitle = genre?.title ?? '선택한 장르';
+  const currentCandidateSummary = currentCandidate
+    ? currentCandidate.description?.trim() ||
+      `${genreTitle} 흐름에서 ${currentCandidate.title}은 ${currentCandidate.genres.join(
+        ' · ',
+      )} 감각을 대표하는 후보예요. 트레일러를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`
+    : '';
   const updateLikedGamesCache = (
     candidate: MatchingCandidateItem,
     nextIsLiked: boolean,
@@ -397,7 +403,7 @@ function MatchingGenreDetailPage() {
               </Link>
             </div>
 
-            <section className="mx-auto max-w-240">
+            <section className="mx-auto max-w-255">
               <div className="text-center">
                 <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                   {safeIndex + 1} / {totalSteps} 단계
@@ -407,29 +413,42 @@ function MatchingGenreDetailPage() {
                 </h1>
               </div>
 
-              <div className="mt-6">
-                <MatchingGuideCards />
-              </div>
-
-              <div className="mt-6 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+              <div className="mt-5 grid gap-4 lg:grid-cols-[1.32fr_0.92fr] lg:gap-5">
                 {currentCandidate ? (
-                  <MatchingMediaPanel
-                    candidate={currentCandidate}
-                    genreTitle={genre.title}
-                    stepLabel={`${safeIndex + 1} / ${totalSteps} 단계`}
-                  />
+                  <MatchingMediaPanel candidate={currentCandidate} />
                 ) : null}
 
                 {currentCandidate && currentEvaluation ? (
-                  <article className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-5">
+                  <article className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold tracking-[0.2em] text-[#f06b6b] uppercase">
-                          Candidate {safeIndex + 1}
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[28px]">
+                        <h2 className="text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[30px]">
                           {currentCandidate.title}
                         </h2>
+                        <p className="mt-3 text-sm leading-6 break-keep text-white/62">
+                          {currentCandidateSummary}
+                        </p>
+                        <div className="mt-4 grid gap-1.5 border-t border-white/8 pt-2.5 sm:grid-cols-2">
+                          <div className="flex h-full flex-col rounded-[14px] border border-white/8 bg-white/3 px-2.5 py-2">
+                            <p className="text-[10px] font-medium text-white/38">
+                              장르
+                            </p>
+                            <p className="mt-1 text-[13px] leading-5 font-medium break-keep text-white/78">
+                              {currentCandidate.genres.join(' · ') ||
+                                genreTitle}
+                            </p>
+                          </div>
+                          <div className="flex h-full flex-col rounded-[14px] border border-white/8 bg-white/3 px-2.5 py-2">
+                            <p className="text-[10px] font-medium text-white/38">
+                              평균 평점
+                            </p>
+                            <p className="mt-1 text-[13px] leading-5 font-medium text-white/78">
+                              {formatMatchingCandidateRating(
+                                currentCandidate.rating,
+                              )}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -461,24 +480,11 @@ function MatchingGenreDetailPage() {
                       </button>
                     </div>
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-white/46">
-                      <span className="rounded-full border border-white/8 bg-white/3 px-3 py-1.5">
-                        장르 {currentCandidate.genres.join(' · ')}
-                      </span>
-                      <span className="rounded-full border border-white/8 bg-white/3 px-3 py-1.5">
-                        평균 평점{' '}
-                        {formatMatchingCandidateRating(currentCandidate.rating)}
-                      </span>
-                    </div>
-
-                    <div className="mt-5">
+                    <div className="mt-7">
                       <p className="text-sm font-semibold text-white">
                         이 게임이 내 취향에 얼마나 가까운가요?
                       </p>
-                      <p className="mt-1 text-sm leading-6 break-keep text-white/55">
-                        별점은 추천을 더 정교하게 만드는 선호도 평가로 반영돼요.
-                      </p>
-                      <div className="mt-3.5">
+                      <div className="mt-3">
                         <MatchingRatingStars
                           value={currentEvaluation.rating}
                           onRate={(rating) =>
@@ -488,17 +494,11 @@ function MatchingGenreDetailPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-[20px] border border-white/8 bg-white/3 px-4 py-3.5">
-                      <p className="text-sm leading-7 break-keep text-white/64">
-                        {isLastCard
-                          ? currentEvaluation.rating === null
-                            ? '마지막 후보예요. 별점을 남기면 지금까지의 선호도 평가를 제출하고 추천 결과로 바로 이어갈 수 있어요.'
-                            : '모든 선호도 평가가 준비됐어요. 제출하면 취향에 맞는 추천 결과를 바로 확인할 수 있어요.'
-                          : currentEvaluation.rating === null
-                            ? '트레일러와 분위기를 보고 지금 카드의 별점을 남겨 주세요.'
-                            : '별점은 취향 분석에 반영되고, 좋아요는 마이페이지에서 다시 볼 게임을 표시해 두는 용도로 저장돼요.'}
-                      </p>
-                    </div>
+                    <p className="mt-4 text-sm leading-6 break-keep text-white/54">
+                      {isLastCard
+                        ? '별점을 매기면 제출 버튼을 사용할 수 있어요.'
+                        : '별점을 매기면 다음 게임으로 넘어갈 수 있어요.'}
+                    </p>
 
                     {submitErrorMessage ? (
                       <p className="mt-2.5 text-sm leading-6 break-keep text-[#ffc2c2]">
