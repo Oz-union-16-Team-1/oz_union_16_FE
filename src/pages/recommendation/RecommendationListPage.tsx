@@ -1,5 +1,3 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import {
   ChevronDown,
   ChevronRight,
@@ -7,40 +5,22 @@ import {
   RotateCcw,
   Star,
 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useState } from 'react';
+import { Link } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
-import { authKeys } from '../../features/auth/api/queryKeys';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
-import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
-import {
-  getGameDetail,
-  likeGame,
-  unlikeGame,
-} from '../../features/games/gameApi';
-import {
-  gamesKeys,
-  syncGameLikeStateInQueryCache,
-} from '../../features/games/queryCache';
 import type { GameListItem } from '../../features/games/types';
-import { useMatchResultsInfinite } from '../../features/matching/api/useMatchingApi';
-import type {
-  MatchResultItem,
-  MatchResultResponse,
-} from '../../features/matching/types';
-import { useResetSurveyMutation } from '../../features/survey/api/useSurveyApi';
-import { useSurveyResultsInfinite } from '../../features/survey/api/useSurveyApi';
-import { extractApiErrorMessage } from '../../features/survey/api/survey';
-import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
-import type {
-  SurveyResultItem,
-  SurveyResultResponse,
-} from '../../features/survey/types/survey';
+import { useRecommendationLike } from '../../features/recommendation/hooks/useRecommendationLike';
+import { useRecommendationResultsSource } from '../../features/recommendation/hooks/useRecommendationResultsSource';
+import { useRecommendationScrollRestoration } from '../../features/recommendation/hooks/useRecommendationScrollRestoration';
+import { useSurveyRecommendationActions } from '../../features/recommendation/hooks/useSurveyRecommendationActions';
+import type { RecommendationDisplayItem } from '../../features/recommendation/types';
+import { formatRecommendationRating } from '../../features/recommendation/utils/normalizeRecommendationItem';
 
 const FALLBACK_BACKDROP_ITEMS = [
   {
@@ -68,83 +48,6 @@ const FALLBACK_BACKDROP_ITEMS = [
       'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80',
   },
 ];
-
-const FALLBACK_HIGHLIGHTS = ['몰입감', '스토리', '액션', '전략'];
-
-type RecommendationDisplayItem = {
-  game_id: number;
-  title: string;
-  genres: string[];
-  thumbnail_url: string | null;
-  rating: number | null;
-  is_liked: boolean;
-};
-
-type RecommendationLikeMutationVariables = {
-  gameId: number;
-  nextIsLiked: boolean;
-  item: RecommendationDisplayItem;
-};
-
-const LIKE_ERROR_MESSAGE =
-  '좋아요 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-const LIKE_LOGIN_REQUIRED_MESSAGE = '로그인 후 좋아요를 사용할 수 있어요.';
-const FEEDBACK_MESSAGE_DURATION_MS = 3000;
-const LOAD_MORE_SCROLL_STEP_FALLBACK = 124;
-
-const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Array.isArray((value as Partial<LikedGamesResponse>).results);
-};
-
-const normalizeResultItem = (
-  item: SurveyResultItem | MatchResultItem,
-): RecommendationDisplayItem => ({
-  game_id: item.game_id,
-  title: item.title,
-  genres: item.genres,
-  thumbnail_url: item.thumbnail_url,
-  rating: item.rating,
-  is_liked: item.is_liked,
-});
-
-const toGameListItem = (item: RecommendationDisplayItem): GameListItem => ({
-  gameId: item.game_id,
-  name: item.title,
-  genres: item.genres,
-  thumbnailUrl: item.thumbnail_url,
-  rating: item.rating,
-  isLiked: item.is_liked,
-});
-
-const formatRecommendationRating = (rating: number | null) =>
-  typeof rating === 'number' ? `${rating.toFixed(1)}점` : 'N/A';
-
-const getRecommendationHighlights = (items: RecommendationDisplayItem[]) => {
-  const genreCounts = new Map<string, number>();
-
-  items.forEach((item) => {
-    item.genres.forEach((genre) => {
-      const trimmedGenre = genre.trim();
-
-      if (!trimmedGenre) {
-        return;
-      }
-
-      genreCounts.set(trimmedGenre, (genreCounts.get(trimmedGenre) ?? 0) + 1);
-    });
-  });
-
-  const rankedGenres = [...genreCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([genre]) => genre);
-
-  return rankedGenres.length > 0 ? rankedGenres : FALLBACK_HIGHLIGHTS;
-};
 
 type RecommendationRowProps = {
   item: RecommendationDisplayItem;
@@ -269,385 +172,55 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
 }
 
 function RecommendationListPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
-  const [pendingLikeGameId, setPendingLikeGameId] = useState<number | null>(
-    null,
-  );
-  const [likeFeedbackMessage, setLikeFeedbackMessage] = useState<string | null>(
-    null,
-  );
-  const recommendationScrollRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreScrollTopRef = useRef<number | null>(null);
-  const loadMoreWindowScrollYRef = useRef<number | null>(null);
-  const loadMoreStepOffsetRef = useRef<number>(LOAD_MORE_SCROLL_STEP_FALLBACK);
-  const detailListScrollTopRef = useRef<number | null>(null);
-  const detailWindowScrollYRef = useRef<number>(0);
-  const queryClient = useQueryClient();
-  const surveySessionId = useSurveyStore((state) => state.sessionId);
-  const surveyRecommendationReady = useSurveyStore(
-    (state) => state.recommendationReady,
-  );
-  const hydrateInitialSession = useSurveyStore(
-    (state) => state.hydrateInitialSession,
-  );
-  const clearModerationState = useSurveyStore(
-    (state) => state.clearModerationState,
-  );
-  const resetSurveyState = useSurveyStore((state) => state.resetSurveyState);
-  const source = searchParams.get('source');
-  const legacySessionId = searchParams.get('session_id');
-  const isMatchSource = source === 'match';
-  const isSurveySource =
-    source === 'survey' || (!source && Boolean(legacySessionId));
   const authGate = useAuthGate({ allowMockBypass: true });
   const canAccessPage = authGate.accessStatus === 'authorized';
-
-  const surveyResultsQuery = useSurveyResultsInfinite(
-    !isMatchSource && isSurveySource && canAccessPage,
-  );
-  const matchResultsQuery = useMatchResultsInfinite(
-    isMatchSource && canAccessPage,
-  );
-  const resetSurveyMutation = useResetSurveyMutation();
-  const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;
-  const { error, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
-    activeQuery;
-
-  const surveyItems =
-    surveyResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
-  const matchItems =
-    matchResultsQuery.data?.pages.flatMap((page) => page.results) ?? [];
-  const recommendationItems = (isMatchSource ? matchItems : surveyItems).map(
-    normalizeResultItem,
-  );
-  const recommendationHighlights =
-    getRecommendationHighlights(recommendationItems);
-  const errorMessage = error ? extractApiErrorMessage(error) : null;
-  const shouldShowMatchEntryCta =
-    isMatchSource &&
-    !isLoading &&
-    Boolean(
-      errorMessage?.includes('매칭 추천 결과를 찾을 수 없습니다') ||
-      recommendationItems.length === 0,
-    );
-  const shouldShowSurveyActions =
-    isSurveySource && canAccessPage && surveyRecommendationReady;
-
-  useLayoutEffect(() => {
-    if (!canAccessPage) {
-      return;
-    }
-
-    if (isMatchSource) {
-      queryClient.setQueryData<{
-        pages: MatchResultResponse[];
-        pageParams: unknown[];
-      }>(['match-results'], (currentData) =>
-        currentData
-          ? {
-              ...currentData,
-              pages: currentData.pages.slice(0, 1),
-              pageParams: currentData.pageParams.slice(0, 1),
-            }
-          : currentData,
-      );
-
-      return;
-    }
-
-    if (isSurveySource) {
-      queryClient.setQueryData<{
-        pages: SurveyResultResponse[];
-        pageParams: unknown[];
-      }>(['survey-results'], (currentData) =>
-        currentData
-          ? {
-              ...currentData,
-              pages: currentData.pages.slice(0, 1),
-              pageParams: currentData.pageParams.slice(0, 1),
-            }
-          : currentData,
-      );
-    }
-  }, [canAccessPage, isMatchSource, isSurveySource, queryClient]);
-
-  useEffect(() => {
-    if (loadMoreScrollTopRef.current === null) {
-      return;
-    }
-
-    const scrollContainer = recommendationScrollRef.current;
-
-    if (!scrollContainer) {
-      loadMoreScrollTopRef.current = null;
-      loadMoreWindowScrollYRef.current = null;
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      if (
-        typeof window !== 'undefined' &&
-        loadMoreWindowScrollYRef.current !== null
-      ) {
-        window.scrollTo({
-          top: loadMoreWindowScrollYRef.current,
-          behavior: 'auto',
-        });
-      }
-
-      scrollContainer.scrollTop =
-        (loadMoreScrollTopRef.current ?? scrollContainer.scrollTop) +
-        loadMoreStepOffsetRef.current;
-      loadMoreScrollTopRef.current = null;
-      loadMoreWindowScrollYRef.current = null;
-      loadMoreStepOffsetRef.current = LOAD_MORE_SCROLL_STEP_FALLBACK;
-    });
-  }, [recommendationItems.length]);
-
-  const handleOpenDetail = (item: RecommendationDisplayItem) => {
-    detailListScrollTopRef.current =
-      recommendationScrollRef.current?.scrollTop ?? null;
-    detailWindowScrollYRef.current =
-      typeof window !== 'undefined' ? window.scrollY : 0;
-    setSelectedGame(toGameListItem(item));
-  };
-
-  const handleCloseDetail = () => {
-    setSelectedGame(null);
-
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      window.scrollTo({
-        top: detailWindowScrollYRef.current,
-        behavior: 'auto',
-      });
-
-      if (
-        recommendationScrollRef.current &&
-        detailListScrollTopRef.current !== null
-      ) {
-        recommendationScrollRef.current.scrollTop =
-          detailListScrollTopRef.current;
-      }
-    });
-  };
-
-  const handleLoadMore = () => {
-    const scrollContainer = recommendationScrollRef.current;
-
-    if (scrollContainer) {
-      loadMoreScrollTopRef.current = scrollContainer.scrollTop;
-      const firstRow = scrollContainer.querySelector('article');
-      loadMoreStepOffsetRef.current =
-        firstRow instanceof HTMLElement
-          ? Math.max(
-              80,
-              Math.min(
-                Math.round(firstRow.getBoundingClientRect().height * 0.82),
-                160,
-              ),
-            )
-          : LOAD_MORE_SCROLL_STEP_FALLBACK;
-    }
-    loadMoreWindowScrollYRef.current =
-      typeof window !== 'undefined' ? window.scrollY : null;
-
-    void fetchNextPage();
-  };
-
-  const handleViewPreviousSurvey = () => {
-    navigate(`/${ROUTES.SURVEY}?mode=history`);
-  };
-
-  const handleResetSurvey = async () => {
-    if (resetSurveyMutation.isPending) {
-      return;
-    }
-
-    setLikeFeedbackMessage(null);
-
-    if (!surveySessionId) {
-      clearModerationState();
-      resetSurveyState();
-      queryClient.removeQueries({ queryKey: ['survey-results'] });
-      navigate(`/${ROUTES.SURVEY}`);
-      return;
-    }
-
-    try {
-      const response = await resetSurveyMutation.mutateAsync({
-        session_id: surveySessionId,
-      });
-
-      setSelectedGame(null);
-      clearModerationState();
-      hydrateInitialSession(response);
-      queryClient.removeQueries({ queryKey: ['survey-results'] });
-      navigate(`/${ROUTES.SURVEY}`);
-    } catch (requestError) {
-      setLikeFeedbackMessage(extractApiErrorMessage(requestError));
-    }
-  };
-
-  useEffect(() => {
-    if (!likeFeedbackMessage) {
-      return undefined;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setLikeFeedbackMessage(null);
-    }, FEEDBACK_MESSAGE_DURATION_MS);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [likeFeedbackMessage]);
-
-  const updateLikedGamesCache = (
-    item: RecommendationDisplayItem,
-    nextIsLiked: boolean,
-  ) => {
-    queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: authKeys.likedGames() },
-      (current) => {
-        if (!isLikedGamesResponse(current)) {
-          return current;
-        }
-
-        const currentLikedGames = current as LikedGamesResponse;
-
-        if (nextIsLiked) {
-          const alreadyExists = currentLikedGames.results.some(
-            (likedGame) => likedGame.game_id === item.game_id,
-          );
-
-          if (alreadyExists) {
-            return current;
-          }
-
-          return {
-            ...currentLikedGames,
-            count: currentLikedGames.count + 1,
-            results: [
-              {
-                game_id: item.game_id,
-                game_title: item.title,
-                thumbnail_url: item.thumbnail_url,
-                genres: item.genres,
-                liked_at: new Date().toISOString(),
-              },
-              ...currentLikedGames.results,
-            ],
-          };
-        }
-
-        const nextResults = currentLikedGames.results.filter(
-          (likedGame) => likedGame.game_id !== item.game_id,
-        );
-
-        if (nextResults.length === currentLikedGames.results.length) {
-          return current;
-        }
-
-        return {
-          ...currentLikedGames,
-          count: Math.max(0, currentLikedGames.count - 1),
-          results: nextResults,
-        };
-      },
-    );
-  };
-
-  const likeMutation = useMutation({
-    mutationFn: ({
-      gameId,
-      nextIsLiked,
-    }: RecommendationLikeMutationVariables) =>
-      nextIsLiked ? likeGame(gameId) : unlikeGame(gameId),
-    onMutate: ({ gameId }) => {
-      setPendingLikeGameId(gameId);
-      setLikeFeedbackMessage(null);
-    },
-    onSuccess: async (response, variables) => {
-      updateLikedGamesCache(variables.item, response.isLiked);
+  const {
+    isMatchSource,
+    isSurveySource,
+    recommendationItems,
+    recommendationHighlights,
+    errorMessage,
+    shouldShowMatchEntryCta,
+    error,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useRecommendationResultsSource({ canAccessPage });
+  const {
+    pendingLikeGameId,
+    feedbackMessage,
+    setFeedbackMessage,
+    handleToggleLike,
+  } = useRecommendationLike({
+    onSelectedGameLikeChange: (gameId, isLiked) => {
       setSelectedGame((current) =>
-        current?.gameId === response.gameId
-          ? { ...current, isLiked: response.isLiked }
-          : current,
+        current?.gameId === gameId ? { ...current, isLiked } : current,
       );
-      syncGameLikeStateInQueryCache(queryClient, {
-        gameId: response.gameId,
-        isLiked: response.isLiked,
-        likeCount: response.likeCount,
-      });
-
-      try {
-        const detail = await queryClient.fetchQuery({
-          queryKey: gamesKeys.detail(response.gameId),
-          queryFn: () => getGameDetail(response.gameId),
-          staleTime: 60_000,
-        });
-
-        queryClient.setQueriesData<LikedGamesResponse>(
-          { queryKey: authKeys.likedGames() },
-          (current) => {
-            if (!isLikedGamesResponse(current) || !response.isLiked) {
-              return current;
-            }
-
-            const currentLikedGames = current as LikedGamesResponse;
-
-            return {
-              ...currentLikedGames,
-              results: currentLikedGames.results.map((likedGame) =>
-                likedGame.game_id === response.gameId
-                  ? {
-                      ...likedGame,
-                      game_title: detail.title.trim() || likedGame.game_title,
-                      thumbnail_url:
-                        detail.coverImageUrl ?? likedGame.thumbnail_url,
-                      genres: detail.genres.length
-                        ? detail.genres
-                        : likedGame.genres,
-                    }
-                  : likedGame,
-              ),
-            };
-          },
-        );
-      } catch {
-        // 상세 조회 실패는 좋아요 토글 결과를 되돌릴 이유가 아니므로 무시합니다.
-      }
-
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
-      });
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError && error.response?.status === 401) {
-        setLikeFeedbackMessage(LIKE_LOGIN_REQUIRED_MESSAGE);
-        return;
-      }
-
-      setLikeFeedbackMessage(LIKE_ERROR_MESSAGE);
-    },
-    onSettled: () => {
-      setPendingLikeGameId(null);
     },
   });
-
-  const handleToggleLike = (item: RecommendationDisplayItem) => {
-    likeMutation.mutate({
-      gameId: item.game_id,
-      nextIsLiked: !item.is_liked,
-      item,
-    });
-  };
+  const {
+    recommendationScrollRef,
+    handleOpenDetail,
+    handleCloseDetail,
+    handleLoadMore,
+  } = useRecommendationScrollRestoration({
+    itemCount: recommendationItems.length,
+    fetchNextPage,
+    setSelectedGame,
+  });
+  const {
+    shouldShowSurveyActions,
+    isResettingSurvey,
+    handleViewPreviousSurvey,
+    handleResetSurvey,
+  } = useSurveyRecommendationActions({
+    canAccessPage,
+    isSurveySource,
+    onBeforeReset: () => setSelectedGame(null),
+    setFeedbackMessage,
+  });
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -686,13 +259,11 @@ function RecommendationListPage() {
                   <button
                     type="button"
                     onClick={() => void handleResetSurvey()}
-                    disabled={resetSurveyMutation.isPending}
+                    disabled={isResettingSurvey}
                     className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <RotateCcw size={16} />
-                    {resetSurveyMutation.isPending
-                      ? '설문 초기화 중...'
-                      : '설문 초기화'}
+                    {isResettingSurvey ? '설문 초기화 중...' : '설문 초기화'}
                   </button>
                 </div>
               ) : null}
@@ -742,10 +313,10 @@ function RecommendationListPage() {
             </section>
           ) : (
             <section className="overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
-              {likeFeedbackMessage ? (
+              {feedbackMessage ? (
                 <div className="border-b border-white/8 px-4 py-4 sm:px-6 lg:px-7">
                   <p className="text-sm leading-6 break-keep text-[#ffc2c2]">
-                    {likeFeedbackMessage}
+                    {feedbackMessage}
                   </p>
                 </div>
               ) : null}
