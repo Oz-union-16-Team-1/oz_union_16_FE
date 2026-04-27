@@ -229,8 +229,8 @@ function RecommendationListPage() {
       <RecommendationBackdrop items={recommendationItems} />
       <LazyHeader fixed />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-10 sm:px-4 sm:pt-28 sm:pb-12 md:px-8 md:pt-32 md:pb-16">
-        <section className="mx-auto w-full max-w-245">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-8 sm:px-4 sm:pt-28 sm:pb-10 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
+        <section className="mx-auto flex min-h-0 w-full max-w-245 flex-1 flex-col">
           <div className="mb-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -314,7 +314,7 @@ function RecommendationListPage() {
               </Link>
             </section>
           ) : (
-            <section className="overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               {feedbackMessage ? (
                 <div className="border-b border-white/8 px-4 py-4 sm:px-6 lg:px-7">
                   <p className="text-sm leading-6 break-keep text-[#ffc2c2]">
@@ -339,7 +339,7 @@ function RecommendationListPage() {
                 <>
                   <div
                     ref={recommendationScrollRef}
-                    className="recommendation-scroll max-h-[62vh] overflow-y-auto"
+                    className="recommendation-scroll min-h-0 flex-1 overflow-y-auto"
                   >
                     <div className="divide-y divide-white/8">
                       {recommendationItems.map((item) => (
@@ -359,24 +359,19 @@ function RecommendationListPage() {
                       type="button"
                       onClick={handleLoadMore}
                       disabled={isFetchingNextPage}
-                      className="flex w-full flex-col items-center justify-center gap-1.5 border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.03))] px-4 py-4 text-sm font-medium text-white/82 transition hover:bg-white/4 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
+                      className="flex w-full items-center justify-center gap-2 border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.03))] px-4 py-2.5 text-sm font-medium text-white/82 transition hover:bg-white/4 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
                     >
+                      {!isFetchingNextPage ? (
+                        <ChevronDown
+                          size={16}
+                          className="translate-y-px text-white/56"
+                        />
+                      ) : null}
                       <span>
                         {isFetchingNextPage
                           ? '추천 결과를 불러오는 중입니다...'
                           : '더보기'}
                       </span>
-                      <div className="flex flex-col items-center gap-0.5">
-                        {!isFetchingNextPage ? (
-                          <ChevronDown
-                            size={18}
-                            className="translate-y-px text-white/56"
-                          />
-                        ) : null}
-                        <span className="text-[11px] font-normal tracking-[0.14em] text-white/38 uppercase">
-                          {isFetchingNextPage ? 'Loading' : 'More Below'}
-                        </span>
-                      </div>
                     </button>
                   ) : null}
                 </>
