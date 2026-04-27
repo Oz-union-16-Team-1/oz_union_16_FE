@@ -1,6 +1,13 @@
-import { useState } from 'react';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 
+import { shouldRetryApiQuery } from '../../../api/queryRetry';
+import { primeGameDetailCacheFromList } from '../../../features/games/detailCachePriming';
 import { getTopGames, searchGames } from '../../../features/games/gameApi';
 import type { GameGenreFilter } from '../../../features/games/genres';
 import { useDebouncedValue } from '../../../features/games/hooks/useDebouncedValue';
@@ -23,16 +30,44 @@ export type MainPageGamesState = {
   carouselKey: string;
   games: GameListItem[];
   isGamesLoading: boolean;
+  isGamesError: boolean;
   isGamesUpdating: boolean;
   isFiltered: boolean;
+  gamesErrorMessage: string | null;
   hasMoreSearchResults: boolean;
   isFetchingMoreSearchResults: boolean;
   setSearchText: (value: string) => void;
   setSelectedGenre: (genre: GameGenreFilter) => void;
   fetchMoreSearchResults: () => void;
+  retryGames: () => void;
+};
+
+const getMainGamesErrorMessage = (error: unknown, isSearchMode: boolean) => {
+  const subject = isSearchMode ? '검색 결과' : '인기 게임 목록';
+
+  if (error instanceof AxiosError) {
+    if (!error.response) {
+      return `${subject} 서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`;
+    }
+
+    const data = error.response.data as
+      | { detail?: string; error_detail?: string }
+      | undefined;
+
+    if (typeof data?.detail === 'string') {
+      return data.detail;
+    }
+
+    if (typeof data?.error_detail === 'string') {
+      return data.error_detail;
+    }
+  }
+
+  return `${subject}을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.`;
 };
 
 export const useMainPageGames = (): MainPageGamesState => {
+  const queryClient = useQueryClient();
   const [searchText, setSearchText] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<GameGenreFilter>('전체');
   const debouncedSearchText = useDebouncedValue(
@@ -46,7 +81,9 @@ export const useMainPageGames = (): MainPageGamesState => {
     enabled: !isSearchMode,
     queryFn: () => getTopGames({ genre: selectedGenre }),
     staleTime: 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: shouldRetryApiQuery,
   });
 
   const searchGamesQuery = useInfiniteQuery({
@@ -71,17 +108,26 @@ export const useMainPageGames = (): MainPageGamesState => {
       return allPages.length + 1;
     },
     staleTime: 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: shouldRetryApiQuery,
   });
 
-  const games = isSearchMode
-    ? (searchGamesQuery.data?.pages.flatMap((page) =>
-        getPaginatedResults(page),
-      ) ?? [])
-    : (topGamesQuery.data ?? []);
+  const games = useMemo(
+    () =>
+      isSearchMode
+        ? (searchGamesQuery.data?.pages.flatMap((page) =>
+            getPaginatedResults(page),
+          ) ?? [])
+        : (topGamesQuery.data ?? []),
+    [isSearchMode, searchGamesQuery.data?.pages, topGamesQuery.data],
+  );
   const isGamesLoading = isSearchMode
     ? searchGamesQuery.isLoading
     : topGamesQuery.isLoading;
+  const isGamesError = isSearchMode
+    ? searchGamesQuery.isError && games.length === 0
+    : topGamesQuery.isError && games.length === 0;
   const isGamesUpdating = isSearchMode
     ? searchGamesQuery.isFetching &&
       !searchGamesQuery.isLoading &&
@@ -95,6 +141,20 @@ export const useMainPageGames = (): MainPageGamesState => {
   const sectionTitle = isSearchMode
     ? `"${debouncedSearchText}" 검색 결과`
     : '인기 TOP 100 🔥';
+  const gamesErrorMessage = isGamesError
+    ? getMainGamesErrorMessage(
+        isSearchMode ? searchGamesQuery.error : topGamesQuery.error,
+        isSearchMode,
+      )
+    : null;
+
+  useEffect(() => {
+    if (games.length === 0) {
+      return;
+    }
+
+    void primeGameDetailCacheFromList(queryClient, games);
+  }, [games, queryClient]);
 
   return {
     searchText,
@@ -103,8 +163,10 @@ export const useMainPageGames = (): MainPageGamesState => {
     carouselKey: `${debouncedSearchText}-${selectedGenre}`,
     games,
     isGamesLoading,
+    isGamesError,
     isGamesUpdating,
     isFiltered: isSearchMode || selectedGenre !== '전체',
+    gamesErrorMessage,
     hasMoreSearchResults,
     isFetchingMoreSearchResults: searchGamesQuery.isFetchingNextPage,
     setSearchText,
@@ -115,6 +177,14 @@ export const useMainPageGames = (): MainPageGamesState => {
       }
 
       void searchGamesQuery.fetchNextPage();
+    },
+    retryGames: () => {
+      if (isSearchMode) {
+        void searchGamesQuery.refetch();
+        return;
+      }
+
+      void topGamesQuery.refetch();
     },
   };
 };

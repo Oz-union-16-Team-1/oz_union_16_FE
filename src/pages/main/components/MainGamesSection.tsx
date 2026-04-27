@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import type { GameListItem } from '../../../features/games/types';
 import type { MainPageGamesState } from '../hooks/useMainPageGames';
 import MainGameCarousel, {
+  ErrorGameList,
   EmptyGameList,
   GameCardSkeletonList,
 } from './MainGameCarousel';
@@ -19,13 +20,16 @@ const MainGamesSection = ({
   carouselKey,
   games,
   isGamesLoading,
+  isGamesError,
   isGamesUpdating,
   isFiltered,
+  gamesErrorMessage,
   hasMoreSearchResults,
   isFetchingMoreSearchResults,
   setSearchText,
   setSelectedGenre,
   fetchMoreSearchResults,
+  retryGames,
   onSelectGame,
 }: MainGamesSectionProps) => {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -77,6 +81,14 @@ const MainGamesSection = ({
 
       {isGamesLoading ? (
         <GameCardSkeletonList />
+      ) : isGamesError ? (
+        <ErrorGameList
+          message={
+            gamesErrorMessage ??
+            '인기 게임 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          }
+          onRetry={retryGames}
+        />
       ) : games.length > 0 ? (
         <>
           <MainGameCarousel
