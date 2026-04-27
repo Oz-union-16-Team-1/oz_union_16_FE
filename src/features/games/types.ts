@@ -74,7 +74,15 @@ export type GameLikeResponse = {
 
 export type RawGameLikeResponse = {
   game_id: number;
-  is_liked: boolean;
+  like_count: number | null;
+};
+
+export type RawTopGameListItem = {
+  game_id: number;
+  name: string | null;
+  genres: string[] | null;
+  thumbnail_url: string | null;
+  total_rating: number | null;
   like_count: number | null;
 };
 

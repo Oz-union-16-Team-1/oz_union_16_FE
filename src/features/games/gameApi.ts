@@ -9,6 +9,7 @@ import type {
   RawGameDetailResponse,
   RawGameLikeResponse,
   RawGameListItem,
+  RawTopGameListItem,
   SearchGamesParams,
   SearchGamesResult,
 } from './types';
@@ -57,25 +58,34 @@ const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
   isLiked: typeof game.is_liked === 'boolean' ? game.is_liked : null,
 });
 
+const normalizeTopGameListItem = (game: RawTopGameListItem): GameListItem => ({
+  gameId: game.game_id,
+  name: game.name || 'N/A',
+  genres: game.genres?.length ? game.genres : ['N/A'],
+  thumbnailUrl: game.thumbnail_url,
+  rating: game.total_rating,
+});
+
 const normalizeGameLikeResponse = (
   response: RawGameLikeResponse,
+  isLiked: boolean,
 ): GameLikeResponse => ({
   gameId: response.game_id,
-  isLiked: response.is_liked,
+  isLiked,
   likeCount: response.like_count ?? 0,
 });
 
 export const getTopGames = async ({
   genre = '전체',
 }: GetTopGamesParams = {}): Promise<GameListItem[]> => {
-  const response = await api.get<GameListResponse>(
-    '/api/v1/games/list/top100',
-    {
-      params: getGenreQueryParams(genre),
-    },
-  );
+  const response = await api.get<{
+    ranked_at: string;
+    results: RawTopGameListItem[];
+  }>('/api/v1/games/list/top100', {
+    params: getGenreQueryParams(genre),
+  });
 
-  return response.data.results.map(normalizeGameListItem);
+  return response.data.results.map(normalizeTopGameListItem);
 };
 
 export const searchGames = async ({
@@ -116,7 +126,7 @@ export const likeGame = async (gameId: number): Promise<GameLikeResponse> => {
     `/api/v1/games/${gameId}/like`,
   );
 
-  return normalizeGameLikeResponse(response.data);
+  return normalizeGameLikeResponse(response.data, true);
 };
 
 export const unlikeGame = async (gameId: number): Promise<GameLikeResponse> => {
@@ -124,5 +134,5 @@ export const unlikeGame = async (gameId: number): Promise<GameLikeResponse> => {
     `/api/v1/games/${gameId}/like`,
   );
 
-  return normalizeGameLikeResponse(response.data);
+  return normalizeGameLikeResponse(response.data, false);
 };
