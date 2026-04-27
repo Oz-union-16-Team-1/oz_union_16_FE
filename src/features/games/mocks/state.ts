@@ -396,3 +396,9 @@ export const getStoredGameDetail = (
     likeCount: resolvedLikeState.likeCount,
   };
 };
+
+export const getStoredGameDetailSnapshot = (gameId: number) => {
+  const detail = ensureStoredDetail(gameId);
+
+  return detail ? cloneGameDetail(detail) : null;
+};
