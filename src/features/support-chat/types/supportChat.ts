@@ -22,11 +22,11 @@ export type SupportChatRouteContext = {
 
 export type ChatbotMessageRequest = {
   message: string;
-  session_id?: number;
+  session_id?: string;
 };
 
 export type ChatbotMessageResponse = {
-  session_id: number;
+  session_id: string;
 };
 
 export type ChatbotErrorResponse = {
@@ -35,7 +35,7 @@ export type ChatbotErrorResponse = {
 
 export type ChatbotStreamStartEvent = {
   type: 'start';
-  sessionId: number;
+  sessionId: string;
 };
 
 export type ChatbotStreamChunkEvent = {
@@ -45,7 +45,7 @@ export type ChatbotStreamChunkEvent = {
 
 export type ChatbotStreamCompleteEvent = {
   type: 'complete';
-  sessionId: number;
+  sessionId: string;
 };
 
 export type ChatbotStreamEvent =
