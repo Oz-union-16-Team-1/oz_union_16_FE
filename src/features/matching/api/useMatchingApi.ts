@@ -20,12 +20,13 @@ import {
 
 export const useMatchCandidatesQuery = (
   genreId: number | null,
+  retryNo = 0,
   enabled = true,
 ) =>
   useQuery({
-    queryKey: ['match-candidates', genreId],
+    queryKey: ['match-candidates', genreId, retryNo],
     enabled: genreId !== null && enabled,
-    queryFn: () => getMatchCandidates(genreId!),
+    queryFn: () => getMatchCandidates(genreId!, retryNo),
     staleTime: 60_000,
     retry: shouldRetryApiQuery,
   });
@@ -59,13 +60,17 @@ export const useSubmitMatchResponsesMutation = () =>
     mutationFn: submitMatchResponses,
   });
 
-export const useMatchResultsInfinite = (enabled = true) =>
+export const useMatchResultsInfinite = (
+  genreId: number | null,
+  enabled = true,
+) =>
   useInfiniteQuery({
-    queryKey: ['match-results'],
+    queryKey: ['match-results', genreId],
     initialPageParam: null as string | null,
-    enabled,
+    enabled: enabled && genreId !== null,
     queryFn: ({ pageParam }) =>
       getMatchResponseResults({
+        genre_id: genreId!,
         cursor: pageParam ?? undefined,
         page_size: 5,
       }),

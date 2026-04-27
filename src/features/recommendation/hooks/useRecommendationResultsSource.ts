@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router';
 
 import { getPaginatedResults } from '../../../utils/paginatedResults';
 import { useMatchResultsInfinite } from '../../matching/api/useMatchingApi';
+import { useMatchingStore } from '../../matching/store/useMatchingStore';
 import type { MatchResultResponse } from '../../matching/types';
 import { useSurveyStore } from '../../survey/store/useSurveyStore';
 import { useSurveyResultsInfinite } from '../../survey/api/useSurveyApi';
@@ -25,11 +26,21 @@ export const useRecommendationResultsSource = ({
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const source = searchParams.get('source');
+  const matchGenreIdFromUrlValue = searchParams.get('genre_id');
   const surveySessionIdFromUrl = searchParams.get('session_id');
   const storedSurveySessionId = useSurveyStore((state) => state.sessionId);
+  const selectedGenreId = useMatchingStore((state) => state.selectedGenreId);
   const isMatchSource = source === 'match';
   const isSurveySource =
     source === 'survey' || (!source && Boolean(surveySessionIdFromUrl));
+  const matchGenreIdFromUrl =
+    matchGenreIdFromUrlValue !== null ? Number(matchGenreIdFromUrlValue) : null;
+  const resolvedMatchGenreId =
+    typeof matchGenreIdFromUrl === 'number' &&
+    !Number.isNaN(matchGenreIdFromUrl) &&
+    matchGenreIdFromUrl >= 1
+      ? matchGenreIdFromUrl
+      : selectedGenreId;
   const resolvedSurveySessionId =
     surveySessionIdFromUrl ?? storedSurveySessionId;
 
@@ -38,6 +49,7 @@ export const useRecommendationResultsSource = ({
     resolvedSurveySessionId,
   );
   const matchResultsQuery = useMatchResultsInfinite(
+    resolvedMatchGenreId,
     isMatchSource && canAccessPage,
   );
   const activeQuery = isMatchSource ? matchResultsQuery : surveyResultsQuery;
@@ -80,10 +92,10 @@ export const useRecommendationResultsSource = ({
     }
 
     if (isMatchSource) {
-      queryClient.setQueryData<{
+      queryClient.setQueriesData<{
         pages: MatchResultResponse[];
         pageParams: unknown[];
-      }>(['match-results'], (currentData) =>
+      }>({ queryKey: ['match-results'] }, (currentData) =>
         currentData
           ? {
               ...currentData,
