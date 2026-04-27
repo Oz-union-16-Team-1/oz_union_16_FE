@@ -25,6 +25,8 @@ type GameDetailModalToast = {
   tone: 'error';
 };
 
+type DetailErrorKind = 'not-found' | 'error' | null;
+
 const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
   if (!value || typeof value !== 'object') {
     return false;
@@ -45,6 +47,18 @@ const getLikeErrorMessage = (error: unknown) => {
   }
 
   return LIKE_ERROR_MESSAGE;
+};
+
+const getDetailErrorKind = (error: unknown): DetailErrorKind => {
+  if (!(error instanceof AxiosError)) {
+    return error ? 'error' : null;
+  }
+
+  if (error.response?.status === 404) {
+    return 'not-found';
+  }
+
+  return 'error';
 };
 
 const syncLikedGamesQueryCache = (
@@ -134,6 +148,14 @@ export const useGameDetailModal = (game: GameListItem) => {
   });
 
   const detail = detailQuery.data;
+  const detailErrorKind = getDetailErrorKind(detailQuery.error);
+  const hasFallbackSummary = Boolean(
+    game.name.trim() ||
+    game.thumbnailUrl ||
+    game.genres.length > 0 ||
+    typeof game.rating === 'number' ||
+    typeof game.isLiked === 'boolean',
+  );
   const activeLikeState = likeState?.gameId === game.gameId ? likeState : null;
   const currentLiked =
     activeLikeState?.isLiked ??
@@ -196,8 +218,10 @@ export const useGameDetailModal = (game: GameListItem) => {
   }, [toast]);
 
   return {
+    canRenderFallbackSummary: hasFallbackSummary,
     clearToast: () => setToast(null),
     detail,
+    detailErrorKind,
     detailQuery,
     handleToggleLike,
     hasResolvedDetail: Boolean(detail),

@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import ToastMessage from '../../../components/mypage/ToastMessage';
 import {
   DETAIL_LOADING_TEXT,
-  formatDetailField,
   normalizeMeaningfulText,
   normalizeMeaningfulTextList,
 } from '../detailUtils';
@@ -32,6 +31,9 @@ const formatNullableText = (value: string | null | undefined) =>
 
 const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
+const DETAIL_FETCH_ERROR_MESSAGE =
+  '상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+const PROMO_VIDEO_FETCH_ERROR_MESSAGE = '프로모션 영상을 불러오지 못했습니다.';
 
 const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
   const title = normalizeMeaningfulText(game.name) ?? 'N/A';
@@ -66,7 +68,7 @@ const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
             >
               {title}
             </h2>
-            <div className="h-10 w-[4.5rem] shrink-0 animate-pulse rounded-md bg-white/8" />
+            <div className="h-10 w-18 shrink-0 animate-pulse rounded-md bg-white/8" />
           </div>
 
           {/* 장르: 리스트 값으로 즉시 표시, 없으면 스켈레톤 */}
@@ -145,8 +147,10 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     Record<number, string[]>
   >({});
   const {
+    canRenderFallbackSummary,
     clearToast,
     detail,
+    detailErrorKind,
     detailQuery,
     handleToggleLike,
     hasResolvedDetail,
@@ -180,22 +184,33 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     detail?.promoEmbedUrl?.trim() || null,
     promoVideoUrl,
   );
-  const descriptionField = formatDetailField(
-    detail?.description,
-    hasResolvedDetail,
-  );
+  const detailFieldFallback =
+    detailErrorKind === 'error' && !hasResolvedDetail
+      ? DETAIL_FETCH_ERROR_MESSAGE
+      : detailErrorKind === 'not-found' && !hasResolvedDetail
+        ? 'N/A'
+        : DETAIL_LOADING_TEXT;
+  const descriptionField =
+    normalizeMeaningfulText(detail?.description) ??
+    (hasResolvedDetail ? 'N/A' : detailFieldFallback);
   const detailRows = [
     {
       label: '게임 출시일',
-      value: formatDetailField(detail?.releaseDate, hasResolvedDetail),
+      value:
+        normalizeMeaningfulText(detail?.releaseDate) ??
+        (hasResolvedDetail ? 'N/A' : detailFieldFallback),
     },
     {
       label: '게임 개발사',
-      value: formatDetailField(detail?.developer, hasResolvedDetail),
+      value:
+        normalizeMeaningfulText(detail?.developer) ??
+        (hasResolvedDetail ? 'N/A' : detailFieldFallback),
     },
     {
       label: '게임 배급사',
-      value: formatDetailField(detail?.publisher, hasResolvedDetail),
+      value:
+        normalizeMeaningfulText(detail?.publisher) ??
+        (hasResolvedDetail ? 'N/A' : detailFieldFallback),
     },
   ];
   const externalLinks = EXTERNAL_LINK_LABELS.map(({ key, label }) => ({
@@ -204,6 +219,16 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
   })).filter((link): link is { label: string; url: string } =>
     Boolean(normalizeMeaningfulText(link.url)),
   );
+  const shouldShowNotFoundState =
+    detailErrorKind === 'not-found' &&
+    !hasResolvedDetail &&
+    !canRenderFallbackSummary;
+  const shouldShowFatalErrorState =
+    detailErrorKind === 'error' &&
+    !hasResolvedDetail &&
+    !canRenderFallbackSummary;
+  const shouldShowErrorState =
+    shouldShowNotFoundState || shouldShowFatalErrorState;
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -267,16 +292,20 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
 
         {detailQuery.isPending ? (
           <GameDetailModalSkeleton game={game} />
-        ) : detailQuery.isError ? (
+        ) : shouldShowErrorState ? (
           <div className="flex min-h-96 flex-col items-center justify-center px-6 py-16 text-center sm:px-10">
             <h2
               id="game-detail-modal-title"
               className="text-2xl font-bold text-white sm:text-3xl"
             >
-              {DETAIL_NOT_FOUND_TITLE}
+              {shouldShowNotFoundState
+                ? DETAIL_NOT_FOUND_TITLE
+                : '상세 정보를 불러오지 못했습니다.'}
             </h2>
             <p className="mt-4 max-w-md text-sm leading-6 text-white/60 sm:text-base">
-              {DETAIL_NOT_FOUND_MESSAGE}
+              {shouldShowNotFoundState
+                ? DETAIL_NOT_FOUND_MESSAGE
+                : DETAIL_FETCH_ERROR_MESSAGE}
             </p>
           </div>
         ) : (
@@ -359,7 +388,9 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                 <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
                   {descriptionField === DETAIL_LOADING_TEXT
                     ? '상세 정보를 불러오는 중입니다.'
-                    : formatNullableText(detail?.description)}
+                    : descriptionField === DETAIL_FETCH_ERROR_MESSAGE
+                      ? DETAIL_FETCH_ERROR_MESSAGE
+                      : formatNullableText(detail?.description)}
                 </p>
               </div>
             </div>
@@ -404,6 +435,32 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     </p>
                     <p className="mt-2 text-xs text-white/45 sm:text-sm">
                       제공된 영상 정보가 없습니다.
+                    </p>
+                  </div>
+                ) : detailErrorKind === 'not-found' ? (
+                  <div className="px-4 text-center">
+                    <PlayCircle
+                      aria-hidden="true"
+                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                    />
+                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
+                      프로모션 영상 N/A
+                    </p>
+                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                      제공된 영상 정보가 없습니다.
+                    </p>
+                  </div>
+                ) : detailErrorKind === 'error' ? (
+                  <div className="px-4 text-center">
+                    <PlayCircle
+                      aria-hidden="true"
+                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
+                    />
+                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
+                      {PROMO_VIDEO_FETCH_ERROR_MESSAGE}
+                    </p>
+                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
+                      잠시 후 다시 시도해 주세요.
                     </p>
                   </div>
                 ) : (
@@ -456,7 +513,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     ) : hasResolvedDetail ? (
                       'N/A'
                     ) : (
-                      DETAIL_LOADING_TEXT
+                      detailFieldFallback
                     )}
                   </dd>
                 </div>
