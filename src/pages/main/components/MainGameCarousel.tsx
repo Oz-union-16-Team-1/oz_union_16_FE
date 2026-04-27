@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper';
@@ -182,7 +182,7 @@ type EmptyGameListProps = {
   isFiltered: boolean;
 };
 
-export const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
+const useGameCardEmptyStateHeight = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [cardHeight, setCardHeight] = useState<number | null>(null);
 
@@ -232,6 +232,12 @@ export const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
     };
   }, []);
 
+  return { cardHeight, containerRef };
+};
+
+export const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
+  const { cardHeight, containerRef } = useGameCardEmptyStateHeight();
+
   return (
     <div className="relative left-1/2 w-screen -translate-x-1/2">
       <div className="px-[clamp(1rem,5vw,20rem)] py-2">
@@ -252,12 +258,45 @@ export const EmptyGameList = ({ isFiltered }: EmptyGameListProps) => {
   );
 };
 
+type ErrorGameListProps = {
+  message: string;
+  onRetry: () => void;
+};
+
+export const ErrorGameList = ({ message, onRetry }: ErrorGameListProps) => {
+  const { cardHeight, containerRef } = useGameCardEmptyStateHeight();
+
+  return (
+    <div className="relative left-1/2 w-screen -translate-x-1/2">
+      <div className="px-[clamp(1rem,5vw,20rem)] py-2">
+        <div ref={containerRef}>
+          <div
+            className="bg-mypage-soft flex flex-col items-center justify-center gap-5 rounded-lg border border-[#5a1115]/60 px-6 text-center"
+            style={cardHeight ? { minHeight: `${cardHeight}px` } : undefined}
+          >
+            <p className="max-w-xl text-base leading-7 text-white/70">
+              {message}
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-white/3 px-5 py-3 text-sm font-medium text-white/85 transition hover:border-[#d20b12]/60 hover:bg-[#160b0b] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d20b12]"
+            >
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const GameListUpdatingOverlay = () => (
   <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-lg">
-    <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
     <div className="absolute top-3 right-3 flex items-center gap-2">
-      <div className="h-2.5 w-14 animate-pulse rounded-full bg-white/20" />
-      <div className="h-2.5 w-8 animate-pulse rounded-full bg-white/15" />
+      <div className="h-2.5 w-14 animate-pulse rounded-full bg-white/22 shadow-[0_0_12px_rgba(255,255,255,0.08)]" />
+      <div className="h-2.5 w-8 animate-pulse rounded-full bg-white/16 shadow-[0_0_12px_rgba(255,255,255,0.05)]" />
     </div>
   </div>
 );

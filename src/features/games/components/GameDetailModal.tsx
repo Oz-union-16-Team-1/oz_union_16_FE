@@ -33,7 +33,6 @@ const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
 const DETAIL_FETCH_ERROR_MESSAGE =
   '상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
-const PROMO_VIDEO_FETCH_ERROR_MESSAGE = '프로모션 영상을 불러오지 못했습니다.';
 
 const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
   const title = normalizeMeaningfulText(game.name) ?? 'N/A';
@@ -45,7 +44,7 @@ const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
       {/* 상단: 커버 이미지 + 기본 정보 */}
       <div className="grid gap-5 px-5 pt-5 pb-6 sm:grid-cols-[216px_minmax(0,1fr)] sm:px-7 sm:pt-7">
         {/* 커버 이미지: 리스트 썸네일로 즉시 표시 */}
-        <div className="relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] sm:w-54">
+        <div className="bg-header-button-border relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 sm:w-54">
           {game.thumbnailUrl ? (
             <img
               src={game.thumbnailUrl}
@@ -184,15 +183,12 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     detail?.promoEmbedUrl?.trim() || null,
     promoVideoUrl,
   );
-  const detailFieldFallback =
-    detailErrorKind === 'error' && !hasResolvedDetail
-      ? DETAIL_FETCH_ERROR_MESSAGE
-      : detailErrorKind === 'not-found' && !hasResolvedDetail
-        ? 'N/A'
-        : DETAIL_LOADING_TEXT;
+  const isInitialDetailLoading = detailQuery.isPending && !hasResolvedDetail;
+  const detailFieldFallback = isInitialDetailLoading
+    ? DETAIL_LOADING_TEXT
+    : 'N/A';
   const descriptionField =
-    normalizeMeaningfulText(detail?.description) ??
-    (hasResolvedDetail ? 'N/A' : detailFieldFallback);
+    normalizeMeaningfulText(detail?.description) ?? detailFieldFallback;
   const detailRows = [
     {
       label: '게임 출시일',
@@ -311,7 +307,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
         ) : (
           <>
             <div className="grid gap-5 px-5 pt-5 pb-6 sm:grid-cols-[216px_minmax(0,1fr)] sm:px-7 sm:pt-7">
-              <div className="relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] sm:w-54">
+              <div className="bg-header-button-border relative isolate aspect-4/5 w-[min(56vw,13.5rem)] max-w-full overflow-hidden rounded-lg border border-white/10 sm:w-54">
                 {imageUrl ? (
                   <img
                     src={imageUrl}
@@ -388,9 +384,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                 <p className="mt-5 line-clamp-5 text-sm leading-6 text-white/60 sm:line-clamp-6">
                   {descriptionField === DETAIL_LOADING_TEXT
                     ? '상세 정보를 불러오는 중입니다.'
-                    : descriptionField === DETAIL_FETCH_ERROR_MESSAGE
-                      ? DETAIL_FETCH_ERROR_MESSAGE
-                      : formatNullableText(detail?.description)}
+                    : formatNullableText(descriptionField)}
                 </p>
               </div>
             </div>
@@ -424,7 +418,7 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                       {title} 관련 영상 페이지로 이동합니다.
                     </p>
                   </a>
-                ) : hasResolvedDetail ? (
+                ) : hasResolvedDetail || detailQuery.isError ? (
                   <div className="px-4 text-center">
                     <PlayCircle
                       aria-hidden="true"
@@ -435,32 +429,6 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     </p>
                     <p className="mt-2 text-xs text-white/45 sm:text-sm">
                       제공된 영상 정보가 없습니다.
-                    </p>
-                  </div>
-                ) : detailErrorKind === 'not-found' ? (
-                  <div className="px-4 text-center">
-                    <PlayCircle
-                      aria-hidden="true"
-                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
-                    />
-                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
-                      프로모션 영상 N/A
-                    </p>
-                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
-                      제공된 영상 정보가 없습니다.
-                    </p>
-                  </div>
-                ) : detailErrorKind === 'error' ? (
-                  <div className="px-4 text-center">
-                    <PlayCircle
-                      aria-hidden="true"
-                      className="mx-auto h-12 w-12 text-white/55 sm:h-16 sm:w-16"
-                    />
-                    <p className="mt-4 text-sm font-semibold text-white/75 sm:text-base">
-                      {PROMO_VIDEO_FETCH_ERROR_MESSAGE}
-                    </p>
-                    <p className="mt-2 text-xs text-white/45 sm:text-sm">
-                      잠시 후 다시 시도해 주세요.
                     </p>
                   </div>
                 ) : (

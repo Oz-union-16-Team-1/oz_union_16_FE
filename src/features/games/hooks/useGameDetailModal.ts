@@ -3,6 +3,7 @@ import { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '../../../store/useAuthStore';
+import { shouldRetryApiQuery } from '../../../api/queryRetry';
 import { authKeys } from '../../auth/api/queryKeys';
 import type { LikedGamesResponse } from '../../auth/types/auth';
 import {
@@ -144,7 +145,7 @@ export const useGameDetailModal = (game: GameListItem) => {
     gcTime: GAME_DETAIL_GC_TIME,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: shouldRetryApiQuery,
   });
 
   const detail = detailQuery.data;
