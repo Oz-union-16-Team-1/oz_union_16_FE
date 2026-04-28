@@ -12,14 +12,7 @@ import {
   matchingMockCandidatesByGenreId,
 } from './data';
 import { getMatchingMockCandidatesForRetry } from './runtime';
-
-const getErrorResponse = (status: number, message: string) =>
-  HttpResponse.json(
-    {
-      error_detail: message,
-    },
-    { status },
-  );
+import { mockErrorResponse } from '../../../mocks/helpers';
 
 type StoredMatchResult = {
   game_id: number;
@@ -205,13 +198,13 @@ export const matchingHandlers = [
       genreId < 1 ||
       genreId > 8
     ) {
-      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+      return mockErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
     const genre = getMatchingGenreById(genreId);
 
     if (!genre) {
-      return getErrorResponse(404, '해당 장르의 이미지를 찾을 수 없습니다.');
+      return mockErrorResponse(404, '해당 장르의 이미지를 찾을 수 없습니다.');
     }
 
     await delay(300);
@@ -236,14 +229,14 @@ export const matchingHandlers = [
       genreId < 1 ||
       genreId > 8
     ) {
-      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+      return mockErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
     if (
       retryNoValue !== null &&
       (Number.isNaN(retryNo) || !Number.isInteger(retryNo) || retryNo < 0)
     ) {
-      return getErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
+      return mockErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
     }
 
     const candidatesByGenre = matchingMockCandidatesByGenreId[genreId];
@@ -253,7 +246,7 @@ export const matchingHandlers = [
     );
 
     if (!candidatesByGenre) {
-      return getErrorResponse(404, '해당 장르의 게임을 찾을 수 없습니다.');
+      return mockErrorResponse(404, '해당 장르의 게임을 찾을 수 없습니다.');
     }
 
     await delay(650);
@@ -291,7 +284,7 @@ export const matchingHandlers = [
       body.genre_id < 1 ||
       body.genre_id > 8
     ) {
-      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+      return mockErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
     if (
@@ -299,11 +292,11 @@ export const matchingHandlers = [
       !Number.isInteger(body.retry_no) ||
       body.retry_no < 0
     ) {
-      return getErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
+      return mockErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
     }
 
     if (!Array.isArray(body.match_result) || body.match_result.length === 0) {
-      return getErrorResponse(400, '평가할 match_result가 필요합니다.');
+      return mockErrorResponse(400, '평가할 match_result가 필요합니다.');
     }
 
     const currentCandidates = getMatchingMockCandidatesForRetry(
@@ -318,22 +311,22 @@ export const matchingHandlers = [
       const rating = result.rating;
 
       if (typeof result.game_id !== 'number') {
-        return getErrorResponse(400, 'game_id는 정수여야 합니다.');
+        return mockErrorResponse(400, 'game_id는 정수여야 합니다.');
       }
 
       if (!candidateIdSet.has(result.game_id)) {
-        return getErrorResponse(
+        return mockErrorResponse(
           400,
           '후보 세트에 없는 game_id가 포함되어 있습니다.',
         );
       }
 
       if (typeof rating !== 'number' || !Number.isInteger(rating)) {
-        return getErrorResponse(400, 'rating은 정수여야 합니다.');
+        return mockErrorResponse(400, 'rating은 정수여야 합니다.');
       }
 
       if (rating < 1 || rating > 5) {
-        return getErrorResponse(400, 'rating은 1~5 사이의 정수여야 합니다.');
+        return mockErrorResponse(400, 'rating은 1~5 사이의 정수여야 합니다.');
       }
     }
 
@@ -402,11 +395,11 @@ export const matchingHandlers = [
       genreId < 1 ||
       genreId > 8
     ) {
-      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+      return mockErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
     if (!storedMatchContext || storedMatchContext.genre_id !== genreId) {
-      return getErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
+      return mockErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
     }
 
     const results = getMockRecommendationResults(

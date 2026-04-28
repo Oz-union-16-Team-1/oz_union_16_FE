@@ -9,6 +9,7 @@ import type {
   ChatbotMessageRequest,
   ChatbotMessageResponse,
 } from '../types/supportChat';
+import { mockErrorResponse } from '../../../mocks/helpers';
 
 // 고객센터 챗봇 mock 전용 엔드포인트.
 // 설문 챗봇(`/api/v1/survey/chatbot/*`) mock과 경계를 분리한다.
@@ -20,14 +21,6 @@ type MockChatSession = {
 };
 
 const chatSessions = new Map<string, MockChatSession>();
-
-const toJsonError = (status: number, message: string) =>
-  HttpResponse.json(
-    {
-      error_detail: message,
-    },
-    { status },
-  );
 
 const splitMessageIntoChunks = (message: string) => {
   const chunks: string[] = [];
@@ -88,13 +81,19 @@ export const supportChatHandlers = [
     const message = body.message.trim();
 
     if (message.length < 2) {
-      return toJsonError(400, '메시지는 공백일 수 없고 2자 이상이어야 합니다.');
+      return mockErrorResponse(
+        400,
+        '메시지는 공백일 수 없고 2자 이상이어야 합니다.',
+      );
     }
 
     let sessionId = body.session_id;
 
     if (sessionId !== undefined && !chatSessions.has(sessionId)) {
-      return toJsonError(404, '만료되었거나 유효하지 않은 session_id 입니다.');
+      return mockErrorResponse(
+        404,
+        '만료되었거나 유효하지 않은 session_id 입니다.',
+      );
     }
 
     if (sessionId === undefined) {
@@ -123,13 +122,13 @@ export const supportChatHandlers = [
     const sessionId = url.searchParams.get('session_id')?.trim() ?? '';
 
     if (!sessionId) {
-      return toJsonError(400, '잘못된 session_id 입니다.');
+      return mockErrorResponse(400, '잘못된 session_id 입니다.');
     }
 
     const session = chatSessions.get(sessionId);
 
     if (!session) {
-      return toJsonError(404, '스트리밍 대상 세션을 찾을 수 없습니다.');
+      return mockErrorResponse(404, '스트리밍 대상 세션을 찾을 수 없습니다.');
     }
 
     return createStreamResponse(sessionId, session.lastReply);

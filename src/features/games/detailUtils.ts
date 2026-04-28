@@ -28,13 +28,6 @@ export const normalizeMeaningfulTextList = (
         .filter((value): value is string => Boolean(value))
     : [];
 
-export const formatDetailField = (
-  value: string | null | undefined,
-  hasResolvedDetail: boolean,
-) =>
-  normalizeMeaningfulText(value) ??
-  (hasResolvedDetail ? 'N/A' : DETAIL_LOADING_TEXT);
-
 const resolveStableLikeCount = (
   previousDetail: GameDetail | null,
   incomingDetail: GameDetail,

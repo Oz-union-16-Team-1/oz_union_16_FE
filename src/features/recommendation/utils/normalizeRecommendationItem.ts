@@ -1,21 +1,7 @@
 import type { GameListItem } from '../../games/types';
-import type {
-  RecommendationDisplayItem,
-  RecommendationResultItemShape,
-} from '../types';
+import type { RecommendationDisplayItem } from '../types';
 
 const FALLBACK_HIGHLIGHTS = ['몰입감', '스토리', '액션', '전략'];
-
-export const normalizeRecommendationItem = (
-  item: RecommendationResultItemShape,
-): RecommendationDisplayItem => ({
-  game_id: item.game_id,
-  title: item.title,
-  genres: item.genres,
-  thumbnail_url: item.thumbnail_url,
-  rating: item.rating,
-  is_liked: item.is_liked,
-});
 
 export const toGameListItem = (
   item: RecommendationDisplayItem,
