@@ -16,7 +16,6 @@ import { ROUTES } from '../constants/routes';
 import useLoginForm, {
   LOGIN_FORM_FIELD_IDS,
 } from '../features/auth/hooks/useLoginForm';
-import { useSupportChatStore } from '../features/support-chat/store/useSupportChatStore';
 
 const LOGIN_MOCK_FAB_CLASS_NAME =
   'support-chat-fab group relative flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none';
@@ -26,7 +25,6 @@ const LOGIN_MOCK_PANEL_CLASS_NAME =
   'support-chat-panel fixed left-4 bottom-22 z-[90] flex w-[min(92vw,22rem)] origin-bottom-left flex-col overflow-hidden transition-all duration-300 ease-out sm:left-6 sm:bottom-24';
 
 function LoginPage() {
-  const openSupportChat = useSupportChatStore((state) => state.openPanel);
   const {
     formValues,
     resolvedFieldErrors,
@@ -84,15 +82,6 @@ function LoginPage() {
             id={LOGIN_FORM_FIELD_IDS.password}
             name="password"
             label="비밀번호"
-            labelAction={
-              <button
-                type="button"
-                className="text-login-helper text-xs font-medium transition-colors hover:text-white/88 focus-visible:ring-2 focus-visible:ring-[#ff5c60]/25 focus-visible:outline-none"
-                onClick={() => openSupportChat()}
-              >
-                비밀번호 찾기
-              </button>
-            }
             type="password"
             autoComplete="current-password"
             placeholder="PASSWORD"

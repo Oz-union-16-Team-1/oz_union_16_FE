@@ -35,11 +35,11 @@ function AuthRadioGroup({
   const shouldRenderMessage = Boolean(errorMessage) || reserveMessageSpace;
 
   return (
-    <fieldset className="space-y-2.5">
+    <fieldset className="w-full min-w-0 space-y-2.5">
       <legend className="text-login-label block text-sm font-medium">
         {label}
       </legend>
-      <div className="grid grid-cols-2 gap-3 pt-1">
+      <div className="grid min-w-0 grid-cols-2 gap-3 pt-1">
         {options.map((option) => {
           const inputId = `${idPrefix ?? name}-${option.value}`;
 
