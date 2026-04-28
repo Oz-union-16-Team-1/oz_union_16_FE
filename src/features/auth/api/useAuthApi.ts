@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   checkIdDuplicate,
   checkNicknameDuplicate,
+  checkPassword,
   changePassword,
   confirmProfileImage,
   deleteAccount,
@@ -106,6 +107,12 @@ export const useChangePasswordMutation = () =>
   useMutation({
     mutationKey: authKeys.changePassword(),
     mutationFn: changePassword,
+  });
+
+export const useCheckPasswordMutation = () =>
+  useMutation({
+    mutationKey: authKeys.checkPassword(),
+    mutationFn: checkPassword,
   });
 
 export const useDeleteAccountMutation = () =>

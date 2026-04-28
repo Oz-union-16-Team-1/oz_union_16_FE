@@ -9,6 +9,9 @@ export type MockUserRecord = {
   gender: AuthGender;
   email: string;
   profileImageUrl: string | null;
+  phoneNumber: string | null;
+  birthday: string | null;
+  createdAt: string;
   note: string;
 };
 
@@ -28,6 +31,9 @@ export const mockAuthSeedUsers: MockUserRecord[] = [
     email: 'pgti-demo@example.com',
     profileImageUrl:
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+    phoneNumber: '010-1234-5678',
+    birthday: '1998-03-21',
+    createdAt: '2026-04-01T09:00:00.000Z',
     note: '기본 로그인, 추천, 설문, 마이페이지 확인용 계정',
   },
   {
@@ -40,6 +46,9 @@ export const mockAuthSeedUsers: MockUserRecord[] = [
     email: 'pgti-tester@example.com',
     profileImageUrl:
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+    phoneNumber: '010-8765-4321',
+    birthday: '1999-07-12',
+    createdAt: '2026-04-02T09:00:00.000Z',
     note: '중복 확인, 계정 전환, 비교 테스트용 계정',
   },
 ];

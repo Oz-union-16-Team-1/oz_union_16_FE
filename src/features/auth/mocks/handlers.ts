@@ -10,12 +10,12 @@ import type {
   AuthGender,
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
+  CheckPasswordResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
   ConfirmProfileImageRequest,
   ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
-  DeleteAccountRequest,
   DeleteLikedGameResponse,
   LikedGameItemResponse,
   LikedGamesResponse,
@@ -36,7 +36,6 @@ const AUTH_CALLBACK_PATH = ROUTE_PATHS.AUTH_CALLBACK;
 const validGenders: AuthGender[] = ['M', 'W'];
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
-const createRefreshToken = (loginId: string) => `mock-refresh-token-${loginId}`;
 const parseLoginIdFromRefreshToken = (refreshToken: string) => {
   const normalizedRefreshToken = refreshToken.trim();
   const refreshTokenPrefix = 'mock-refresh-token-';
@@ -358,7 +357,6 @@ const loginHandlers = [
 
     return HttpResponse.json({
       access_token: createAccessToken(user.loginId),
-      refresh_token: createRefreshToken(user.loginId),
     });
   }),
 
@@ -477,6 +475,9 @@ const signupHandlers = [
       gender,
       email: `${loginId}@example.com`,
       profileImageUrl: null,
+      phoneNumber: null,
+      birthday: null,
+      createdAt: new Date().toISOString(),
       note: 'MSW 회원가입으로 생성된 테스트 계정',
     };
 
@@ -485,9 +486,12 @@ const signupHandlers = [
 
     await delay(450);
 
-    return HttpResponse.json({
-      detail: '회원가입이 완료되었습니다.',
-    });
+    return HttpResponse.json(
+      {
+        detail: '회원가입이 완료되었습니다.',
+      },
+      { status: 201 },
+    );
   }),
 
   http.post(`${AUTH_BASE_PATH}/check-id`, async ({ request }) => {
@@ -547,12 +551,16 @@ const accountHandlers = [
     await delay(180);
 
     const responseBody: CurrentUserProfileResponse = {
+      id: user.id,
       login_id: user.loginId,
+      email: user.email,
       name: user.name,
       nickname: user.nickname,
       gender: user.gender,
-      email: user.email,
       profile_img_url: user.profileImageUrl,
+      phone_number: user.phoneNumber,
+      birthday: user.birthday,
+      created_at: user.createdAt,
     };
 
     return HttpResponse.json(responseBody);
@@ -907,23 +915,37 @@ const accountHandlers = [
     await delay(240);
 
     return HttpResponse.json({
-      detail: '비밀번호가 변경되었습니다.',
+      detail: '비밀번호가 성공적으로 변경되었습니다.',
     } satisfies ChangePasswordResponse);
   }),
 
-  http.delete(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
+  http.post(`${AUTH_BASE_PATH}/me/check-password`, async ({ request }) => {
     const authorization = request.headers.get('Authorization');
     const user = getAuthorizedUser(authorization);
 
-    if (!user) {
-      return getUnauthorizedError('로그인이 필요합니다.');
+    if (!authorization?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        {
+          error_detail: '자격 인증 데이터가 제공되지 않았습니다.',
+        },
+        { status: 401 },
+      );
     }
 
-    const body = (await request.json().catch(() => ({}))) as
-      | DeleteAccountRequest
-      | Record<string, unknown>;
+    if (!user) {
+      return HttpResponse.json(
+        {
+          error_detail: '인증 정보가 유효하지 않거나 만료되었습니다.',
+        },
+        { status: 403 },
+      );
+    }
+
+    const body = (await request.json().catch(() => null)) as {
+      password?: string;
+    } | null;
     const password =
-      typeof body.password === 'string' ? body.password.trim() : '';
+      typeof body?.password === 'string' ? body.password.trim() : '';
 
     if (!password) {
       return getFieldValidationError(
@@ -941,8 +963,43 @@ const accountHandlers = [
       );
     }
 
+    await delay(160);
+
+    return HttpResponse.json({
+      detail: '비밀번호 확인에 성공했습니다.',
+    } satisfies CheckPasswordResponse);
+  }),
+
+  http.delete(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!authorization?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        {
+          error_detail: '자격 인증 데이터가 제공되지 않았습니다.',
+        },
+        { status: 401 },
+      );
+    }
+
+    if (!user) {
+      return HttpResponse.json(
+        {
+          error_detail: '인증 정보가 유효하지 않거나 만료되었습니다.',
+        },
+        { status: 403 },
+      );
+    }
+
     mockUsers.delete(user.loginId);
     mockLikedGamesByLoginId.delete(user.loginId);
+    if (refreshSessionLoginId === user.loginId) {
+      refreshSessionLoginId = null;
+    }
+    if (pendingSocialLoginId === user.loginId) {
+      pendingSocialLoginId = null;
+    }
     [...mockUploadedProfileImagesByPath.keys()]
       .filter((key) => key.startsWith(`${user.loginId}/`))
       .forEach((key) => {
@@ -1032,8 +1089,22 @@ const logoutHandlers = [
     const authorization = request.headers.get('Authorization');
     const user = getAuthorizedUser(authorization);
 
+    if (!authorization?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        {
+          error_detail: '자격 인증 데이터가 제공되지 않았습니다.',
+        },
+        { status: 401 },
+      );
+    }
+
     if (!user) {
-      return getUnauthorizedError('로그인이 필요합니다.');
+      return HttpResponse.json(
+        {
+          error_detail: '인증 정보가 유효하지 않거나 만료되었습니다.',
+        },
+        { status: 403 },
+      );
     }
 
     await delay(200);

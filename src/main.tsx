@@ -122,8 +122,18 @@ const renderApp = () => {
   );
 };
 
+const disableMocking = async () => {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  const { worker } = await import('./mocks/browser');
+  worker.stop();
+};
+
 const enableMocking = async () => {
   if (!isMockServiceWorkerEnabled()) {
+    await disableMocking();
     return;
   }
 

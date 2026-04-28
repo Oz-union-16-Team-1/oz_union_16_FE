@@ -7,12 +7,13 @@ import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
 import type {
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
+  CheckPasswordRequest,
+  CheckPasswordResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
   ConfirmProfileImageRequest,
   ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
-  DeleteAccountRequest,
   DeleteLikedGameResponse,
   DuplicateCheckResponse,
   LikedGamesRequest,
@@ -94,6 +95,7 @@ export const requestRefreshAccessToken = async (
   payload: { refresh_token?: string } = {},
 ) => {
   const requestConfig = createCredentialedAuthRequestConfig();
+  const requestBody = payload.refresh_token?.trim() ? payload : undefined;
 
   logCredentialedAuthRequestDiagnostics({
     label: 'refresh',
@@ -103,7 +105,7 @@ export const requestRefreshAccessToken = async (
 
   const response = await axios.post<RefreshAccessTokenResponse>(
     refreshRequestUrl,
-    payload,
+    requestBody,
     requestConfig,
   );
 
@@ -199,12 +201,20 @@ export const changePassword = async (payload: ChangePasswordRequest) => {
   return response.data;
 };
 
-export const deleteAccount = async (payload: DeleteAccountRequest) => {
+export const checkPassword = async (payload: CheckPasswordRequest) => {
+  const response = await api.post<CheckPasswordResponse>(
+    `${AUTH_BASE_PATH}/me/check-password`,
+    payload,
+    createCredentialedAuthRequestConfig(),
+  );
+
+  return response.data;
+};
+
+export const deleteAccount = async () => {
   await api.delete(
     `${AUTH_BASE_PATH}/me`,
-    createCredentialedAuthRequestConfig({
-      data: payload,
-    }),
+    createCredentialedAuthRequestConfig(),
   );
 };
 

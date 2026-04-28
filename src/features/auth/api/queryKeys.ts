@@ -29,6 +29,7 @@ export const authKeys = {
   profileImageUpload: () => [...authMeKey, 'profile-image', 'upload'] as const,
   profileImageConfirm: () =>
     [...authMeKey, 'profile-image', 'confirm'] as const,
+  checkPassword: () => [...authRootKey, 'check-password'] as const,
   changePassword: () => [...authRootKey, 'change-password'] as const,
   deleteAccount: () => [...authRootKey, 'delete-account'] as const,
   checkIdDuplicate: () => [...authRootKey, 'check-id-duplicate'] as const,

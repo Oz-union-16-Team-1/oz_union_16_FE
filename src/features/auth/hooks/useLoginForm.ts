@@ -186,7 +186,8 @@ function useLoginForm() {
       if (
         mockPanelRef.current &&
         !mockPanelRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement)?.closest('.dev-login-fab')
+        !(event.target as HTMLElement)?.closest('.dev-login-fab') &&
+        !(event.target as HTMLElement)?.closest('.dev-api-mode-fab')
       ) {
         setIsMockPanelOpen(false);
       }
