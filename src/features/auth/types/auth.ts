@@ -20,6 +20,14 @@ export interface LogoutResponse {
   detail: string;
 }
 
+export interface CheckPasswordRequest {
+  password: string;
+}
+
+export interface CheckPasswordResponse {
+  detail: string;
+}
+
 export interface ChangePasswordRequest {
   old_password: string;
   new_password: string;
@@ -28,10 +36,6 @@ export interface ChangePasswordRequest {
 
 export interface ChangePasswordResponse {
   detail: string;
-}
-
-export interface DeleteAccountRequest {
-  password: string;
 }
 
 export interface DeleteLikedGameResponse {
@@ -57,12 +61,16 @@ export interface LikedGamesResponse {
 }
 
 export interface CurrentUserProfileResponse {
+  id?: number;
   login_id: string;
+  email?: string | null;
   name: string;
   nickname: string;
   gender: AuthGender;
-  email?: string | null;
   profile_img_url?: string | null;
+  phone_number?: string | null;
+  birthday?: string | null;
+  created_at?: string | null;
 }
 
 export interface UpdateUserInfoRequest {
@@ -112,7 +120,8 @@ export interface SignupRequest {
 }
 
 export interface SignupResponse {
-  detail: string;
+  detail?: string;
+  error_detail?: string;
 }
 
 export interface CheckNicknameDuplicateRequest {

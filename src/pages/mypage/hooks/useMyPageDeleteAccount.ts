@@ -6,7 +6,10 @@ import {
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
 } from '../../../features/auth/api/auth';
-import { useDeleteAccountMutation } from '../../../features/auth/api/useAuthApi';
+import {
+  useCheckPasswordMutation,
+  useDeleteAccountMutation,
+} from '../../../features/auth/api/useAuthApi';
 import { clearAuthSession } from '../../../features/auth/utils/sessionManager';
 import type { MyPageToastPayload } from '../types';
 
@@ -16,6 +19,7 @@ type UseMyPageDeleteAccountOptions = {
 
 function useMyPageDeleteAccount({ onToast }: UseMyPageDeleteAccountOptions) {
   const navigate = useNavigate();
+  const checkPasswordMutation = useCheckPasswordMutation();
   const deleteAccountMutation = useDeleteAccountMutation();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -50,9 +54,11 @@ function useMyPageDeleteAccount({ onToast }: UseMyPageDeleteAccountOptions) {
     }
 
     try {
-      await deleteAccountMutation.mutateAsync({
+      await checkPasswordMutation.mutateAsync({
         password: trimmedPassword,
       });
+
+      await deleteAccountMutation.mutateAsync();
 
       clearAuthSession();
       navigate(ROUTE_PATHS.LOGIN, {
@@ -91,7 +97,8 @@ function useMyPageDeleteAccount({ onToast }: UseMyPageDeleteAccountOptions) {
     deletePasswordError,
     handleDeletePasswordChange,
     handleDeleteAccount,
-    isDeleteAccountPending: deleteAccountMutation.isPending,
+    isDeleteAccountPending:
+      checkPasswordMutation.isPending || deleteAccountMutation.isPending,
   };
 }
 

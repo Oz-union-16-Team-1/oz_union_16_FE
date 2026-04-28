@@ -19,6 +19,7 @@ import {
 export {
   checkIdDuplicate,
   checkNicknameDuplicate,
+  checkPassword,
   changePassword,
   confirmProfileImage,
   deleteAccount,
