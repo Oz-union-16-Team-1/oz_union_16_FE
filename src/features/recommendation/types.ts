@@ -1,4 +1,4 @@
-export type RecommendationDisplayItem = {
+export type RecommendationResultItemShape = {
   game_id: number;
   title: string;
   genres: string[];
@@ -6,3 +6,5 @@ export type RecommendationDisplayItem = {
   rating: number | null;
   is_liked: boolean;
 };
+
+export type RecommendationDisplayItem = RecommendationResultItemShape;

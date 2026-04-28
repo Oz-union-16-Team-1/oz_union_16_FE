@@ -1,3 +1,5 @@
+import type { RecommendationResultItemShape } from '../recommendation/types';
+
 export type MatchingGenreSlug =
   | 'action-fighting'
   | 'adventure-platform'
@@ -91,14 +93,7 @@ export interface MatchResultQuery {
   page_size?: number;
 }
 
-export interface MatchResultItem {
-  game_id: number;
-  title: string;
-  genres: string[];
-  thumbnail_url: string | null;
-  rating: number;
-  is_liked: boolean;
-}
+export type MatchResultItem = RecommendationResultItemShape;
 
 export interface MatchResultResponse {
   user_id: number;

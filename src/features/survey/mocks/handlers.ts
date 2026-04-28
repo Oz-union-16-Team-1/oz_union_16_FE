@@ -7,11 +7,12 @@ import type {
   SurveyApiResultItem,
   SurveyResetRequest,
 } from '../types/survey';
-
-const MIN_STEPS = 3;
-const DEFAULT_STEPS = 4;
-const MAX_STEPS = 5;
-const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
+import {
+  DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
+  SURVEY_DEFAULT_STEPS,
+  SURVEY_MAX_STEPS,
+  SURVEY_MIN_STEPS,
+} from './constants';
 
 const surveyQuestions = [
   '스토리 중심의 몰입감을 더 중요하게 보시나요, 아니면 손맛과 시스템 완성도를 더 중요하게 보시나요?',
@@ -106,14 +107,14 @@ const getQuestionCountFromAnswer = (answer: string) => {
     (hasVaguePhrase ? 1 : 0);
 
   if (detailScore >= 3) {
-    return MIN_STEPS;
+    return SURVEY_MIN_STEPS;
   }
 
   if (detailScore <= 0) {
-    return MAX_STEPS;
+    return SURVEY_MAX_STEPS;
   }
 
-  return DEFAULT_STEPS;
+  return SURVEY_DEFAULT_STEPS;
 };
 
 const getErrorResponse = (status: number, message: string) =>
@@ -128,7 +129,7 @@ export const surveyHandlers = [
   http.post('/api/v1/survey/chatbot/sessions', async ({ request }) => {
     await request.json().catch(() => ({}));
     const sessionId = createSessionId();
-    const totalQuestions = MAX_STEPS;
+    const totalQuestions = SURVEY_MAX_STEPS;
 
     surveySessions.set(sessionId, {
       askedQuestions: 1,
@@ -160,7 +161,7 @@ export const surveyHandlers = [
         surveySessions.get(sessionId) ??
         ({
           askedQuestions: 1,
-          totalQuestions: DEFAULT_STEPS,
+          totalQuestions: SURVEY_DEFAULT_STEPS,
         } satisfies MockSurveySession);
 
       if (session.askedQuestions === 1) {
@@ -204,7 +205,8 @@ export const surveyHandlers = [
     const url = new URL(request.url);
     const cursor = Number(url.searchParams.get('cursor') ?? '0');
     const pageSize = Number(
-      url.searchParams.get('page_size') ?? DEFAULT_RECOMMENDATION_PAGE_SIZE,
+      url.searchParams.get('page_size') ??
+        DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
     );
     const requestedSessionId = url.searchParams.get('session_id');
     const recommendations = buildSurveyRecommendations(
@@ -244,7 +246,7 @@ export const surveyHandlers = [
     const nextSessionId = createSessionId();
     surveySessions.set(nextSessionId, {
       askedQuestions: 1,
-      totalQuestions: MAX_STEPS,
+      totalQuestions: SURVEY_MAX_STEPS,
     });
 
     await delay(350);
@@ -254,7 +256,7 @@ export const surveyHandlers = [
       session_id: nextSessionId,
       status: 'IN_PROGRESS',
       ai_question: surveyQuestions[0],
-      progress: buildProgress(1, MAX_STEPS),
+      progress: buildProgress(1, SURVEY_MAX_STEPS),
       recommendation_ready: false,
     });
   }),
