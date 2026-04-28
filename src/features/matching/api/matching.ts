@@ -51,6 +51,7 @@ export const getMatchCandidates = async (genreId: number, retryNo = 0) => {
 
     return {
       genre_id: response.data.genre_id,
+      retry_no: response.data.retry_no,
       count: response.data.count,
       results,
     } satisfies MatchingCandidatesResponse;

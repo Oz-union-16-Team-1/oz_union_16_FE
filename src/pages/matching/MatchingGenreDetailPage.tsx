@@ -108,6 +108,7 @@ function MatchingGenreDetailPage() {
     retryNo,
     canAccessPage,
   );
+  const candidateRetryNo = matchCandidatesQuery.data?.retry_no ?? retryNo;
   const submitMatchResponsesMutation = useSubmitMatchResponsesMutation();
   const resetSubmitMatchResponsesMutation = submitMatchResponsesMutation.reset;
   const candidates = useMemo(
@@ -305,7 +306,7 @@ function MatchingGenreDetailPage() {
     try {
       await submitMatchResponsesMutation.mutateAsync({
         genre_id: currentGenreId,
-        retry_no: retryNo,
+        retry_no: candidateRetryNo,
         match_result: displayCandidates.map((candidate) => ({
           game_id: candidate.game_id,
           rating: evaluationsByGameId[candidate.game_id]!.rating!,
@@ -381,7 +382,7 @@ function MatchingGenreDetailPage() {
                 onClick={() =>
                   setRetryState({
                     genreSlug: currentGenreSlug,
-                    value: retryNo + 1,
+                    value: candidateRetryNo + 1,
                   })
                 }
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"

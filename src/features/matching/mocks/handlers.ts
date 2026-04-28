@@ -260,6 +260,7 @@ export const matchingHandlers = [
 
     return HttpResponse.json({
       genre_id: genreId,
+      retry_no: retryNo,
       count: candidates.length,
       results: candidates.map((candidate) => ({
         game_id: candidate.game_id,

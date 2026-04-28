@@ -37,6 +37,7 @@ export interface MatchingApiCandidateItem {
 
 export interface MatchingApiCandidatesResponse {
   genre_id: number;
+  retry_no: number;
   count: number;
   results: MatchingApiCandidateItem[];
 }
@@ -54,6 +55,7 @@ export interface MatchingCandidateItem {
 
 export interface MatchingCandidatesResponse {
   genre_id: number;
+  retry_no: number;
   count: number;
   results: MatchingCandidateItem[];
 }
