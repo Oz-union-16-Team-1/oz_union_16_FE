@@ -11,10 +11,7 @@ import { useSurveyStore } from '../../survey/store/useSurveyStore';
 import { useSurveyResultsInfinite } from '../../survey/api/useSurveyApi';
 import { extractApiErrorMessage } from '../../survey/api/survey';
 import type { SurveyResultResponse } from '../../survey/types/survey';
-import {
-  getRecommendationHighlights,
-  normalizeRecommendationItem,
-} from '../utils/normalizeRecommendationItem';
+import { getRecommendationHighlights } from '../utils/normalizeRecommendationItem';
 
 type UseRecommendationResultsSourceParams = {
   canAccessPage: boolean;
@@ -70,9 +67,7 @@ export const useRecommendationResultsSource = ({
     matchResultsQuery.data?.pages.flatMap((page) =>
       getPaginatedResults(page),
     ) ?? [];
-  const recommendationItems = (isMatchSource ? matchItems : surveyItems).map(
-    normalizeRecommendationItem,
-  );
+  const recommendationItems = isMatchSource ? matchItems : surveyItems;
   const recommendationHighlights =
     getRecommendationHighlights(recommendationItems);
   const isResultNotFound =

@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw';
 
+import { parsePositiveInteger } from '../../../mocks/helpers';
 import { ROUTE_PATHS } from '../../../constants/routes';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { mockGameDetails } from '../../games/mockGameDetails';
@@ -142,20 +143,6 @@ const getMockSocialLoginId = (provider: SocialAuthProvider) => {
   }
 
   return 'pgti-demo';
-};
-
-const parsePositiveInteger = (value: string | null, fallback: number) => {
-  if (!value) {
-    return fallback;
-  }
-
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    return fallback;
-  }
-
-  return parsedValue;
 };
 
 const sanitizeFileName = (fileName: string) => {

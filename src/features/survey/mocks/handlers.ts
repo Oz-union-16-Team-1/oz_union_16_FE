@@ -13,19 +13,8 @@ import {
   SURVEY_MAX_STEPS,
   SURVEY_MIN_STEPS,
 } from './constants';
-
-const surveyQuestions = [
-  '스토리 중심의 몰입감을 더 중요하게 보시나요, 아니면 손맛과 시스템 완성도를 더 중요하게 보시나요?',
-  '혼자 오래 파고드는 플레이와 친구들과 함께 즐기는 플레이 중 어느 쪽에 더 끌리시나요?',
-  '그래픽 스타일은 사실적인 쪽과 감성적인 아트 스타일 중 무엇이 더 마음에 드시나요?',
-  '보스 공략 같은 강한 도전, 혹은 편하게 수집과 성장에 집중하는 흐름 중 어느 쪽을 더 선호하시나요?',
-  '플레이 타임은 짧고 강렬한 편이 좋으신가요, 아니면 오래 파고들며 성장하는 흐름이 좋으신가요?',
-];
-
-const SURVEY_RECOMMENDATION_GAME_IDS = [
-  1086940, 1245620, 292030, 1091500, 814380, 2050650, 1868140, 367520, 646570,
-  1551360, 1364780, 1003590, 412830, 620, 553850,
-] as const;
+import { mockErrorResponse } from '../../../mocks/helpers';
+import { surveyQuestions, SURVEY_RECOMMENDATION_GAME_IDS } from './data';
 
 const mockTopGameById = new Map(
   mockTopGames.map((game) => [game.gameId, game]),
@@ -117,14 +106,6 @@ const getQuestionCountFromAnswer = (answer: string) => {
   return SURVEY_DEFAULT_STEPS;
 };
 
-const getErrorResponse = (status: number, message: string) =>
-  HttpResponse.json(
-    {
-      error_detail: message,
-    },
-    { status },
-  );
-
 export const surveyHandlers = [
   http.post('/api/v1/survey/chatbot/sessions', async ({ request }) => {
     await request.json().catch(() => ({}));
@@ -154,7 +135,7 @@ export const surveyHandlers = [
       const sessionId = String(params.sessionId ?? '');
 
       if (!sessionId || !body.user_answer?.trim()) {
-        return getErrorResponse(400, '필수 입력 항목입니다.');
+        return mockErrorResponse(400, '필수 입력 항목입니다.');
       }
 
       const session =
@@ -214,7 +195,7 @@ export const surveyHandlers = [
     );
 
     if (!latestCompletedSurveySessionId && !requestedSessionId) {
-      return getErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
+      return mockErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
     }
 
     const startIndex = Number.isNaN(cursor) ? 0 : cursor;
@@ -235,7 +216,7 @@ export const surveyHandlers = [
     const body = (await request.json()) as SurveyResetRequest;
 
     if (!body.session_id) {
-      return getErrorResponse(400, 'session_id는 필수입니다.');
+      return mockErrorResponse(400, 'session_id는 필수입니다.');
     }
 
     surveySessions.delete(body.session_id);

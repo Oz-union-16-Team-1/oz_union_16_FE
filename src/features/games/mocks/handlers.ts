@@ -2,6 +2,10 @@ import { delay, http, HttpResponse } from 'msw';
 
 import { getMockGameLikeStateForAuthorization } from '../../auth/mocks/handlers';
 import { GAME_GENRE_ID_MAP } from '../genres';
+import {
+  mockErrorResponse,
+  parsePositiveInteger,
+} from '../../../mocks/helpers';
 import { getStoredGameDetail, searchStoredGames } from './state';
 import type {
   GameDetail,
@@ -13,20 +17,6 @@ import type {
 const DEFAULT_GAME_PAGE_SIZE = 20;
 const DEFAULT_TOP_GAMES_PAGE_SIZE = 100;
 const validGenreIds = new Set([0, ...Object.values(GAME_GENRE_ID_MAP)]);
-
-const getErrorResponse = (status: number, message: string) =>
-  HttpResponse.json(
-    {
-      error_detail: message,
-    },
-    { status },
-  );
-
-const parsePositiveInteger = (value: string | null, fallback: number) => {
-  const parsed = Number(value ?? fallback);
-
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-};
 
 const parseGenreId = (value: string | null) => {
   if (value === null || value.trim() === '') {
@@ -99,7 +89,7 @@ export const gamesHandlers = [
     };
 
     if (!genreIdValue || genreId === undefined || !validGenreIds.has(genreId)) {
-      return getErrorResponse(400, '유효하지 않은 genre_id 입니다. (0~14)');
+      return mockErrorResponse(400, '유효하지 않은 genre_id 입니다. (0~14)');
     }
 
     const { count, results } = searchStoredGames({
@@ -134,7 +124,7 @@ export const gamesHandlers = [
     const gameId = Number(params.gameId);
 
     if (!Number.isInteger(gameId) || gameId <= 0) {
-      return getErrorResponse(400, '유효하지 않은 game_id 입니다.');
+      return mockErrorResponse(400, '유효하지 않은 game_id 입니다.');
     }
 
     const detail = getStoredGameDetail(gameId, (resolvedGameId, fallback) => {
@@ -151,7 +141,7 @@ export const gamesHandlers = [
     });
 
     if (!detail) {
-      return getErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
+      return mockErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
     }
 
     await delay(220);
