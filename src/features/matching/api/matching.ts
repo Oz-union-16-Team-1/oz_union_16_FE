@@ -16,7 +16,7 @@ const MATCHING_BASE_PATH = '/api/v1/match';
 
 const normalizeMatchCandidate = (item: MatchingApiCandidateItem) => ({
   game_id: item.game_id,
-  title: item.name?.trim() || '제목 정보 준비 중',
+  title: item.title?.trim() || '제목 정보 준비 중',
   description:
     item.description?.trim() || '게임 설명이 아직 준비되지 않았습니다.',
   genres: Array.isArray(item.genres) ? item.genres : [],

@@ -27,7 +27,7 @@ export interface MatchingGenreImageResponse {
 
 export interface MatchingApiCandidateItem {
   game_id: number;
-  name: string;
+  title: string;
   description: string;
   genres: string[];
   trailer_url: string | null;
