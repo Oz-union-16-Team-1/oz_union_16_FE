@@ -10,6 +10,7 @@ import {
   AUTH_SHARED_FORM_CLASS_NAMES,
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
 } from '../components/auth/authSharedStyles';
+import DevApiModeToggle from '../components/common/DevApiModeToggle';
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
 import useLoginForm, {
@@ -18,7 +19,9 @@ import useLoginForm, {
 import { useSupportChatStore } from '../features/support-chat/store/useSupportChatStore';
 
 const LOGIN_MOCK_FAB_CLASS_NAME =
-  'support-chat-fab group fixed left-4 bottom-4 z-[95] flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none sm:left-6 sm:bottom-6';
+  'support-chat-fab group relative flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none';
+const LOGIN_DEV_FABS_CLASS_NAME =
+  'fixed left-4 bottom-4 z-[95] flex items-center gap-3 sm:left-6 sm:bottom-6';
 const LOGIN_MOCK_PANEL_CLASS_NAME =
   'support-chat-panel fixed left-4 bottom-22 z-[90] flex w-[min(92vw,22rem)] origin-bottom-left flex-col overflow-hidden transition-all duration-300 ease-out sm:left-6 sm:bottom-24';
 
@@ -219,7 +222,11 @@ function LoginPage() {
               </div>
             </div>
           </div>
+        </>
+      ) : null}
 
+      <div className={LOGIN_DEV_FABS_CLASS_NAME}>
+        {showMockAccounts ? (
           <button
             type="button"
             onClick={toggleMockPanel}
@@ -238,8 +245,10 @@ function LoginPage() {
               }`}
             />
           </button>
-        </>
-      ) : null}
+        ) : null}
+
+        <DevApiModeToggle variant="fab" className="dev-api-mode-fab" />
+      </div>
     </>
   );
 }
