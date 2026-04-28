@@ -9,18 +9,17 @@ import type {
   RawGameDetailResponse,
   RawGameLikeResponse,
   RawGameListItem,
-  RawTopGameListItem,
   SearchGamesParams,
   SearchGamesResult,
 } from './types';
 
 const DEFAULT_PAGE_SIZE = 20;
-const DEFAULT_SORT = 'rating_desc';
+const DEFAULT_TOP_GAMES_PAGE_SIZE = 100;
 
 const getGenreQueryParams = (genre: GetTopGamesParams['genre'] = '전체') => {
   const genreId = getGameGenreId(genre);
 
-  return genreId ? { genre_id: genreId } : {};
+  return { genre_id: genreId };
 };
 
 const normalizeNullableString = (value: string | null | undefined) => {
@@ -36,6 +35,7 @@ const normalizeGameListItem = (game: RawGameListItem): GameListItem => ({
   thumbnailUrl: game.thumbnail_url,
   rating: game.rating,
   isLiked: typeof game.is_liked === 'boolean' ? game.is_liked : undefined,
+  likeCount: game.like_count ?? undefined,
 });
 
 const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
@@ -58,14 +58,6 @@ const normalizeGameDetail = (game: RawGameDetailResponse): GameDetail => ({
   isLiked: typeof game.is_liked === 'boolean' ? game.is_liked : null,
 });
 
-const normalizeTopGameListItem = (game: RawTopGameListItem): GameListItem => ({
-  gameId: game.game_id,
-  name: game.name || 'N/A',
-  genres: game.genres?.length ? game.genres : ['N/A'],
-  thumbnailUrl: game.thumbnail_url,
-  rating: game.total_rating,
-});
-
 const normalizeGameLikeResponse = (
   response: RawGameLikeResponse,
   isLiked: boolean,
@@ -78,14 +70,18 @@ const normalizeGameLikeResponse = (
 export const getTopGames = async ({
   genre = '전체',
 }: GetTopGamesParams = {}): Promise<GameListItem[]> => {
-  const response = await api.get<{
-    ranked_at: string;
-    results: RawTopGameListItem[];
-  }>('/api/v1/games/list/top100', {
-    params: getGenreQueryParams(genre),
-  });
+  const response = await api.get<GameListResponse>(
+    '/api/v1/games/list/top100',
+    {
+      params: {
+        ...getGenreQueryParams(genre),
+        page: 1,
+        page_size: DEFAULT_TOP_GAMES_PAGE_SIZE,
+      },
+    },
+  );
 
-  return response.data.results.map(normalizeTopGameListItem);
+  return response.data.results.map(normalizeGameListItem);
 };
 
 export const searchGames = async ({
@@ -94,21 +90,23 @@ export const searchGames = async ({
   genre = '전체',
   page = 1,
   pageSize = DEFAULT_PAGE_SIZE,
-  sort = DEFAULT_SORT,
 }: SearchGamesParams): Promise<SearchGamesResult> => {
-  const response = await api.get<GameListResponse>('/api/v1/games/list', {
-    params: {
-      search,
-      fuzzy,
-      sort,
-      page,
-      page_size: pageSize,
-      ...getGenreQueryParams(genre),
+  const response = await api.get<GameListResponse>(
+    '/api/v1/games/list/top100',
+    {
+      params: {
+        search,
+        fuzzy,
+        page,
+        page_size: pageSize,
+        ...getGenreQueryParams(genre),
+      },
     },
-  });
+  );
 
   return {
     count: response.data.count ?? response.data.results.length,
+    next: response.data.next ?? null,
     results: response.data.results.map(normalizeGameListItem),
   };
 };
