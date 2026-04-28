@@ -50,8 +50,22 @@ const getNextLikeCount = (
 const updateGameListItem = (
   item: GameListItem,
   update: GameLikeCacheUpdate,
-): GameListItem =>
-  item.gameId === update.gameId ? { ...item, isLiked: update.isLiked } : item;
+): GameListItem => {
+  if (item.gameId !== update.gameId) {
+    return item;
+  }
+
+  const nextLikeCount =
+    typeof item.likeCount === 'number' || typeof update.likeCount === 'number'
+      ? getNextLikeCount(item.likeCount ?? 0, item.isLiked ?? null, update)
+      : item.likeCount;
+
+  return {
+    ...item,
+    isLiked: update.isLiked,
+    likeCount: nextLikeCount,
+  };
+};
 
 export const syncGameLikeStateInQueryCache = (
   queryClient: QueryClient,

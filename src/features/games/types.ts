@@ -7,10 +7,12 @@ export type GameListItem = {
   thumbnailUrl: string | null;
   rating: number | null;
   isLiked?: boolean;
+  likeCount?: number;
 };
 
 export type GameListResponse = {
   count?: number;
+  next?: string | null;
   ranked_at?: string;
   results: RawGameListItem[];
 };
@@ -22,6 +24,7 @@ export type RawGameListItem = {
   thumbnail_url: string | null;
   rating: number | null;
   is_liked?: boolean | null;
+  like_count?: number | null;
 };
 
 export type GameDetail = {
@@ -77,15 +80,6 @@ export type RawGameLikeResponse = {
   like_count: number | null;
 };
 
-export type RawTopGameListItem = {
-  game_id: number;
-  name: string | null;
-  genres: string[] | null;
-  thumbnail_url: string | null;
-  total_rating: number | null;
-  like_count: number | null;
-};
-
 export type GetTopGamesParams = {
   genre?: GameGenreFilter;
 };
@@ -96,10 +90,10 @@ export type SearchGamesParams = {
   genre?: GameGenreFilter;
   page?: number;
   pageSize?: number;
-  sort?: 'rating_desc' | 'like_desc' | 'created_at';
 };
 
 export type SearchGamesResult = {
   count: number;
+  next?: string | null;
   results: GameListItem[];
 };

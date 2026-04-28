@@ -58,7 +58,7 @@ const GENRE_ALIASES: Record<Exclude<GameGenreFilter, '전체'>, string[]> = {
 const normalizeGenreKeyword = (value: string) => value.trim().toLowerCase();
 
 export const getGameGenreId = (selectedGenre: GameGenreFilter) =>
-  selectedGenre === '전체' ? undefined : GAME_GENRE_ID_MAP[selectedGenre];
+  selectedGenre === '전체' ? 0 : GAME_GENRE_ID_MAP[selectedGenre];
 
 export const matchesGenreFilter = (
   genres: string[],
