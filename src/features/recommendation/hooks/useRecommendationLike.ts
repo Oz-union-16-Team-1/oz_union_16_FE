@@ -2,13 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 
-import { authKeys } from '../../auth/api/queryKeys';
-import type { LikedGamesResponse } from '../../auth/types/auth';
-import { getGameDetail, likeGame, unlikeGame } from '../../games/gameApi';
-import {
-  gamesKeys,
-  syncGameLikeStateInQueryCache,
-} from '../../games/queryCache';
+import { likeGame, unlikeGame } from '../../games/gameApi';
+import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
 import type { RecommendationDisplayItem } from '../types';
 
 const LIKE_ERROR_MESSAGE =
@@ -24,14 +19,6 @@ type RecommendationLikeMutationVariables = {
 
 type UseRecommendationLikeParams = {
   onSelectedGameLikeChange?: (gameId: number, isLiked: boolean) => void;
-};
-
-const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Array.isArray((value as Partial<LikedGamesResponse>).results);
 };
 
 export const useRecommendationLike = ({
@@ -57,61 +44,6 @@ export const useRecommendationLike = ({
     };
   }, [feedbackMessage]);
 
-  const updateLikedGamesCache = (
-    item: RecommendationDisplayItem,
-    nextIsLiked: boolean,
-  ) => {
-    queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: authKeys.likedGames() },
-      (current) => {
-        if (!isLikedGamesResponse(current)) {
-          return current;
-        }
-
-        const currentLikedGames = current as LikedGamesResponse;
-
-        if (nextIsLiked) {
-          const alreadyExists = currentLikedGames.results.some(
-            (likedGame) => likedGame.game_id === item.game_id,
-          );
-
-          if (alreadyExists) {
-            return current;
-          }
-
-          return {
-            ...currentLikedGames,
-            count: currentLikedGames.count + 1,
-            results: [
-              {
-                game_id: item.game_id,
-                game_title: item.title,
-                thumbnail_url: item.thumbnail_url,
-                genres: item.genres,
-                liked_at: new Date().toISOString(),
-              },
-              ...currentLikedGames.results,
-            ],
-          };
-        }
-
-        const nextResults = currentLikedGames.results.filter(
-          (likedGame) => likedGame.game_id !== item.game_id,
-        );
-
-        if (nextResults.length === currentLikedGames.results.length) {
-          return current;
-        }
-
-        return {
-          ...currentLikedGames,
-          count: Math.max(0, currentLikedGames.count - 1),
-          results: nextResults,
-        };
-      },
-    );
-  };
-
   const likeMutation = useMutation({
     mutationFn: ({
       gameId,
@@ -122,56 +54,19 @@ export const useRecommendationLike = ({
       setPendingLikeGameId(gameId);
       setFeedbackMessage(null);
     },
-    onSuccess: async (response, variables) => {
-      updateLikedGamesCache(variables.item, response.isLiked);
-      onSelectedGameLikeChange?.(response.gameId, response.isLiked);
-      syncGameLikeStateInQueryCache(queryClient, {
+    onSuccess: (response, variables) => {
+      syncLikeMutationStateInQueryCache(queryClient, {
         gameId: response.gameId,
         isLiked: response.isLiked,
         likeCount: response.likeCount,
+        likedGame: {
+          gameId: variables.item.game_id,
+          title: variables.item.title,
+          thumbnailUrl: variables.item.thumbnail_url,
+          genres: variables.item.genres,
+        },
       });
-
-      try {
-        const detail = await queryClient.fetchQuery({
-          queryKey: gamesKeys.detail(response.gameId),
-          queryFn: () => getGameDetail(response.gameId),
-          staleTime: 60_000,
-        });
-
-        queryClient.setQueriesData<LikedGamesResponse>(
-          { queryKey: authKeys.likedGames() },
-          (current) => {
-            if (!isLikedGamesResponse(current) || !response.isLiked) {
-              return current;
-            }
-
-            const currentLikedGames = current as LikedGamesResponse;
-
-            return {
-              ...currentLikedGames,
-              results: currentLikedGames.results.map((likedGame) =>
-                likedGame.game_id === response.gameId
-                  ? {
-                      ...likedGame,
-                      game_title: detail.title.trim() || likedGame.game_title,
-                      thumbnail_url:
-                        detail.coverImageUrl ?? likedGame.thumbnail_url,
-                      genres: detail.genres.length
-                        ? detail.genres
-                        : likedGame.genres,
-                    }
-                  : likedGame,
-              ),
-            };
-          },
-        );
-      } catch {
-        // 상세 조회 실패는 좋아요 토글 결과를 되돌릴 이유가 아니므로 무시합니다.
-      }
-
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
-      });
+      onSelectedGameLikeChange?.(response.gameId, response.isLiked);
     },
     onError: (error) => {
       if (error instanceof AxiosError && error.response?.status === 401) {

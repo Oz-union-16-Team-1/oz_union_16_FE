@@ -23,12 +23,6 @@ export const authKeys = {
       resolveLikedGamesPage(payload),
       resolveLikedGamesPageSize(payload),
     ] as const,
-  likedGamesInfinite: (payload: Pick<LikedGamesRequest, 'page_size'> = {}) =>
-    [
-      ...authLikedGamesKey,
-      'infinite',
-      resolveLikedGamesPageSize(payload),
-    ] as const,
   unlikeLikedGame: () => [...authLikedGamesKey, 'unlike'] as const,
   profileImagePresignedUrl: () =>
     [...authMeKey, 'profile-image', 'presigned-url'] as const,

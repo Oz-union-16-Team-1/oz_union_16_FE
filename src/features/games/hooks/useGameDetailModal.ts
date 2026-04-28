@@ -4,16 +4,14 @@ import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '../../../store/useAuthStore';
 import { shouldRetryApiQuery } from '../../../api/queryRetry';
-import { authKeys } from '../../auth/api/queryKeys';
-import type { LikedGamesResponse } from '../../auth/types/auth';
 import {
   GAME_DETAIL_GC_TIME,
   GAME_DETAIL_STALE_TIME,
   mergeGameDetail,
 } from '../detailUtils';
 import { getGameDetail, likeGame, unlikeGame } from '../gameApi';
-import { gamesKeys, syncGameLikeStateInQueryCache } from '../queryCache';
-import type { GameDetail, GameLikeResponse, GameListItem } from '../types';
+import { gamesKeys, syncLikeMutationStateInQueryCache } from '../queryCache';
+import type { GameDetail, GameListItem } from '../types';
 
 const LOGIN_REQUIRED_MESSAGE = '로그인 후 찜하기를 사용할 수 있어요.';
 const LIKE_ERROR_MESSAGE =
@@ -27,14 +25,6 @@ type GameDetailModalToast = {
 };
 
 type DetailErrorKind = 'not-found' | 'error' | null;
-
-const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Array.isArray((value as Partial<LikedGamesResponse>).results);
-};
 
 const getLikeErrorMessage = (error: unknown) => {
   if (error instanceof AxiosError) {
@@ -60,65 +50,6 @@ const getDetailErrorKind = (error: unknown): DetailErrorKind => {
   }
 
   return 'error';
-};
-
-const syncLikedGamesQueryCache = (
-  queryClient: ReturnType<typeof useQueryClient>,
-  game: GameListItem,
-  response: GameLikeResponse,
-) => {
-  queryClient.setQueriesData<LikedGamesResponse>(
-    { queryKey: authKeys.likedGames() },
-    (current) => {
-      if (!isLikedGamesResponse(current)) {
-        return current;
-      }
-
-      const currentLikedGames = current as LikedGamesResponse;
-
-      if (response.isLiked) {
-        const alreadyExists = currentLikedGames.results.some(
-          (likedGame) => likedGame.game_id === response.gameId,
-        );
-
-        if (alreadyExists) {
-          return current;
-        }
-
-        const detail =
-          queryClient.getQueryData<GameDetail>(gamesKeys.detail(game.gameId)) ??
-          null;
-
-        const nextLikedGame = {
-          game_id: response.gameId,
-          game_title: detail?.title?.trim() || game.name.trim() || 'N/A',
-          thumbnail_url: detail?.coverImageUrl ?? game.thumbnailUrl,
-          genres: detail?.genres?.length ? detail.genres : game.genres,
-          liked_at: new Date().toISOString(),
-        };
-
-        return {
-          ...currentLikedGames,
-          count: currentLikedGames.count + 1,
-          results: [nextLikedGame, ...currentLikedGames.results],
-        };
-      }
-
-      const nextResults = currentLikedGames.results.filter(
-        (likedGame) => likedGame.game_id !== response.gameId,
-      );
-
-      if (nextResults.length === currentLikedGames.results.length) {
-        return current;
-      }
-
-      return {
-        ...currentLikedGames,
-        count: Math.max(0, currentLikedGames.count - 1),
-        results: nextResults,
-      };
-    },
-  );
 };
 
 export const useGameDetailModal = (game: GameListItem) => {
@@ -178,10 +109,14 @@ export const useGameDetailModal = (game: GameListItem) => {
       };
 
       setLikeState(nextLikeState);
-      syncGameLikeStateInQueryCache(queryClient, nextLikeState);
-      syncLikedGamesQueryCache(queryClient, game, response);
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
+      syncLikeMutationStateInQueryCache(queryClient, {
+        ...nextLikeState,
+        likedGame: {
+          gameId: response.gameId,
+          title: detail?.title ?? game.name,
+          thumbnailUrl: detail?.coverImageUrl ?? game.thumbnailUrl,
+          genres: detail?.genres?.length ? detail.genres : game.genres,
+        },
       });
     },
     onError: (error) => {

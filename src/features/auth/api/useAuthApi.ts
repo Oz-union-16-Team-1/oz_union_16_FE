@@ -1,15 +1,5 @@
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { shouldRetryApiQuery } from '../../../api/queryRetry';
-import {
-  getPaginatedCount,
-  getPaginatedLoadedCount,
-} from '../../../utils/paginatedResults';
 import {
   checkIdDuplicate,
   checkNicknameDuplicate,
@@ -30,18 +20,15 @@ import { authKeys } from './queryKeys';
 import type {
   ConfirmProfileImageRequest,
   CurrentUserProfileResponse,
-  LikedGamesResponse,
   LikedGamesRequest,
   ProfileImagePresignedUrlRequest,
   UpdateUserInfoResponse,
   UpdateUserInfoRequest,
   UploadFileToS3Request,
 } from '../types/auth';
-import { syncGameLikeStateInQueryCache } from '../../games/queryCache';
+import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
 import { syncAuthAccount } from '../utils/sessionManager';
 import { useAuthStore } from '../../../store/useAuthStore';
-
-export const DEFAULT_LIKED_GAMES_PAGE_SIZE = 20;
 
 export const useLoginMutation = () =>
   useMutation({
@@ -80,33 +67,6 @@ export const useLikedGamesQuery = (
     staleTime: 60_000,
   });
 
-export const useLikedGamesInfiniteQuery = (
-  enabled = true,
-  pageSize = DEFAULT_LIKED_GAMES_PAGE_SIZE,
-) =>
-  useInfiniteQuery({
-    queryKey: authKeys.likedGamesInfinite({ page_size: pageSize }),
-    queryFn: ({ pageParam }) =>
-      getLikedGames({
-        page: pageParam,
-        page_size: pageSize,
-      }),
-    enabled,
-    staleTime: 60_000,
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      const loadedGameCount = getPaginatedLoadedCount(allPages);
-      const totalCount = getPaginatedCount(lastPage, loadedGameCount);
-
-      if (loadedGameCount >= totalCount) {
-        return undefined;
-      }
-
-      return allPages.length + 1;
-    },
-    retry: shouldRetryApiQuery,
-  });
-
 export const useUnlikeLikedGameMutation = () => {
   const queryClient = useQueryClient();
 
@@ -114,38 +74,9 @@ export const useUnlikeLikedGameMutation = () => {
     mutationKey: authKeys.unlikeLikedGame(),
     mutationFn: unlikeLikedGame,
     onSuccess: (_, gameId) => {
-      queryClient.setQueriesData<LikedGamesResponse>(
-        { queryKey: authKeys.likedGames() },
-        (current) => {
-          if (
-            !current ||
-            !Array.isArray((current as Partial<LikedGamesResponse>).results)
-          ) {
-            return current;
-          }
-
-          const currentLikedGames = current as LikedGamesResponse;
-          const nextResults = currentLikedGames.results.filter(
-            (likedGame) => likedGame.game_id !== gameId,
-          );
-
-          if (nextResults.length === currentLikedGames.results.length) {
-            return current;
-          }
-
-          return {
-            ...currentLikedGames,
-            count: Math.max(0, currentLikedGames.count - 1),
-            results: nextResults,
-          };
-        },
-      );
-      syncGameLikeStateInQueryCache(queryClient, {
+      syncLikeMutationStateInQueryCache(queryClient, {
         gameId,
         isLiked: false,
-      });
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
       });
     },
   });

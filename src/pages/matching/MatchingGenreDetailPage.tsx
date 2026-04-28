@@ -13,11 +13,9 @@ import {
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
-import { authKeys } from '../../features/auth/api/queryKeys';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
-import type { LikedGamesResponse } from '../../features/auth/types/auth';
 import { likeGame, unlikeGame } from '../../features/games/gameApi';
-import { syncGameLikeStateInQueryCache } from '../../features/games/queryCache';
+import { syncLikeMutationStateInQueryCache } from '../../features/games/queryCache';
 import type { MatchingCandidateItem } from '../../features/matching/types';
 import {
   useMatchCandidatesQuery,
@@ -47,14 +45,6 @@ const formatMatchingCandidateRating = (rating: number | null) => {
   const normalizedRating = rating <= 5 ? rating * 20 : rating;
 
   return `${normalizedRating.toFixed(1)}점`;
-};
-
-const isLikedGamesResponse = (value: unknown): value is LikedGamesResponse => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return Array.isArray((value as Partial<LikedGamesResponse>).results);
 };
 
 const getMatchingLikeErrorMessage = (error: unknown) => {
@@ -176,60 +166,6 @@ function MatchingGenreDetailPage() {
         ' · ',
       )} 감각을 대표하는 후보예요. 트레일러를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`
     : '';
-  const updateLikedGamesCache = (
-    candidate: MatchingCandidateItem,
-    nextIsLiked: boolean,
-  ) => {
-    queryClient.setQueriesData<LikedGamesResponse>(
-      { queryKey: authKeys.likedGames() },
-      (current) => {
-        if (!isLikedGamesResponse(current)) {
-          return current;
-        }
-
-        const currentLikedGames = current as LikedGamesResponse;
-
-        if (nextIsLiked) {
-          const alreadyExists = currentLikedGames.results.some(
-            (likedGame) => likedGame.game_id === candidate.game_id,
-          );
-
-          if (alreadyExists) {
-            return current;
-          }
-
-          return {
-            ...currentLikedGames,
-            count: currentLikedGames.count + 1,
-            results: [
-              {
-                game_id: candidate.game_id,
-                game_title: candidate.title,
-                thumbnail_url: candidate.thumbnail_url,
-                genres: candidate.genres,
-                liked_at: new Date().toISOString(),
-              },
-              ...currentLikedGames.results,
-            ],
-          };
-        }
-
-        const nextResults = currentLikedGames.results.filter(
-          (likedGame) => likedGame.game_id !== candidate.game_id,
-        );
-
-        if (nextResults.length === currentLikedGames.results.length) {
-          return current;
-        }
-
-        return {
-          ...currentLikedGames,
-          count: Math.max(0, currentLikedGames.count - 1),
-          results: nextResults,
-        };
-      },
-    );
-  };
   const likeMutation = useMutation({
     mutationFn: ({
       candidate,
@@ -239,47 +175,24 @@ function MatchingGenreDetailPage() {
       nextIsLiked: boolean;
     }) =>
       nextIsLiked ? likeGame(candidate.game_id) : unlikeGame(candidate.game_id),
-    onMutate: async ({ candidate, nextIsLiked }) => {
+    onMutate: async () => {
       setLikeFeedbackMessage(null);
-
-      updateLikedGamesCache(candidate, nextIsLiked);
-      syncGameLikeStateInQueryCache(queryClient, {
-        gameId: candidate.game_id,
-        isLiked: nextIsLiked,
-      });
-
-      return {
-        gameId: candidate.game_id,
-      };
     },
     onSuccess: (response, variables) => {
-      updateLikedGamesCache(variables.candidate, response.isLiked);
-      syncGameLikeStateInQueryCache(queryClient, {
+      syncLikeMutationStateInQueryCache(queryClient, {
         gameId: response.gameId,
         isLiked: response.isLiked,
         likeCount: response.likeCount,
-      });
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
+        likedGame: {
+          gameId: variables.candidate.game_id,
+          title: variables.candidate.title,
+          thumbnailUrl: variables.candidate.thumbnail_url,
+          genres: variables.candidate.genres,
+        },
       });
     },
     onError: (error) => {
       setLikeFeedbackMessage(getMatchingLikeErrorMessage(error));
-      void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGames(),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['match-candidates'],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['survey-results'],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['match-results'],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['games'],
-      });
     },
   });
 
