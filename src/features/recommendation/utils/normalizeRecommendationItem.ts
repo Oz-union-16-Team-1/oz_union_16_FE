@@ -1,12 +1,13 @@
 import type { GameListItem } from '../../games/types';
-import type { MatchResultItem } from '../../matching/types';
-import type { SurveyResultItem } from '../../survey/types/survey';
-import type { RecommendationDisplayItem } from '../types';
+import type {
+  RecommendationDisplayItem,
+  RecommendationResultItemShape,
+} from '../types';
 
 const FALLBACK_HIGHLIGHTS = ['몰입감', '스토리', '액션', '전략'];
 
 export const normalizeRecommendationItem = (
-  item: SurveyResultItem | MatchResultItem,
+  item: RecommendationResultItemShape,
 ): RecommendationDisplayItem => ({
   game_id: item.game_id,
   title: item.title,

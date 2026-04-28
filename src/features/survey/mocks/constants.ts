@@ -1,0 +1,4 @@
+export const SURVEY_MIN_STEPS = 3;
+export const SURVEY_DEFAULT_STEPS = 4;
+export const SURVEY_MAX_STEPS = 5;
+export const DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE = 5;

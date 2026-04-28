@@ -1,3 +1,5 @@
+import type { RecommendationResultItemShape } from '../../recommendation/types';
+
 export type SurveySessionStatus =
   | 'IDLE'
   | 'IN_PROGRESS'
@@ -37,16 +39,19 @@ export interface SurveyApiProgress {
   completion_rate?: number | null;
 }
 
-export interface SurveyApiSessionResponse {
+export interface SurveyApiLegacySessionResponseFields {
+  chatbot_reply?: string | null;
+  progress_rate?: number | null;
+  is_completed?: boolean | null;
+}
+
+export type SurveyApiSessionResponse = SurveyApiLegacySessionResponseFields & {
   session_id: string;
   ai_question?: string | null;
   progress?: SurveyApiProgress | null;
   recommendation_ready?: boolean | null;
   status?: SurveySessionStatus | null;
-  chatbot_reply?: string | null;
-  progress_rate?: number | null;
-  is_completed?: boolean | null;
-}
+};
 
 export interface SurveyApiResetResponse extends SurveyApiSessionResponse {
   message: string;
@@ -99,14 +104,7 @@ export interface SurveyApiResultItem {
   is_liked: boolean;
 }
 
-export interface SurveyResultItem {
-  game_id: number;
-  title: string;
-  genres: string[];
-  thumbnail_url: string | null;
-  rating: number | null;
-  is_liked: boolean;
-}
+export type SurveyResultItem = RecommendationResultItemShape;
 
 export interface SurveyApiResultResponse {
   session_id?: string;

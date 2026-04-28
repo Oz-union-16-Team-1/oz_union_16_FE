@@ -6,11 +6,12 @@ import type {
   SurveyApiResultResponse,
   SurveyApiSessionResponse,
 } from '../types/survey';
-
-const MIN_STEPS = 3;
-const DEFAULT_STEPS = 4;
-const MAX_STEPS = 5;
-const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
+import {
+  DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
+  SURVEY_DEFAULT_STEPS,
+  SURVEY_MAX_STEPS,
+  SURVEY_MIN_STEPS,
+} from './constants';
 
 const surveyQuestions = [
   '스토리 중심의 몰입감을 더 중요하게 보시나요, 아니면 손맛과 시스템 완성도를 더 중요하게 보시나요?',
@@ -87,14 +88,14 @@ const getQuestionCountFromAnswer = (answer: string) => {
     (hasVaguePhrase ? 1 : 0);
 
   if (detailScore >= 3) {
-    return MIN_STEPS;
+    return SURVEY_MIN_STEPS;
   }
 
   if (detailScore <= 0) {
-    return MAX_STEPS;
+    return SURVEY_MAX_STEPS;
   }
 
-  return DEFAULT_STEPS;
+  return SURVEY_DEFAULT_STEPS;
 };
 
 const buildSurveyRecommendations = () =>
@@ -114,14 +115,14 @@ export const startMockSurveySession = (): SurveyApiSessionResponse => {
   const sessionId = createSessionId();
   surveySessions.set(sessionId, {
     askedQuestions: 1,
-    totalQuestions: MAX_STEPS,
+    totalQuestions: SURVEY_MAX_STEPS,
   });
 
   return {
     session_id: sessionId,
     ai_question: surveyQuestions[0],
     status: 'IN_PROGRESS',
-    progress: buildProgress(1, MAX_STEPS),
+    progress: buildProgress(1, SURVEY_MAX_STEPS),
     recommendation_ready: false,
   };
 };
@@ -133,7 +134,7 @@ export const continueMockSurveyChat = (
     surveySessions.get(payload.session_id) ??
     ({
       askedQuestions: 1,
-      totalQuestions: DEFAULT_STEPS,
+      totalQuestions: SURVEY_DEFAULT_STEPS,
     } satisfies MockSurveySession);
 
   if (session.askedQuestions === 1) {
@@ -172,7 +173,7 @@ export const continueMockSurveyChat = (
 
 export const getMockSurveyResults = ({
   cursor,
-  pageSize = DEFAULT_RECOMMENDATION_PAGE_SIZE,
+  pageSize = DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
   sessionId,
 }: {
   cursor?: string | null;
@@ -214,7 +215,7 @@ export const resetMockSurveySession = (
   const nextSessionId = createSessionId();
   surveySessions.set(nextSessionId, {
     askedQuestions: 1,
-    totalQuestions: MAX_STEPS,
+    totalQuestions: SURVEY_MAX_STEPS,
   });
 
   return {
@@ -222,7 +223,7 @@ export const resetMockSurveySession = (
     session_id: nextSessionId,
     status: 'IN_PROGRESS',
     ai_question: surveyQuestions[0],
-    progress: buildProgress(1, MAX_STEPS),
+    progress: buildProgress(1, SURVEY_MAX_STEPS),
     recommendation_ready: false,
   };
 };
