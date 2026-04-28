@@ -26,8 +26,9 @@ const normalizeMatchCandidate = (item: MatchingApiCandidateItem) => ({
   is_liked: Boolean(item.is_liked),
 });
 
-export const getMatchCandidates = async (genreId: number) => {
-  const getMockFallback = () => getMatchingMockCandidatesSnapshot(genreId);
+export const getMatchCandidates = async (genreId: number, retryNo = 0) => {
+  const getMockFallback = () =>
+    getMatchingMockCandidatesSnapshot(genreId, retryNo);
 
   try {
     const response = await api.get<MatchingApiCandidatesResponse>(
@@ -35,6 +36,7 @@ export const getMatchCandidates = async (genreId: number) => {
       {
         params: {
           genre_id: genreId,
+          retry_no: retryNo,
         },
       },
     );

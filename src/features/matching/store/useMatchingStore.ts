@@ -126,5 +126,5 @@ export const useMatchingStore = create<MatchingStoreState>((set) => ({
     set((state) => ({
       currentIndex: state.currentIndex > 0 ? state.currentIndex - 1 : 0,
     })),
-  resetFlow: () => ({ ...initialState }),
+  resetFlow: () => set({ ...initialState }),
 }));

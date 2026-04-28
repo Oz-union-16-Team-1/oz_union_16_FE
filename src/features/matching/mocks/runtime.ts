@@ -1,10 +1,35 @@
 import type { MatchingCandidatesResponse } from '../types';
 import { matchingMockCandidatesByGenreId } from './data';
 
+export const getMatchingMockCandidatesForRetry = (
+  genreId: number,
+  retryNo = 0,
+) => {
+  const candidates = matchingMockCandidatesByGenreId[genreId] ?? [];
+
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const normalizedRetryNo =
+    Number.isInteger(retryNo) && retryNo >= 0 ? retryNo : 0;
+  const rotationIndex = normalizedRetryNo % candidates.length;
+
+  if (rotationIndex === 0) {
+    return candidates;
+  }
+
+  return [
+    ...candidates.slice(rotationIndex),
+    ...candidates.slice(0, rotationIndex),
+  ];
+};
+
 export const getMatchingMockCandidatesSnapshot = (
   genreId: number,
+  retryNo = 0,
 ): MatchingCandidatesResponse => {
-  const candidates = matchingMockCandidatesByGenreId[genreId] ?? [];
+  const candidates = getMatchingMockCandidatesForRetry(genreId, retryNo);
 
   return {
     genre_id: genreId,

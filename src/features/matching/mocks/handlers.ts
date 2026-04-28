@@ -11,6 +11,7 @@ import {
   matchingMockCandidateMapById,
   matchingMockCandidatesByGenreId,
 } from './data';
+import { getMatchingMockCandidatesForRetry } from './runtime';
 
 const getErrorResponse = (status: number, message: string) =>
   HttpResponse.json(
@@ -28,10 +29,17 @@ type StoredMatchResult = {
   mock_rank_score: number;
 };
 
+type StoredMatchContext = {
+  genre_id: number;
+  retry_no: number;
+  candidate_date?: string;
+  results: StoredMatchResult[];
+};
+
 const DEFAULT_RECOMMENDATION_PAGE_SIZE = 5;
 const DEFAULT_RECOMMENDATION_TOTAL_COUNT = 15;
 
-let storedMatchResults: StoredMatchResult[] = [];
+let storedMatchContext: StoredMatchContext | null = null;
 
 const MATCHING_RESULT_GENRE_FILTERS: Record<number, GameGenreFilter[]> = {
   1: ['액션', '대전 / 격투'],
@@ -66,7 +74,7 @@ const calculateMockRankScore = ({
 };
 
 const getRankedMatchResults = () =>
-  [...storedMatchResults].sort((a, b) => {
+  [...(storedMatchContext?.results ?? [])].sort((a, b) => {
     if (b.mock_rank_score !== a.mock_rank_score) {
       return b.mock_rank_score - a.mock_rank_score;
     }
@@ -80,22 +88,6 @@ const toMockRecommendationRating = (candidateRating: number | null) =>
     : null;
 
 const normalizeGenre = (value: string) => value.trim().toLowerCase();
-
-const getSelectedGenreIdFromStoredResults = () => {
-  const firstStoredResult = storedMatchResults[0];
-
-  if (!firstStoredResult) {
-    return null;
-  }
-
-  return (
-    Object.entries(matchingMockCandidatesByGenreId).find(([, candidates]) =>
-      candidates.some(
-        (candidate) => candidate.game_id === firstStoredResult.game_id,
-      ),
-    )?.[0] ?? null
-  );
-};
 
 const getGenreAffinityScore = (genres: string[], genreId: number | null) => {
   if (!genreId) {
@@ -122,9 +114,9 @@ const getGenreOverlapScore = (
 };
 
 const getMockRecommendationResults = (authorization: string | null) => {
-  const selectedGenreId = Number(getSelectedGenreIdFromStoredResults());
+  const selectedGenreId = storedMatchContext?.genre_id ?? null;
   const evaluatedGameIds = new Set(
-    storedMatchResults.map((result) => result.game_id),
+    (storedMatchContext?.results ?? []).map((result) => result.game_id),
   );
   const currentLikedGameIds =
     getMockLikedGameIdsForAuthorization(authorization);
@@ -227,18 +219,28 @@ export const matchingHandlers = [
   http.get('/api/v1/match/candidates', async ({ request }) => {
     const url = new URL(request.url);
     const genreIdValue = url.searchParams.get('genre_id');
+    const retryNoValue = url.searchParams.get('retry_no');
     const genreId = Number(genreIdValue);
+    const retryNo = retryNoValue !== null ? Number(retryNoValue) : 0;
 
     if (!genreIdValue || Number.isNaN(genreId) || genreId <= 0) {
       return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
-    const candidates = matchingMockCandidatesByGenreId[genreId];
+    if (
+      retryNoValue !== null &&
+      (Number.isNaN(retryNo) || !Number.isInteger(retryNo) || retryNo < 0)
+    ) {
+      return getErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
+    }
+
+    const candidatesByGenre = matchingMockCandidatesByGenreId[genreId];
+    const candidates = getMatchingMockCandidatesForRetry(genreId, retryNo);
     const currentLikedGameIds = getMockLikedGameIdsForAuthorization(
       request.headers.get('Authorization'),
     );
 
-    if (!candidates) {
+    if (!candidatesByGenre) {
       return getErrorResponse(404, '해당 장르의 게임을 찾을 수 없습니다.');
     }
 
@@ -260,6 +262,9 @@ export const matchingHandlers = [
   }),
   http.post('/api/v1/match/responses', async ({ request }) => {
     const body = (await request.json()) as {
+      genre_id?: number;
+      retry_no?: number;
+      candidate_date?: string;
       match_result?: Array<{
         game_id?: number;
         rating?: number;
@@ -267,41 +272,76 @@ export const matchingHandlers = [
       }>;
     };
 
+    if (
+      typeof body.genre_id !== 'number' ||
+      !Number.isInteger(body.genre_id) ||
+      body.genre_id < 1 ||
+      body.genre_id > 8
+    ) {
+      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+    }
+
+    if (
+      typeof body.retry_no !== 'number' ||
+      !Number.isInteger(body.retry_no) ||
+      body.retry_no < 0
+    ) {
+      return getErrorResponse(400, 'retry_no는 0 이상의 정수여야 합니다.');
+    }
+
     if (!Array.isArray(body.match_result) || body.match_result.length === 0) {
       return getErrorResponse(400, '평가할 match_result가 필요합니다.');
     }
 
+    const currentCandidates = getMatchingMockCandidatesForRetry(
+      body.genre_id,
+      body.retry_no,
+    );
+    const candidateIdSet = new Set(
+      currentCandidates.map((candidate) => candidate.game_id),
+    );
+
     for (const result of body.match_result) {
-      if (
-        typeof result.game_id !== 'number' ||
-        !matchingMockCandidateMapById.has(result.game_id)
-      ) {
-        return getErrorResponse(404, '해당 게임을 찾을 수 없습니다.');
+      const rating = result.rating;
+
+      if (typeof result.game_id !== 'number') {
+        return getErrorResponse(400, 'game_id는 정수여야 합니다.');
       }
 
-      if (
-        typeof result.rating !== 'number' ||
-        !Number.isInteger(result.rating) ||
-        result.rating < 1 ||
-        result.rating > 5
-      ) {
-        return getErrorResponse(400, '1~5 사이 정수여야 합니다.');
+      if (!candidateIdSet.has(result.game_id)) {
+        return getErrorResponse(
+          400,
+          '후보 세트에 없는 game_id가 포함되어 있습니다.',
+        );
+      }
+
+      if (typeof rating !== 'number' || !Number.isInteger(rating)) {
+        return getErrorResponse(400, 'rating은 정수여야 합니다.');
+      }
+
+      if (rating < 1 || rating > 5) {
+        return getErrorResponse(400, 'rating은 1~5 사이의 정수여야 합니다.');
       }
     }
 
-    storedMatchResults = body.match_result.map((result, index, allResults) => ({
-      game_id: result.game_id!,
-      rating: result.rating!,
-      is_liked: Boolean(result.is_liked),
-      created_at_order: index,
-      mock_rank_score: calculateMockRankScore({
-        gameId: result.game_id!,
+    storedMatchContext = {
+      genre_id: body.genre_id,
+      retry_no: body.retry_no,
+      candidate_date: body.candidate_date,
+      results: body.match_result.map((result, index, allResults) => ({
+        game_id: result.game_id!,
         rating: result.rating!,
-        isLiked: Boolean(result.is_liked),
-        createdAtOrder: index,
-        totalCount: allResults.length,
-      }),
-    }));
+        is_liked: Boolean(result.is_liked),
+        created_at_order: index,
+        mock_rank_score: calculateMockRankScore({
+          gameId: result.game_id!,
+          rating: result.rating!,
+          isLiked: Boolean(result.is_liked),
+          createdAtOrder: index,
+          totalCount: allResults.length,
+        }),
+      })),
+    };
 
     syncMockLikedGamesForAuthorization(
       request.headers.get('Authorization'),
@@ -322,7 +362,7 @@ export const matchingHandlers = [
 
     return HttpResponse.json({
       user_id: 1,
-      match_result: storedMatchResults.map((result) => ({
+      match_result: (storedMatchContext?.results ?? []).map((result) => ({
         game_id: result.game_id,
         rating: result.rating,
         is_liked: result.is_liked,
@@ -330,15 +370,31 @@ export const matchingHandlers = [
     });
   }),
   http.get('/api/v1/match/responses/result', async ({ request }) => {
-    if (storedMatchResults.length === 0) {
-      return getErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
-    }
-
     const url = new URL(request.url);
-    const cursor = Number(url.searchParams.get('cursor') ?? '0');
+    const genreIdValue = url.searchParams.get('genre_id');
+    const genreId = Number(genreIdValue);
+    const cursorParam = url.searchParams.get('cursor');
+    const cursor =
+      cursorParam !== null && !Number.isNaN(Number(cursorParam))
+        ? Number(cursorParam)
+        : 0;
     const pageSize = Number(
       url.searchParams.get('page_size') ?? DEFAULT_RECOMMENDATION_PAGE_SIZE,
     );
+
+    if (
+      !genreIdValue ||
+      Number.isNaN(genreId) ||
+      !Number.isInteger(genreId) ||
+      genreId < 1 ||
+      genreId > 8
+    ) {
+      return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
+    }
+
+    if (!storedMatchContext || storedMatchContext.genre_id !== genreId) {
+      return getErrorResponse(404, '매칭 추천 결과를 찾을 수 없습니다.');
+    }
 
     const results = getMockRecommendationResults(
       request.headers.get('Authorization'),

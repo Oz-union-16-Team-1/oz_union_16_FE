@@ -92,9 +92,20 @@ function MatchingGenreDetailPage() {
   const canAccessPage = authGate.accessStatus === 'authorized';
   const isValidGenreSlug = genreSlug ? isMatchingGenreSlug(genreSlug) : false;
   const genre = genreSlug ? getMatchingGenreBySlug(genreSlug) : undefined;
+  const currentGenreSlug = genre?.slug ?? null;
+  const [retryState, setRetryState] = useState<{
+    genreSlug: string | null;
+    value: number;
+  }>({
+    genreSlug: currentGenreSlug,
+    value: 0,
+  });
+  const retryNo =
+    retryState.genreSlug === currentGenreSlug ? retryState.value : 0;
 
   const matchCandidatesQuery = useMatchCandidatesQuery(
     genre?.genreId ?? null,
+    retryNo,
     canAccessPage,
   );
   const submitMatchResponsesMutation = useSubmitMatchResponsesMutation();
@@ -124,7 +135,7 @@ function MatchingGenreDetailPage() {
 
   useEffect(() => {
     hasInitializedFlowRef.current = false;
-  }, [genre?.slug]);
+  }, [genre?.slug, retryNo]);
 
   useEffect(() => {
     if (!genre || candidates.length === 0 || hasInitializedFlowRef.current) {
@@ -285,19 +296,25 @@ function MatchingGenreDetailPage() {
   }
 
   const handleSubmit = async () => {
-    if (!allCandidatesRated || displayCandidates.length === 0) {
+    if (!genre || !allCandidatesRated || displayCandidates.length === 0) {
       return;
     }
 
+    const currentGenreId = genre.genreId;
+
     try {
       await submitMatchResponsesMutation.mutateAsync({
+        genre_id: currentGenreId,
+        retry_no: retryNo,
         match_result: displayCandidates.map((candidate) => ({
           game_id: candidate.game_id,
           rating: evaluationsByGameId[candidate.game_id]!.rating!,
           is_liked: candidate.is_liked,
         })),
       });
-      navigate(`/${ROUTES.RECOMMENDATION_LIST}?source=match`);
+      navigate(
+        `/${ROUTES.RECOMMENDATION_LIST}?source=match&genre_id=${currentGenreId}`,
+      );
     } catch {
       return;
     }
@@ -361,7 +378,12 @@ function MatchingGenreDetailPage() {
             <div className="mt-7 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => void matchCandidatesQuery.refetch()}
+                onClick={() =>
+                  setRetryState({
+                    genreSlug: currentGenreSlug,
+                    value: retryNo + 1,
+                  })
+                }
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
               >
                 다시 시도

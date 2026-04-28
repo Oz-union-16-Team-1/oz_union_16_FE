@@ -74,6 +74,9 @@ export interface MatchResponseItem {
 }
 
 export interface SubmitMatchResponsesRequest {
+  genre_id: number;
+  retry_no: number;
+  candidate_date?: string;
   match_result: MatchResponseItem[];
 }
 
@@ -83,6 +86,7 @@ export interface SubmitMatchResponsesResponse {
 }
 
 export interface MatchResultQuery {
+  genre_id: number;
   cursor?: string;
   page_size?: number;
 }
