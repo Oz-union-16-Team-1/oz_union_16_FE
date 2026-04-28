@@ -9,6 +9,7 @@ import {
   type AuthSessionExpiredDetail,
 } from './features/auth/constants/session';
 import useAuthBootstrap from './features/auth/hooks/useAuthBootstrap';
+import DevApiModeToggle from './components/common/DevApiModeToggle';
 import SupportChatWidget from './components/support-chat/SupportChatWidget';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
     <>
       <Outlet />
       <SupportChatWidget />
+      <DevApiModeToggle />
     </>
   );
 }
