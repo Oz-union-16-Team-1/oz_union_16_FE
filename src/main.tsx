@@ -29,8 +29,8 @@ const authPageFallback = (
     <main className="auth-layout-main relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div aria-hidden="true" className="auth-layout-backdrop" />
       <div aria-hidden="true" className="auth-layout-grid" />
-      <section className="auth-layout-panel w-full max-w-[520px] rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8">
-        <div className="mx-auto w-full max-w-[440px] text-center text-white/68">
+      <section className="auth-layout-panel w-full max-w-130 rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8">
+        <div className="mx-auto w-full max-w-110 text-center text-white/68">
           화면을 불러오는 중입니다...
         </div>
       </section>
@@ -98,7 +98,7 @@ const router = createBrowserRouter([
             fallback={
               <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
                 <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
-                <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1240px] items-center justify-center px-4 text-center text-white/70 sm:px-6 md:px-8">
+                <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-310 items-center justify-center px-4 text-center text-white/70 sm:px-6 md:px-8">
                   마이페이지를 불러오는 중입니다...
                 </main>
               </div>

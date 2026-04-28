@@ -1,5 +1,12 @@
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
+import { authKeys } from '../auth/api/queryKeys';
+import {
+  applyLikeStateToLikedGamesResponse,
+  isLikedGamesResponse,
+  type LikedGameCacheSeed,
+} from '../auth/api/likedGamesCacheState';
+import type { LikedGamesResponse } from '../auth/types/auth';
 import type { GameGenreFilter } from './genres';
 import type { GameDetail, GameListItem, SearchGamesResult } from './types';
 import type { MatchingCandidatesResponse } from '../matching/types';
@@ -23,6 +30,22 @@ type GameLikeCacheUpdate = {
   isLiked: boolean;
   likeCount?: number;
 };
+
+type LikeMutationCacheUpdate =
+  | {
+      gameId: number;
+      isLiked: true;
+      likeCount?: number;
+      likedGame: LikedGameCacheSeed;
+    }
+  | {
+      gameId: number;
+      isLiked: false;
+      likeCount?: number;
+      likedGame?: LikedGameCacheSeed;
+    };
+
+const PRIMARY_LIKED_GAMES_PAGE_SIZE = 20;
 
 type LikeableResultPage = {
   results: Array<{
@@ -66,6 +89,10 @@ const updateGameListItem = (
     likeCount: nextLikeCount,
   };
 };
+
+const primaryLikedGamesQueryKey = authKeys.likedGamesList({
+  page_size: PRIMARY_LIKED_GAMES_PAGE_SIZE,
+});
 
 export const syncGameLikeStateInQueryCache = (
   queryClient: QueryClient,
@@ -151,4 +178,33 @@ export const syncGameLikeStateInQueryCache = (
           }
         : currentData,
   );
+};
+
+export const syncLikedGamesStateInQueryCache = (
+  queryClient: QueryClient,
+  update: LikeMutationCacheUpdate,
+) => {
+  queryClient.setQueryData<LikedGamesResponse>(
+    primaryLikedGamesQueryKey,
+    (currentLikedGames) => {
+      if (!isLikedGamesResponse(currentLikedGames)) {
+        return currentLikedGames;
+      }
+
+      return applyLikeStateToLikedGamesResponse(currentLikedGames, {
+        isLiked: update.isLiked,
+        seed: update.likedGame ?? {
+          gameId: update.gameId,
+        },
+      });
+    },
+  );
+};
+
+export const syncLikeMutationStateInQueryCache = (
+  queryClient: QueryClient,
+  update: LikeMutationCacheUpdate,
+) => {
+  syncGameLikeStateInQueryCache(queryClient, update);
+  syncLikedGamesStateInQueryCache(queryClient, update);
 };

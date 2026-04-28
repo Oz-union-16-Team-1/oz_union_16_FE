@@ -21,15 +21,10 @@ function MyPageLikedGamesSection({
   onToast,
 }: MyPageLikedGamesSectionProps) {
   const {
-    favoriteGamesScrollRef,
-    favoriteGamesLoadMoreRef,
     favoriteGames,
     favoriteCount,
     isFavoriteGamesLoading,
     isFavoriteGamesError,
-    hasFavoriteGamesNextPage,
-    isFavoriteGamesFetchingNextPage,
-    isFavoriteGamesFetchNextPageError,
     isFetchingFavoriteGames,
     selectedFavoriteGame,
     isUnlikePending,
@@ -37,7 +32,6 @@ function MyPageLikedGamesSection({
     handleFavoriteGameCardClick,
     handleFavoriteGameDeleteConfirm,
     refetchFavoriteGames,
-    fetchNextFavoriteGamesPage,
   } = useMyPageLikedGames({
     enabled,
     onOpenGameDetail,
@@ -68,65 +62,25 @@ function MyPageLikedGamesSection({
           </p>
         </div>
 
-        <div
-          ref={favoriteGamesScrollRef}
-          className="mypage-scrollbar mt-5 box-border max-w-full overflow-x-auto overflow-y-hidden pb-2"
-        >
+        <div className="mypage-scrollbar mt-5 box-border max-w-full overflow-x-auto overflow-y-hidden pb-2">
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
           ) : favoriteCount > 0 ? (
-            <div>
-              <div className="flex min-w-max items-stretch gap-3 lg:gap-4">
-                {favoriteGames.map((game) => (
-                  <FavoriteGameCard
-                    key={game.gameId}
-                    game={game}
-                    onClick={handleFavoriteGameCardClick}
-                    onFavoriteClick={setSelectedFavoriteGame}
-                  />
-                ))}
-                <div className="flex w-6 shrink-0 items-stretch">
-                  <div
-                    ref={favoriteGamesLoadMoreRef}
-                    aria-hidden="true"
-                    className="h-full w-px self-stretch"
-                  />
-                </div>
-              </div>
-              <div className="mt-5 flex flex-col items-center gap-2">
-                {isFavoriteGamesFetchNextPageError ? (
-                  <>
-                    <p className="text-sm text-red-300">
-                      추가 찜 목록을 불러오지 못했습니다.
-                    </p>
-                    <AuthButton
-                      type="button"
-                      variant="secondary"
-                      className="w-full max-w-40"
-                      onClick={() => void fetchNextFavoriteGamesPage()}
-                      disabled={isFavoriteGamesFetchingNextPage}
-                    >
-                      {isFavoriteGamesFetchingNextPage
-                        ? '다시 불러오는 중...'
-                        : '다시 시도'}
-                    </AuthButton>
-                  </>
-                ) : isFavoriteGamesFetchingNextPage ? (
-                  <p className="text-mypage-muted text-sm">
-                    찜 목록을 더 불러오는 중입니다...
-                  </p>
-                ) : hasFavoriteGamesNextPage ? (
-                  <p className="text-mypage-muted text-sm">
-                    오른쪽으로 스크롤하면 찜 목록을 더 볼 수 있어요.
-                  </p>
-                ) : null}
-              </div>
+            <div className="flex min-w-max items-stretch gap-3 lg:gap-4">
+              {favoriteGames.map((game) => (
+                <FavoriteGameCard
+                  key={game.gameId}
+                  game={game}
+                  onClick={handleFavoriteGameCardClick}
+                  onFavoriteClick={setSelectedFavoriteGame}
+                />
+              ))}
             </div>
           ) : isFavoriteGamesError ? (
             <div
               role="status"
               aria-live="polite"
-              className="border-mypage-divider bg-mypage-card flex min-h-56 flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed px-6 py-10 text-center"
+              className="border-mypage-divider bg-mypage-card flex min-h-56 flex-col items-center justify-center gap-4 rounded-3xl border border-dashed px-6 py-10 text-center"
             >
               <p className="text-sm text-red-300">
                 찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.

@@ -213,6 +213,13 @@ MSW mock은 실제 API 경로와 응답 구조를 최대한 동일하게 맞춥�
 - 추천 결과 mock도 `더보기` 버튼 정책과 동일하게 `5개 단위 + next 기반` 구조를 유지
 - 프론트 adapter는 방어적으로 legacy fallback을 유지하지만, mock 응답은 최신 계약을 우선 기준으로 사용
 
+#### Mock liked-state source of truth
+
+- 좋아요 mock의 canonical source-of-truth 는 `src/features/auth/mocks/handlers.ts` 의 사용자별 liked map과 game like-count map입니다.
+- `GET /api/v1/accounts/me/game-like`, `POST/DELETE /api/v1/games/{game_id}/like`, 추천/매칭/게임 상세 mock 은 모두 이 상태를 기준으로 동작합니다.
+- 이 상태는 **브라우저 메모리 기반**이므로 SPA 내부 이동에서는 유지되지만, **전체 페이지 리로드나 직접 URL 진입 시 초기화**됩니다.
+- 현재 mock 계층은 `sessionStorage`/`localStorage` persistence를 사용하지 않습니다. 리로드 이후 영속 상태가 필요하면 별도 요구사항으로 추가합니다.
+
 ### 7. Recommendation Detail Modal Integration
 
 추천 결과 리스트에서는 `game_id`가 있는 item만 상세 모달 진입이 가능합니다.
