@@ -142,77 +142,81 @@ function LoginPage() {
       {showMockAccounts ? (
         <>
           <div
-            ref={mockPanelRef}
             className={`${LOGIN_MOCK_PANEL_CLASS_NAME} ${
               isMockPanelOpen
                 ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
                 : 'pointer-events-none translate-y-4 scale-95 opacity-0'
             }`}
-            role="dialog"
-            aria-modal="false"
-            aria-label="개발용 로그인 계정"
           >
-            <div className="border-login-outline flex items-center justify-between border-b px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  개발용 로그인 계정
-                </p>
-                <p className="text-login-helper mt-1 text-xs/5">
-                  dev + MSW에서만 표시됩니다.
-                </p>
+            <div
+              ref={mockPanelRef}
+              className="flex w-full flex-col"
+              role="dialog"
+              aria-modal="false"
+              aria-label="개발용 로그인 계정"
+            >
+              <div className="border-login-outline flex items-center justify-between border-b px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    개발용 로그인 계정
+                  </p>
+                  <p className="text-login-helper mt-1 text-xs/5">
+                    dev + MSW에서만 표시됩니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeMockPanel}
+                  className="support-chat-icon-btn"
+                  aria-label="개발용 로그인 계정 패널 닫기"
+                >
+                  <X size={16} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={closeMockPanel}
-                className="support-chat-icon-btn"
-                aria-label="개발용 로그인 계정 패널 닫기"
-              >
-                <X size={16} />
-              </button>
-            </div>
 
-            <div className="support-chat-scrollbar max-h-[min(60vh,28rem)] overflow-y-auto px-4 py-4">
-              <ul className="space-y-2.5">
-                {visibleMockAccounts.map((account) => (
-                  <li
-                    key={account.loginId}
-                    className="border-login-outline rounded-2xl border bg-black/20 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white">
-                          {account.name}
-                        </p>
+              <div className="support-chat-scrollbar max-h-[min(60vh,28rem)] overflow-y-auto px-4 py-4">
+                <ul className="space-y-2.5">
+                  {visibleMockAccounts.map((account) => (
+                    <li
+                      key={account.loginId}
+                      className="border-login-outline rounded-2xl border bg-black/20 p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white">
+                            {account.name}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyMockAccount(account)}
+                          className="border-login-outline shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white/25 hover:bg-white/5"
+                        >
+                          입력하기
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyMockAccount(account)}
-                        className="border-login-outline shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white/25 hover:bg-white/5"
-                      >
-                        입력하기
-                      </button>
-                    </div>
-                    <dl className="mt-3 space-y-1.5 text-xs/5">
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-login-helper">아이디</dt>
-                        <dd className="font-mono text-white">
-                          {account.loginId}
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-login-helper">비밀번호</dt>
-                        <dd className="font-mono text-white">
-                          {account.password}
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-login-helper">닉네임</dt>
-                        <dd className="text-white">{account.nickname}</dd>
-                      </div>
-                    </dl>
-                  </li>
-                ))}
-              </ul>
+                      <dl className="mt-3 space-y-1.5 text-xs/5">
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-login-helper">아이디</dt>
+                          <dd className="font-mono text-white">
+                            {account.loginId}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-login-helper">비밀번호</dt>
+                          <dd className="font-mono text-white">
+                            {account.password}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-login-helper">닉네임</dt>
+                          <dd className="text-white">{account.nickname}</dd>
+                        </div>
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
 

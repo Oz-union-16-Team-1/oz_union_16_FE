@@ -1,5 +1,6 @@
 import { ClipboardCheck, Search } from 'lucide-react';
 import { useState } from 'react';
+import DevApiModeToggle from '../../components/common/DevApiModeToggle';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
@@ -50,6 +51,11 @@ const MainPage = () => {
           onClose={() => setSelectedGame(null)}
         />
       ) : null}
+
+      <DevApiModeToggle
+        variant="fab"
+        className="fixed bottom-4 left-4 z-[80] sm:bottom-6 sm:left-6"
+      />
     </div>
   );
 };
