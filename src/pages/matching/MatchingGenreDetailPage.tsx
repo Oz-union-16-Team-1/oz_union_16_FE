@@ -239,7 +239,7 @@ function MatchingGenreDetailPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.12),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <LazyHeader fixed />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-21 pb-8 sm:px-6 sm:pt-[5.6rem] sm:pb-10 md:px-8 md:pt-[5.9rem] md:pb-12">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-[6.35rem] pb-10 sm:px-6 sm:pt-[6.8rem] sm:pb-12 md:px-8 md:pt-[7.35rem] md:pb-14">
         {!genre || !isValidGenreSlug ? (
           <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
@@ -329,7 +329,7 @@ function MatchingGenreDetailPage() {
           </section>
         ) : (
           <>
-            <div className="pointer-events-none absolute top-[4.85rem] left-1/2 z-20 w-screen -translate-x-1/2 pr-[clamp(1rem,5vw,20rem)] pl-[clamp(0.35rem,3vw,20rem)] sm:top-[5.15rem] md:top-[5.35rem]">
+            <div className="pointer-events-none absolute top-[5.15rem] left-1/2 z-20 w-screen -translate-x-1/2 pr-[clamp(1rem,5vw,20rem)] pl-[clamp(0.35rem,3vw,20rem)] sm:top-[5.45rem] md:top-[5.75rem]">
               <Link
                 to={`/${ROUTES.MATCHING_LIST}`}
                 className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-4 py-2 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
@@ -339,7 +339,7 @@ function MatchingGenreDetailPage() {
               </Link>
             </div>
 
-            <section className="mx-auto max-w-255">
+            <section className="mx-auto mt-9 max-w-255 sm:mt-10 md:mt-12">
               <div className="text-center">
                 <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
                   {safeIndex + 1} / {totalSteps} 단계
@@ -349,7 +349,7 @@ function MatchingGenreDetailPage() {
                 </h1>
               </div>
 
-              <div className="mt-5 grid gap-4 lg:grid-cols-[1.32fr_0.92fr] lg:gap-5">
+              <div className="mt-8 grid gap-4 lg:grid-cols-[1.32fr_0.92fr] lg:gap-5 xl:mt-9">
                 {currentCandidate ? (
                   <MatchingMediaPanel candidate={currentCandidate} />
                 ) : null}
