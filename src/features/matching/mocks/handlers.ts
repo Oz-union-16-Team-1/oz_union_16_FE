@@ -198,7 +198,13 @@ export const matchingHandlers = [
     const genreIdValue = url.searchParams.get('genre_id');
     const genreId = Number(genreIdValue);
 
-    if (!genreIdValue || Number.isNaN(genreId) || genreId <= 0) {
+    if (
+      !genreIdValue ||
+      Number.isNaN(genreId) ||
+      !Number.isInteger(genreId) ||
+      genreId < 1 ||
+      genreId > 8
+    ) {
       return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
@@ -223,7 +229,13 @@ export const matchingHandlers = [
     const genreId = Number(genreIdValue);
     const retryNo = retryNoValue !== null ? Number(retryNoValue) : 0;
 
-    if (!genreIdValue || Number.isNaN(genreId) || genreId <= 0) {
+    if (
+      !genreIdValue ||
+      Number.isNaN(genreId) ||
+      !Number.isInteger(genreId) ||
+      genreId < 1 ||
+      genreId > 8
+    ) {
       return getErrorResponse(400, '유효하지 않은 genre_id 입니다.');
     }
 
@@ -248,10 +260,11 @@ export const matchingHandlers = [
 
     return HttpResponse.json({
       genre_id: genreId,
+      retry_no: retryNo,
       count: candidates.length,
       results: candidates.map((candidate) => ({
         game_id: candidate.game_id,
-        name: candidate.title,
+        title: candidate.title,
         description: candidate.description,
         genres: candidate.genres,
         trailer_url: candidate.trailer_url,
