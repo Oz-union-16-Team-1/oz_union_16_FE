@@ -6,11 +6,7 @@ import {
 } from '@tanstack/react-query';
 
 import { shouldRetryApiQuery } from '../../../api/queryRetry';
-import {
-  getPaginatedCount,
-  getPaginatedLoadedCount,
-  getPaginatedNext,
-} from '../../../utils/paginatedResults';
+import { getPaginatedNext } from '../../../utils/paginatedResults';
 import {
   getMatchCandidates,
   getMatchingGenreImage,
@@ -74,15 +70,6 @@ export const useMatchResultsInfinite = (
         cursor: pageParam ?? undefined,
         page_size: 5,
       }),
-    getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = getPaginatedLoadedCount(allPages);
-      const totalCount = getPaginatedCount(lastPage, 15);
-
-      if (loadedCount >= totalCount) {
-        return undefined;
-      }
-
-      return getPaginatedNext(lastPage);
-    },
+    getNextPageParam: (lastPage) => getPaginatedNext(lastPage) ?? undefined,
     retry: shouldRetryApiQuery,
   });

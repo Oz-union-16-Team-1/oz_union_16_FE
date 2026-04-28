@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { getPaginatedResults } from '../../../utils/paginatedResults';
@@ -43,6 +43,12 @@ export const useRecommendationResultsSource = ({
       : selectedGenreId;
   const resolvedSurveySessionId =
     surveySessionIdFromUrl ?? storedSurveySessionId;
+  const hasTrimmedOnEntryRef = useRef<string | null>(null);
+  const activeTrimKey = isMatchSource
+    ? `match:${resolvedMatchGenreId ?? 'none'}`
+    : isSurveySource
+      ? `survey:${resolvedSurveySessionId ?? 'current'}`
+      : null;
 
   const surveyResultsQuery = useSurveyResultsInfinite(
     !isMatchSource && isSurveySource && canAccessPage,
@@ -87,22 +93,30 @@ export const useRecommendationResultsSource = ({
     (isResultNotFound || recommendationItems.length === 0);
 
   useLayoutEffect(() => {
-    if (!canAccessPage) {
+    if (!canAccessPage || !activeTrimKey) {
       return;
     }
 
-    if (isMatchSource) {
+    if (hasTrimmedOnEntryRef.current === activeTrimKey) {
+      return;
+    }
+
+    hasTrimmedOnEntryRef.current = activeTrimKey;
+
+    if (isMatchSource && resolvedMatchGenreId !== null) {
       queryClient.setQueriesData<{
         pages: MatchResultResponse[];
         pageParams: unknown[];
-      }>({ queryKey: ['match-results'] }, (currentData) =>
-        currentData
-          ? {
-              ...currentData,
-              pages: currentData.pages.slice(0, 1),
-              pageParams: currentData.pageParams.slice(0, 1),
-            }
-          : currentData,
+      }>(
+        { queryKey: ['match-results', resolvedMatchGenreId] },
+        (currentData) =>
+          currentData
+            ? {
+                ...currentData,
+                pages: currentData.pages.slice(0, 1),
+                pageParams: currentData.pageParams.slice(0, 1),
+              }
+            : currentData,
       );
 
       return;
@@ -112,17 +126,27 @@ export const useRecommendationResultsSource = ({
       queryClient.setQueriesData<{
         pages: SurveyResultResponse[];
         pageParams: unknown[];
-      }>({ queryKey: ['survey-results'] }, (currentData) =>
-        currentData
-          ? {
-              ...currentData,
-              pages: currentData.pages.slice(0, 1),
-              pageParams: currentData.pageParams.slice(0, 1),
-            }
-          : currentData,
+      }>(
+        { queryKey: ['survey-results', resolvedSurveySessionId ?? 'current'] },
+        (currentData) =>
+          currentData
+            ? {
+                ...currentData,
+                pages: currentData.pages.slice(0, 1),
+                pageParams: currentData.pageParams.slice(0, 1),
+              }
+            : currentData,
       );
     }
-  }, [canAccessPage, isMatchSource, isSurveySource, queryClient]);
+  }, [
+    activeTrimKey,
+    canAccessPage,
+    isMatchSource,
+    isSurveySource,
+    queryClient,
+    resolvedMatchGenreId,
+    resolvedSurveySessionId,
+  ]);
 
   return {
     isMatchSource,
