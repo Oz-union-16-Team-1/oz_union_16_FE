@@ -39,7 +39,9 @@ function AuthInputField({
   const shouldRenderMessage = Boolean(resolvedMessage) || reserveMessageSpace;
 
   return (
-    <div className={`space-y-2 ${containerClassName} sm:space-y-2.5`}>
+    <div
+      className={`w-full min-w-0 space-y-2 ${containerClassName} sm:space-y-2.5`}
+    >
       <div className="flex items-center justify-between gap-3">
         <label
           htmlFor={id}
@@ -49,7 +51,7 @@ function AuthInputField({
         </label>
         {labelAction ? <div className="shrink-0">{labelAction}</div> : null}
       </div>
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="relative flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
         <InputControl
           id={id}
           {...inputProps}

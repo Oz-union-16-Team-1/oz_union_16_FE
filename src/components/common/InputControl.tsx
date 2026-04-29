@@ -6,7 +6,7 @@ type InputControlProps = {
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const inputBaseClassName =
-  'auth-input-autofill placeholder-login-muted bg-login-field h-12 min-w-0 w-full rounded-2xl border px-3.5 text-[0.95rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition outline-none focus-visible:ring-2 sm:h-[3.2rem] sm:px-4 sm:text-base';
+  'auth-input-autofill placeholder-login-muted bg-login-field h-12 min-w-0 w-full max-w-full rounded-2xl border px-3.5 text-[0.95rem] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition outline-none focus-visible:ring-2 sm:h-[3.2rem] sm:px-4 sm:text-base';
 
 function InputControl({
   hasError = false,

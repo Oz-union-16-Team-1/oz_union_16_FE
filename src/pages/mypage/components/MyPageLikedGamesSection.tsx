@@ -62,11 +62,11 @@ function MyPageLikedGamesSection({
           </p>
         </div>
 
-        <div className="mypage-scrollbar mt-5 box-border max-w-full overflow-x-auto overflow-y-hidden pb-2">
+        <div className="mypage-scrollbar mt-5 box-border h-[22rem] max-w-full overflow-x-hidden overflow-y-auto pr-1 sm:h-[24rem] lg:h-[25rem]">
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
           ) : favoriteCount > 0 ? (
-            <div className="flex min-w-max items-stretch gap-3 lg:gap-4">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
               {favoriteGames.map((game) => (
                 <FavoriteGameCard
                   key={game.gameId}

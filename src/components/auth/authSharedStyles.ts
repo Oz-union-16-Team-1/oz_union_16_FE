@@ -1,12 +1,12 @@
 export const AUTH_SHARED_LAYOUT_CLASS_NAMES = {
-  panel: 'max-w-[560px] px-5 py-6 sm:px-9 sm:py-8',
-  content: 'max-w-[428px]',
+  panel: 'min-w-0 max-w-[560px] px-4 py-6 sm:px-9 sm:py-8',
+  content: 'min-w-0 w-full max-w-[428px]',
 } as const;
 
 export const AUTH_SHARED_FORM_CLASS_NAMES = {
   socialGroup: 'mt-4 sm:mt-5',
   divider: 'my-3 sm:my-4',
-  form: 'space-y-2.5 sm:space-y-3',
+  form: 'min-w-0 w-full space-y-2.5 sm:space-y-3',
   feedbackMessage: 'text-sm/5',
   submitButton:
     'mt-1.5 h-12 w-full rounded-2xl text-sm/6 sm:mt-2 sm:h-[3.2rem] sm:text-base/6',
