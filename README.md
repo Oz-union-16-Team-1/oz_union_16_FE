@@ -23,7 +23,36 @@ npm install
 npm run dev
 ```
 
-로컬 개발 서버가 출력하는 URL로 접속합니다.
+기본 개발 서버는 `https://localhost:5173` 기준으로 실행합니다.
+
+처음 한 번은 로컬 인증서를 생성합니다.
+
+```bash
+brew install mkcert
+mkcert -install
+mkdir -p certs
+mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1
+```
+
+이후 아래 명령으로 개발 서버를 실행합니다.
+
+```bash
+npm run dev
+```
+
+브라우저에서 `https://localhost:5173`로 접속합니다.
+
+인증/소셜 로그인과 무관한 단순 UI 작업 등으로 HTTP가 필요하면 예외적으로 아래 명령을 사용할 수 있습니다.
+
+```bash
+npm run dev:http
+```
+
+백엔드 연동 시에는 아래 조건도 함께 맞아야 합니다.
+
+- backend CORS 허용 origin에 `https://localhost:5173` 추가
+- `Access-Control-Allow-Credentials: true` 유지
+- 소셜 로그인 로컬 redirect URI가 있다면 `https://localhost:5173` 기준으로 등록
 
 ## Verification
 
