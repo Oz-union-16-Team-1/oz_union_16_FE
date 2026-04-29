@@ -12,7 +12,7 @@ export type GameListItem = {
 
 export type GameListResponse = {
   count?: number;
-  next?: string | null;
+  next?: number | null;
   ranked_at?: string;
   results: RawGameListItem[];
 };
@@ -94,6 +94,6 @@ export type SearchGamesParams = {
 
 export type SearchGamesResult = {
   count: number;
-  next?: string | null;
+  next?: number | null;
   results: GameListItem[];
 };

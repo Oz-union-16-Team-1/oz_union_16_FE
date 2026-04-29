@@ -1,7 +1,7 @@
 type ResultsPage<T> =
   | {
       count?: number | null;
-      next?: string | null;
+      next?: string | number | null;
       results?: T[] | null;
     }
   | null
