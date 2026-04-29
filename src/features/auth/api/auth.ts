@@ -24,6 +24,7 @@ export {
   confirmProfileImage,
   deleteAccount,
   getCurrentUserProfile,
+  getCurrentUserSocialProfile,
   getLikedGames,
   getProfileImagePresignedUrl,
   signup,

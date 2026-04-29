@@ -14,6 +14,7 @@ import type {
   ConfirmProfileImageRequest,
   ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
+  CurrentUserSocialResponse,
   DeleteLikedGameResponse,
   DuplicateCheckResponse,
   LikedGamesRequest,
@@ -137,6 +138,15 @@ export const requestRefreshAccessToken = async (
 export const getCurrentUserProfile = async () => {
   const response = await api.get<CurrentUserProfileResponse>(
     `${AUTH_BASE_PATH}/me`,
+    createCredentialedAuthRequestConfig(),
+  );
+
+  return response.data;
+};
+
+export const getCurrentUserSocialProfile = async () => {
+  const response = await api.get<CurrentUserSocialResponse>(
+    `${AUTH_BASE_PATH}/me/social`,
     createCredentialedAuthRequestConfig(),
   );
 

@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import type { CurrentUserProfileResponse } from '../features/auth/types/auth';
+import type {
+  CurrentUserProfileResponse,
+  CurrentUserSocialResponse,
+} from '../features/auth/types/auth';
 
 /**
  * [Auth] 쿠키 기반 세션 복구 업데이트
@@ -42,12 +45,18 @@ const persistProfilePreviewImageUrl = (profileImageUrl?: string | null) => {
 interface AuthState {
   accessToken: string | null;
   account: CurrentUserProfileResponse | null;
+  socialAccount: CurrentUserSocialResponse | null;
   profilePreviewImageUrl: string | null;
   isAuthenticated: boolean;
   authBootstrapStatus: AuthBootstrapStatus;
   setAccessToken: (token: string) => void;
   setAccount: (account: CurrentUserProfileResponse | null) => void;
-  setAuth: (token: string, account: CurrentUserProfileResponse) => void;
+  setSocialAccount: (socialAccount: CurrentUserSocialResponse | null) => void;
+  setAuth: (
+    token: string,
+    account: CurrentUserProfileResponse,
+    socialAccount: CurrentUserSocialResponse,
+  ) => void;
   clearAuth: () => void;
   setAuthBootstrapStatus: (status: AuthBootstrapStatus) => void;
 }
@@ -62,6 +71,7 @@ export type AuthSessionStateSnapshot = {
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   account: null,
+  socialAccount: null,
   profilePreviewImageUrl: readPersistedProfilePreviewImageUrl(),
   isAuthenticated: false,
   authBootstrapStatus: 'idle',
@@ -80,11 +90,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  setAuth: (token, account) => {
+  setSocialAccount: (socialAccount) => {
+    set({
+      socialAccount,
+    });
+  },
+
+  setAuth: (token, account, socialAccount) => {
     persistProfilePreviewImageUrl(account?.profile_img_url);
     set({
       accessToken: token,
       account: account,
+      socialAccount,
       profilePreviewImageUrl: account?.profile_img_url?.trim() ?? null,
       isAuthenticated: true,
     });
@@ -95,6 +112,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       accessToken: null,
       account: null,
+      socialAccount: null,
       profilePreviewImageUrl: null,
       isAuthenticated: false,
     });

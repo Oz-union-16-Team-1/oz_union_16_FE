@@ -16,6 +16,7 @@ import type {
   ConfirmProfileImageRequest,
   ConfirmProfileImageResponse,
   CurrentUserProfileResponse,
+  CurrentUserSocialResponse,
   DeleteLikedGameResponse,
   LikedGameItemResponse,
   LoginRequest,
@@ -31,9 +32,10 @@ import type {
 import { createMockUserMap, type MockUserRecord } from './mockUsers';
 
 const mockUsers = createMockUserMap();
-const AUTH_CALLBACK_PATH = ROUTE_PATHS.AUTH_CALLBACK;
 
 const validGenders: AuthGender[] = ['M', 'W'];
+const DEFAULT_MOCK_SOCIAL_TYPE = 'nomal';
+type MockSocialType = SocialAuthProvider | typeof DEFAULT_MOCK_SOCIAL_TYPE;
 
 const createAccessToken = (loginId: string) => `mock-access-token-${loginId}`;
 const parseLoginIdFromRefreshToken = (refreshToken: string) => {
@@ -50,7 +52,9 @@ const parseLoginIdFromRefreshToken = (refreshToken: string) => {
 };
 const MOCK_S3_HOST = 'https://mock-s3.oz-union-16.com';
 let refreshSessionLoginId: string | null = null;
+let refreshSessionSocialType: MockSocialType | null = null;
 let pendingSocialLoginId: string | null = null;
+let pendingSocialProvider: SocialAuthProvider | null = null;
 
 const mockLikedGamesByLoginId = new Map<string, LikedGameItemResponse[]>(
   [...mockUsers.keys()].map((loginId) => [loginId, []]),
@@ -143,6 +147,19 @@ const getMockSocialLoginId = (provider: SocialAuthProvider) => {
 
   return 'pgti-demo';
 };
+
+const getCurrentMockSocialAccount = (
+  user: MockUserRecord,
+): CurrentUserSocialResponse => ({
+  is_social:
+    refreshSessionLoginId === user.loginId && !!refreshSessionSocialType
+      ? refreshSessionSocialType !== DEFAULT_MOCK_SOCIAL_TYPE
+      : false,
+  social_type:
+    refreshSessionLoginId === user.loginId && refreshSessionSocialType
+      ? refreshSessionSocialType
+      : DEFAULT_MOCK_SOCIAL_TYPE,
+});
 
 const sanitizeFileName = (fileName: string) => {
   const normalizedFileName = fileName.trim().replace(/\s+/g, '-');
@@ -314,13 +331,14 @@ const loginHandlers = [
     }
 
     pendingSocialLoginId = getMockSocialLoginId(provider);
+    pendingSocialProvider = provider;
 
     await delay(120);
 
     return new HttpResponse(null, {
       status: 302,
       headers: {
-        Location: AUTH_CALLBACK_PATH,
+        Location: ROUTE_PATHS.HOME,
       },
     });
   }),
@@ -354,6 +372,9 @@ const loginHandlers = [
 
     await delay(500);
     refreshSessionLoginId = user.loginId;
+    refreshSessionSocialType = DEFAULT_MOCK_SOCIAL_TYPE;
+    pendingSocialLoginId = null;
+    pendingSocialProvider = null;
 
     return HttpResponse.json({
       access_token: createAccessToken(user.loginId),
@@ -371,6 +392,10 @@ const loginHandlers = [
       : null;
     const loginId =
       pendingSocialLoginId ?? loginIdFromRefreshToken ?? refreshSessionLoginId;
+    const nextSocialType =
+      pendingSocialProvider ??
+      refreshSessionSocialType ??
+      DEFAULT_MOCK_SOCIAL_TYPE;
 
     if (!loginId) {
       return HttpResponse.json(
@@ -383,6 +408,8 @@ const loginHandlers = [
 
     pendingSocialLoginId = null;
     refreshSessionLoginId = loginId;
+    refreshSessionSocialType = nextSocialType;
+    pendingSocialProvider = null;
 
     await delay(180);
 
@@ -564,6 +591,19 @@ const accountHandlers = [
     };
 
     return HttpResponse.json(responseBody);
+  }),
+
+  http.get(`${AUTH_BASE_PATH}/me/social`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const user = getAuthorizedUser(authorization);
+
+    if (!user) {
+      return getUnauthorizedError('로그인이 필요합니다.');
+    }
+
+    await delay(160);
+
+    return HttpResponse.json(getCurrentMockSocialAccount(user));
   }),
 
   http.patch(`${AUTH_BASE_PATH}/me`, async ({ request }) => {
@@ -1007,9 +1047,13 @@ const accountHandlers = [
     mockLikedGamesByLoginId.delete(user.loginId);
     if (refreshSessionLoginId === user.loginId) {
       refreshSessionLoginId = null;
+      refreshSessionSocialType = null;
     }
     if (pendingSocialLoginId === user.loginId) {
       pendingSocialLoginId = null;
+    }
+    if (pendingSocialProvider) {
+      pendingSocialProvider = null;
     }
     [...mockUploadedProfileImagesByPath.keys()]
       .filter((key) => key.startsWith(`${user.loginId}/`))
@@ -1120,7 +1164,9 @@ const logoutHandlers = [
 
     await delay(200);
     refreshSessionLoginId = null;
+    refreshSessionSocialType = null;
     pendingSocialLoginId = null;
+    pendingSocialProvider = null;
 
     return HttpResponse.json({
       detail: '로그아웃 되었습니다.',

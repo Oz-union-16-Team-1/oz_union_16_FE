@@ -16,6 +16,11 @@ export interface RefreshAccessTokenResponse {
   refresh_token?: string | null;
 }
 
+export interface CurrentUserSocialResponse {
+  is_social: boolean;
+  social_type: string;
+}
+
 export interface LogoutResponse {
   detail: string;
 }
