@@ -79,18 +79,18 @@ const MainGamesSection = ({
         </label>
       </div>
 
-      {isGamesLoading ? (
-        <GameCardSkeletonList />
-      ) : isGamesError ? (
-        <ErrorGameList
-          message={
-            gamesErrorMessage ??
-            '인기 게임 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
-          }
-          onRetry={retryGames}
-        />
-      ) : games.length > 0 ? (
-        <>
+      <div className="mt-3 sm:mt-4">
+        {isGamesLoading ? (
+          <GameCardSkeletonList />
+        ) : isGamesError ? (
+          <ErrorGameList
+            message={
+              gamesErrorMessage ??
+              '인기 게임 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+            }
+            onRetry={retryGames}
+          />
+        ) : games.length > 0 ? (
           <MainGameCarousel
             key={carouselKey}
             games={games}
@@ -100,10 +100,10 @@ const MainGamesSection = ({
             isFetchingMoreSearchResults={isFetchingMoreSearchResults}
             onRequestMoreSearchResults={fetchMoreSearchResults}
           />
-        </>
-      ) : (
-        <EmptyGameList isFiltered={isFiltered} />
-      )}
+        ) : (
+          <EmptyGameList isFiltered={isFiltered} />
+        )}
+      </div>
     </div>
   );
 };
