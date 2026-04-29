@@ -5,9 +5,16 @@ import {
   createAuthSessionExpiredEvent,
   type AuthSessionExpiredDetail,
 } from '../constants/session';
-import { getCurrentUserProfile, refreshAccessToken } from '../api/auth';
+import {
+  getCurrentUserProfile,
+  getCurrentUserSocialProfile,
+  refreshAccessToken,
+} from '../api/auth';
 import { logRefreshStoreSync } from '../api/auth.diagnostics';
-import type { CurrentUserProfileResponse } from '../types/auth';
+import type {
+  CurrentUserProfileResponse,
+  CurrentUserSocialResponse,
+} from '../types/auth';
 
 export const setAuthBootstrapLoading = () => {
   useAuthStore.getState().setAuthBootstrapStatus('loading');
@@ -21,6 +28,12 @@ export const syncAuthAccount = (account: CurrentUserProfileResponse | null) => {
   useAuthStore.getState().setAccount(account);
 };
 
+export const syncAuthSocialAccount = (
+  socialAccount: CurrentUserSocialResponse | null,
+) => {
+  useAuthStore.getState().setSocialAccount(socialAccount);
+};
+
 export const applyAccessToken = (accessToken: string) => {
   useAuthStore.getState().setAccessToken(accessToken);
 };
@@ -28,8 +41,9 @@ export const applyAccessToken = (accessToken: string) => {
 export const applyAuthenticatedSession = (
   accessToken: string,
   account: CurrentUserProfileResponse,
+  socialAccount: CurrentUserSocialResponse,
 ) => {
-  useAuthStore.getState().setAuth(accessToken, account);
+  useAuthStore.getState().setAuth(accessToken, account, socialAccount);
   setAuthBootstrapReady();
 };
 
@@ -54,12 +68,16 @@ export const hydrateAuthSessionFromAccessToken = async (
   applyAccessToken(accessToken);
 
   try {
-    const profile = await getCurrentUserProfile();
-    applyAuthenticatedSession(accessToken, profile);
+    const [profile, socialAccount] = await Promise.all([
+      getCurrentUserProfile(),
+      getCurrentUserSocialProfile(),
+    ]);
+    applyAuthenticatedSession(accessToken, profile, socialAccount);
 
     return {
       accessToken,
       profile,
+      socialAccount,
     };
   } catch (error) {
     clearAuthSession();
