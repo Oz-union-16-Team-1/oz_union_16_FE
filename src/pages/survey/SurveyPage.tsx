@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
+import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -133,11 +134,11 @@ function SurveyPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
         {authGate.accessStatus === 'loading' ? (
-          <AuthGateStatusPanel
-            title="인증 상태를 확인하는 중입니다."
-            description="잠시만 기다려 주세요. 세션 확인 후 설문 화면을 이어서 보여드릴게요."
-            align="center"
-            className="mx-auto max-w-190 sm:py-12"
+          <CenteredLoadingState
+            label="Survey"
+            title="AI가 첫 질문을 준비하고 있습니다."
+            hint="질문 흐름을 정리하고 있어요."
+            className="mx-auto max-w-190"
           />
         ) : canAccessSurvey ? (
           <SurveyChatPanel isHistoryView={isHistoryMode} />
