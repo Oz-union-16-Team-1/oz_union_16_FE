@@ -82,23 +82,13 @@ function MatchingGenreDetailPage() {
   const canAccessPage = authGate.accessStatus === 'authorized';
   const isValidGenreSlug = genreSlug ? isMatchingGenreSlug(genreSlug) : false;
   const genre = genreSlug ? getMatchingGenreBySlug(genreSlug) : undefined;
-  const currentGenreSlug = genre?.slug ?? null;
-  const [retryState, setRetryState] = useState<{
-    genreSlug: string | null;
-    value: number;
-  }>({
-    genreSlug: currentGenreSlug,
-    value: 0,
-  });
-  const retryNo =
-    retryState.genreSlug === currentGenreSlug ? retryState.value : 0;
 
   const matchCandidatesQuery = useMatchCandidatesQuery(
     genre?.genreId ?? null,
-    retryNo,
+    undefined,
     canAccessPage,
   );
-  const candidateRetryNo = matchCandidatesQuery.data?.retry_no ?? retryNo;
+  const candidateRetryNo = matchCandidatesQuery.data?.retry_no ?? 0;
   const submitMatchResponsesMutation = useSubmitMatchResponsesMutation();
   const resetSubmitMatchResponsesMutation = submitMatchResponsesMutation.reset;
   const candidates = useMemo(
@@ -126,7 +116,7 @@ function MatchingGenreDetailPage() {
 
   useEffect(() => {
     hasInitializedFlowRef.current = false;
-  }, [genre?.slug, retryNo]);
+  }, [genre?.slug, matchCandidatesQuery.dataUpdatedAt]);
 
   useEffect(() => {
     if (!genre || candidates.length === 0 || hasInitializedFlowRef.current) {
@@ -292,12 +282,7 @@ function MatchingGenreDetailPage() {
             <div className="mt-7 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  setRetryState({
-                    genreSlug: currentGenreSlug,
-                    value: candidateRetryNo + 1,
-                  })
-                }
+                onClick={() => void matchCandidatesQuery.refetch()}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909]"
               >
                 다시 시도

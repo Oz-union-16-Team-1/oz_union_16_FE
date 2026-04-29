@@ -16,11 +16,11 @@ import {
 
 export const useMatchCandidatesQuery = (
   genreId: number | null,
-  retryNo = 0,
+  retryNo?: number,
   enabled = true,
 ) =>
   useQuery({
-    queryKey: ['match-candidates', genreId, retryNo],
+    queryKey: ['match-candidates', genreId, retryNo ?? 'server'],
     enabled: genreId !== null && enabled,
     queryFn: () => getMatchCandidates(genreId!, retryNo),
     staleTime: 60_000,
