@@ -16,7 +16,6 @@ import type {
   SurveyApiSessionResponse,
   SurveyChatRequest,
   SurveyChatResponse,
-  SurveyResetRequest,
   SurveyResetResponse,
   SurveyResultQuery,
   SurveyResultResponse,
@@ -32,6 +31,7 @@ import type {
 interface ErrorResponseBody {
   detail?: string;
   error_detail?: string | Record<string, string[]>;
+  retry_after_seconds?: number;
 }
 
 const SURVEY_BASE_PATH = '/api/v1/survey';
@@ -97,7 +97,11 @@ export const normalizeSurveySessionResponse = (
 
   return {
     session_id: payload.session_id,
-    assistant_message: payload.ai_question ?? payload.chatbot_reply ?? null,
+    assistant_message:
+      payload.ai_question ??
+      payload.ai_message ??
+      payload.chatbot_reply ??
+      null,
     progress: normalizeSurveyProgress(payload.progress, payload.progress_rate),
     status: normalizeSurveyStatus(payload.status, isCompleted),
     recommendation_ready: recommendationReady,
@@ -106,10 +110,7 @@ export const normalizeSurveySessionResponse = (
 
 export const normalizeSurveyResetResponse = (
   payload: SurveyApiResetResponse,
-): SurveyResetResponse => ({
-  message: payload.message,
-  ...normalizeSurveySessionResponse(payload),
-});
+): SurveyResetResponse => normalizeSurveySessionResponse(payload);
 
 const normalizeSurveyResultItem = (
   item: SurveyApiResultItem,
@@ -128,7 +129,6 @@ const normalizeSurveyResultItem = (
 export const normalizeSurveyResultResponse = (
   payload: SurveyApiResultResponse,
 ): SurveyResultResponse => ({
-  session_id: payload.session_id,
   user_id: typeof payload.user_id === 'number' ? payload.user_id : undefined,
   count:
     typeof payload.count === 'number'
@@ -145,7 +145,7 @@ export const startSurveySession = async (
 ): Promise<SurveySessionStartResponse> => {
   try {
     const response = await api.post<SurveyApiSessionResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
       payload satisfies SurveyApiSessionStartRequest,
     );
 
@@ -164,9 +164,9 @@ export const continueSurveyChat = async (
 ): Promise<SurveyChatResponse> => {
   try {
     const response = await api.post<SurveyApiSessionResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages/`,
       {
-        user_answer: payload.user_answer,
+        message: payload.user_answer,
       } satisfies SurveyApiChatRequest,
     );
 
@@ -179,17 +179,16 @@ export const continueSurveyChat = async (
     return normalizeSurveySessionResponse(
       continueMockSurveyChat({
         session_id: payload.session_id,
-        user_answer: payload.user_answer,
+        message: payload.user_answer,
       }),
     );
   }
 };
 
-export const resetSurveySession = async (payload: SurveyResetRequest) => {
+export const resetSurveySession = async () => {
   try {
     const response = await api.post<SurveyApiResetResponse>(
-      `${SURVEY_BASE_PATH}/sessions/reset`,
-      payload,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/reset/`,
     );
 
     return normalizeSurveyResetResponse(response.data);
@@ -198,18 +197,20 @@ export const resetSurveySession = async (payload: SurveyResetRequest) => {
       throw error;
     }
 
-    return normalizeSurveyResetResponse(
-      resetMockSurveySession(payload.session_id),
-    );
+    return normalizeSurveyResetResponse(resetMockSurveySession());
   }
 };
 
 export const getSurveyResults = async (query: SurveyResultQuery) => {
   try {
     const response = await api.get<SurveyApiResultResponse>(
-      `${SURVEY_BASE_PATH}/result`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${query.session_id}/recommendations/`,
       {
-        params: query,
+        params: {
+          cursor: query.cursor,
+          page_size: query.page_size,
+          sort: query.sort,
+        },
       },
     );
 
@@ -223,7 +224,7 @@ export const getSurveyResults = async (query: SurveyResultQuery) => {
       getMockSurveyResults({
         cursor: query.cursor ?? null,
         pageSize: query.page_size,
-        sessionId: query.session_id ?? null,
+        sessionId: query.session_id,
       }),
     );
   }
@@ -261,4 +262,17 @@ export const extractApiErrorMessage = (error: unknown) => {
   }
 
   return '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+};
+
+export const extractApiRetryAfterSeconds = (error: unknown) => {
+  if (!(error instanceof AxiosError)) {
+    return null;
+  }
+
+  const data = error.response?.data as ErrorResponseBody | undefined;
+
+  return typeof data?.retry_after_seconds === 'number' &&
+    Number.isFinite(data.retry_after_seconds)
+    ? data.retry_after_seconds
+    : null;
 };

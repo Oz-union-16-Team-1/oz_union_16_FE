@@ -5,7 +5,6 @@ import { mockTopGames } from '../../games/mockGames';
 import type {
   SurveyApiChatRequest,
   SurveyApiResultItem,
-  SurveyResetRequest,
 } from '../types/survey';
 import {
   DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
@@ -107,7 +106,7 @@ const getQuestionCountFromAnswer = (answer: string) => {
 };
 
 export const surveyHandlers = [
-  http.post('/api/v1/survey/chatbot/sessions', async ({ request }) => {
+  http.post('/api/v1/survey/chatbot/sessions/', async ({ request }) => {
     await request.json().catch(() => ({}));
     const sessionId = createSessionId();
     const totalQuestions = SURVEY_MAX_STEPS;
@@ -129,12 +128,12 @@ export const surveyHandlers = [
   }),
 
   http.post(
-    '/api/v1/survey/chatbot/sessions/:sessionId/messages',
+    '/api/v1/survey/chatbot/sessions/:sessionId/messages/',
     async ({ request, params }) => {
       const body = (await request.json()) as SurveyApiChatRequest;
       const sessionId = String(params.sessionId ?? '');
 
-      if (!sessionId || !body.user_answer?.trim()) {
+      if (!sessionId || !body.message?.trim()) {
         return mockErrorResponse(400, '필수 입력 항목입니다.');
       }
 
@@ -146,7 +145,7 @@ export const surveyHandlers = [
         } satisfies MockSurveySession);
 
       if (session.askedQuestions === 1) {
-        session.totalQuestions = getQuestionCountFromAnswer(body.user_answer);
+        session.totalQuestions = getQuestionCountFromAnswer(body.message);
       }
 
       await delay(800);
@@ -157,7 +156,7 @@ export const surveyHandlers = [
 
         return HttpResponse.json({
           session_id: sessionId,
-          ai_question: null,
+          ai_message: null,
           progress: buildProgress(
             session.totalQuestions,
             session.totalQuestions,
@@ -174,7 +173,7 @@ export const surveyHandlers = [
 
       return HttpResponse.json({
         session_id: sessionId,
-        ai_question: surveyQuestions[nextQuestionIndex],
+        ai_message: surveyQuestions[nextQuestionIndex],
         progress: buildProgress(session.askedQuestions, session.totalQuestions),
         status: 'IN_PROGRESS',
         recommendation_ready: false,
@@ -182,47 +181,46 @@ export const surveyHandlers = [
     },
   ),
 
-  http.get('/api/v1/survey/result', async ({ request }) => {
-    const url = new URL(request.url);
-    const cursor = Number(url.searchParams.get('cursor') ?? '0');
-    const pageSize = Number(
-      url.searchParams.get('page_size') ??
-        DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
-    );
-    const requestedSessionId = url.searchParams.get('session_id');
-    const recommendations = buildSurveyRecommendations(
-      request.headers.get('authorization'),
-    );
+  http.get(
+    '/api/v1/survey/chatbot/sessions/:sessionId/recommendations/',
+    async ({ request, params }) => {
+      const url = new URL(request.url);
+      const cursor = Number(url.searchParams.get('cursor') ?? '0');
+      const pageSize = Number(
+        url.searchParams.get('page_size') ??
+          DEFAULT_SURVEY_RECOMMENDATION_PAGE_SIZE,
+      );
+      const requestedSessionId = String(params.sessionId ?? '');
+      const recommendations = buildSurveyRecommendations(
+        request.headers.get('authorization'),
+      );
 
-    if (!latestCompletedSurveySessionId && !requestedSessionId) {
-      return mockErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
-    }
+      if (
+        !latestCompletedSurveySessionId ||
+        requestedSessionId !== latestCompletedSurveySessionId
+      ) {
+        return mockErrorResponse(404, '설문 추천 결과를 찾을 수 없습니다.');
+      }
 
-    const startIndex = Number.isNaN(cursor) ? 0 : cursor;
-    const nextIndex = startIndex + pageSize;
-    const next = nextIndex < recommendations.length ? String(nextIndex) : null;
+      const startIndex = Number.isNaN(cursor) ? 0 : cursor;
+      const nextIndex = startIndex + pageSize;
+      const next =
+        nextIndex < recommendations.length ? String(nextIndex) : null;
 
-    await delay(500);
+      await delay(500);
 
-    return HttpResponse.json({
-      user_id: 1,
-      count: recommendations.length,
-      next,
-      results: recommendations.slice(startIndex, nextIndex),
-    });
-  }),
+      return HttpResponse.json({
+        user_id: 1,
+        count: recommendations.length,
+        next,
+        results: recommendations.slice(startIndex, nextIndex),
+      });
+    },
+  ),
 
-  http.post('/api/v1/survey/sessions/reset', async ({ request }) => {
-    const body = (await request.json()) as SurveyResetRequest;
-
-    if (!body.session_id) {
-      return mockErrorResponse(400, 'session_id는 필수입니다.');
-    }
-
-    surveySessions.delete(body.session_id);
-    if (latestCompletedSurveySessionId === body.session_id) {
-      latestCompletedSurveySessionId = null;
-    }
+  http.post('/api/v1/survey/chatbot/sessions/reset/', async () => {
+    surveySessions.clear();
+    latestCompletedSurveySessionId = null;
 
     const nextSessionId = createSessionId();
     surveySessions.set(nextSessionId, {
@@ -233,7 +231,6 @@ export const surveyHandlers = [
     await delay(350);
 
     return HttpResponse.json({
-      message: '설문이 초기화되었습니다.',
       session_id: nextSessionId,
       status: 'IN_PROGRESS',
       ai_question: surveyQuestions[0],

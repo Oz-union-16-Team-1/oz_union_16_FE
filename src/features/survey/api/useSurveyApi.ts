@@ -29,14 +29,14 @@ export const useSurveyResultsInfinite = (
   sessionId?: string | null,
 ) =>
   useInfiniteQuery({
-    queryKey: ['survey-results', sessionId ?? 'current'],
+    queryKey: ['survey-results', sessionId ?? 'missing'],
     initialPageParam: null as string | null,
-    enabled,
+    enabled: enabled && Boolean(sessionId),
     queryFn: ({ pageParam }) =>
       getSurveyResults({
         cursor: pageParam ?? undefined,
         page_size: 5,
-        session_id: sessionId ?? undefined,
+        session_id: sessionId!,
       }),
     getNextPageParam: (lastPage) => getPaginatedNext(lastPage) ?? undefined,
     retry: shouldRetryApiQuery,
