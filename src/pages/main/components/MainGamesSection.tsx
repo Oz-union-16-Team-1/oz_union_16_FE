@@ -1,4 +1,4 @@
-import { ChevronRight, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useRef } from 'react';
 import type { GameListItem } from '../../../features/games/types';
 import type { MainPageGamesState } from '../hooks/useMainPageGames';
@@ -96,13 +96,10 @@ const MainGamesSection = ({
             games={games}
             onSelectGame={onSelectGame}
             showUpdatingOverlay={isGamesUpdating}
+            hasMoreSearchResults={hasMoreSearchResults}
+            isFetchingMoreSearchResults={isFetchingMoreSearchResults}
+            onRequestMoreSearchResults={fetchMoreSearchResults}
           />
-          {hasMoreSearchResults ? (
-            <SearchResultMoreAction
-              isLoading={isFetchingMoreSearchResults}
-              onClick={fetchMoreSearchResults}
-            />
-          ) : null}
         </>
       ) : (
         <EmptyGameList isFiltered={isFiltered} />
@@ -110,29 +107,5 @@ const MainGamesSection = ({
     </div>
   );
 };
-
-type SearchResultMoreActionProps = {
-  isLoading: boolean;
-  onClick: () => void;
-};
-
-const SearchResultMoreAction = ({
-  isLoading,
-  onClick,
-}: SearchResultMoreActionProps) => (
-  <div className="mt-4 flex justify-end px-[clamp(1rem,5vw,20rem)]">
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={isLoading}
-      className="inline-flex min-w-30 cursor-pointer items-center justify-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white/82 transition hover:border-[#6f2525] hover:bg-[#160b0b] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
-    >
-      {isLoading ? '불러오는 중...' : '더보기'}
-      {!isLoading ? (
-        <ChevronRight aria-hidden="true" className="h-4 w-4" />
-      ) : null}
-    </button>
-  </div>
-);
 
 export default MainGamesSection;
