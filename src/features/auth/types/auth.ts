@@ -115,8 +115,7 @@ export interface ConfirmProfileImageRequest {
 }
 
 export interface ConfirmProfileImageResponse {
-  detail?: string;
-  profile_img_url?: string;
+  detail: string;
 }
 
 export interface UploadFileToS3Request {

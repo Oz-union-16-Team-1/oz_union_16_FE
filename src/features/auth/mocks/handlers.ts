@@ -671,6 +671,15 @@ const accountHandlers = [
         );
       }
 
+      if (!contentType.startsWith('image/')) {
+        return HttpResponse.json(
+          {
+            error_detail: '지원하지 않는 파일 형식입니다.',
+          },
+          { status: 400 },
+        );
+      }
+
       const uploadFileName = `${Date.now()}-${sanitizeFileName(fileName)}`;
       const fileKey = getProfileImagePathKey(user.loginId, uploadFileName);
       const responseBody: ProfileImagePresignedUrlResponse = {
@@ -787,8 +796,7 @@ const accountHandlers = [
     await delay(120);
 
     return HttpResponse.json({
-      detail: '프로필 이미지가 변경되었습니다.',
-      profile_img_url: profileImageUrl,
+      detail: '프로필 사진이 등록되었습니다.',
     } satisfies ConfirmProfileImageResponse);
   }),
 

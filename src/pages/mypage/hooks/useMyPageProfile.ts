@@ -101,11 +101,10 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
 
       hasOptimisticProfileUpdate = true;
 
-      const confirmResponse = await confirmProfileImageMutation.mutateAsync({
+      await confirmProfileImageMutation.mutateAsync({
         profile_img_url: presignedResponse.img_url,
       });
-      const confirmedProfileImageUrl =
-        confirmResponse.profile_img_url ?? presignedResponse.img_url;
+      const confirmedProfileImageUrl = presignedResponse.img_url;
 
       queryClient.setQueryData<CurrentUserProfileResponse>(
         authKeys.me(),
