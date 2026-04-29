@@ -36,6 +36,7 @@ interface ErrorResponseBody {
 
 const SURVEY_BASE_PATH = '/api/v1/survey';
 const SURVEY_CHATBOT_BASE_PATH = `${SURVEY_BASE_PATH}/chatbot`;
+const SURVEY_CHATBOT_REQUEST_TIMEOUT_MS = 45_000;
 
 const clampProgressRate = (value: number | null | undefined) => {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -147,6 +148,9 @@ export const startSurveySession = async (
     const response = await api.post<SurveyApiSessionResponse>(
       `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
       payload satisfies SurveyApiSessionStartRequest,
+      {
+        timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
+      },
     );
 
     return normalizeSurveySessionResponse(response.data);
@@ -168,6 +172,9 @@ export const continueSurveyChat = async (
       {
         message: payload.user_answer,
       } satisfies SurveyApiChatRequest,
+      {
+        timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
+      },
     );
 
     return normalizeSurveySessionResponse(response.data);
@@ -189,6 +196,10 @@ export const resetSurveySession = async () => {
   try {
     const response = await api.post<SurveyApiResetResponse>(
       `${SURVEY_CHATBOT_BASE_PATH}/sessions/reset/`,
+      undefined,
+      {
+        timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
+      },
     );
 
     return normalizeSurveyResetResponse(response.data);
@@ -233,6 +244,10 @@ export const getSurveyResults = async (query: SurveyResultQuery) => {
 export const extractApiErrorMessage = (error: unknown) => {
   if (!(error instanceof AxiosError)) {
     return '요청을 처리하는 중 알 수 없는 오류가 발생했습니다.';
+  }
+
+  if (error.code === 'ECONNABORTED') {
+    return '응답 생성이 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.';
   }
 
   if (!error.response) {
