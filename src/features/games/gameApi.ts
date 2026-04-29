@@ -67,6 +67,9 @@ const normalizeGameLikeResponse = (
   likeCount: response.like_count ?? 0,
 });
 
+const normalizeGameListNextPage = (next: number | null | undefined) =>
+  typeof next === 'number' && Number.isInteger(next) && next > 0 ? next : null;
+
 export const getTopGames = async ({
   genre = '전체',
 }: GetTopGamesParams = {}): Promise<GameListItem[]> => {
@@ -106,7 +109,7 @@ export const searchGames = async ({
 
   return {
     count: response.data.count ?? response.data.results.length,
-    next: response.data.next ?? null,
+    next: normalizeGameListNextPage(response.data.next),
     results: response.data.results.map(normalizeGameListItem),
   };
 };

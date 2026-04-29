@@ -100,15 +100,7 @@ export const gamesHandlers = [
       pageSize,
       resolveStoredGameLikeState,
     });
-    const next =
-      page * pageSize < count
-        ? (() => {
-            const nextUrl = new URL(url);
-            nextUrl.searchParams.set('page', String(page + 1));
-            nextUrl.searchParams.set('page_size', String(pageSize));
-            return nextUrl.toString();
-          })()
-        : null;
+    const next = page * pageSize < count ? page + 1 : null;
 
     await delay(250);
 

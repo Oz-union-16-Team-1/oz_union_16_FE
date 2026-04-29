@@ -98,6 +98,10 @@ export const useMainPageGames = (): MainPageGamesState => {
         pageSize: SEARCH_RESULT_PAGE_SIZE,
       }),
     getNextPageParam: (lastPage, allPages) => {
+      if (typeof lastPage.next === 'number') {
+        return lastPage.next;
+      }
+
       const loadedCount = getPaginatedLoadedCount(allPages);
       const totalCount = getPaginatedCount(lastPage, loadedCount);
 

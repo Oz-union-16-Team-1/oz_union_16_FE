@@ -40,19 +40,55 @@ const GAME_CARD_SWIPER_BREAKPOINTS = {
   },
 } as const;
 const GAME_CARD_SKELETON_COUNT = 6;
+const SEARCH_RESULT_PREFETCH_GROUP_COUNT = 2;
 
 type MainGameCarouselProps = {
   games: GameListItem[];
   onSelectGame: (game: GameListItem) => void;
   showUpdatingOverlay?: boolean;
+  hasMoreSearchResults?: boolean;
+  isFetchingMoreSearchResults?: boolean;
+  onRequestMoreSearchResults?: () => void;
 };
 
 const MainGameCarousel = ({
   games,
   onSelectGame,
   showUpdatingOverlay = false,
+  hasMoreSearchResults = false,
+  isFetchingMoreSearchResults = false,
+  onRequestMoreSearchResults,
 }: MainGameCarouselProps) => {
   const swiperRef = useRef<SwiperInstance | null>(null);
+
+  const canRequestMoreSearchResults = Boolean(
+    hasMoreSearchResults &&
+    !isFetchingMoreSearchResults &&
+    onRequestMoreSearchResults,
+  );
+
+  const requestMoreSearchResultsIfNeeded = (swiper: SwiperInstance) => {
+    if (!canRequestMoreSearchResults) {
+      return;
+    }
+
+    const slidesPerView =
+      typeof swiper.params.slidesPerView === 'number'
+        ? swiper.params.slidesPerView
+        : 1;
+    const slidesPerGroup =
+      typeof swiper.params.slidesPerGroup === 'number'
+        ? swiper.params.slidesPerGroup
+        : 1;
+    const viewedUntilIndex = swiper.activeIndex + slidesPerView;
+    const remainingSlides = games.length - viewedUntilIndex;
+    const prefetchThreshold =
+      slidesPerGroup * SEARCH_RESULT_PREFETCH_GROUP_COUNT;
+
+    if (remainingSlides <= prefetchThreshold) {
+      onRequestMoreSearchResults?.();
+    }
+  };
 
   const scrollCards = (direction: 'previous' | 'next') => {
     const swiper = swiperRef.current;
@@ -66,6 +102,7 @@ const MainGameCarousel = ({
       return;
     }
 
+    requestMoreSearchResultsIfNeeded(swiper);
     swiper.slideNext();
   };
 
@@ -75,6 +112,7 @@ const MainGameCarousel = ({
       showUpdatingOverlay={showUpdatingOverlay}
       onPrevious={() => scrollCards('previous')}
       onNext={() => scrollCards('next')}
+      onSlideChange={requestMoreSearchResultsIfNeeded}
       onSwiper={(swiper) => {
         swiperRef.current = swiper;
       }}
@@ -94,6 +132,7 @@ type GameCardSwiperFrameProps = {
   showUpdatingOverlay?: boolean;
   onPrevious?: () => void;
   onNext?: () => void;
+  onSlideChange?: (swiper: SwiperInstance) => void;
   onSwiper?: (swiper: SwiperInstance) => void;
 };
 
@@ -103,6 +142,7 @@ const GameCardSwiperFrame = ({
   showUpdatingOverlay = false,
   onPrevious,
   onNext,
+  onSlideChange,
   onSwiper,
 }: GameCardSwiperFrameProps) => (
   <div className="group/carousel relative left-1/2 w-screen -translate-x-1/2">
@@ -114,6 +154,7 @@ const GameCardSwiperFrame = ({
       <div className="relative">
         <Swiper
           onSwiper={onSwiper}
+          onSlideChange={onSlideChange}
           slidesPerView={1}
           slidesPerGroup={1}
           spaceBetween={20}
