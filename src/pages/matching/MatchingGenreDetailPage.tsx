@@ -216,6 +216,9 @@ function MatchingGenreDetailPage() {
           is_liked: candidate.is_liked,
         })),
       });
+      queryClient.removeQueries({
+        queryKey: ['match-candidates', currentGenreId],
+      });
       navigate(
         `/${ROUTES.RECOMMENDATION_LIST}?source=match&genre_id=${currentGenreId}`,
       );
