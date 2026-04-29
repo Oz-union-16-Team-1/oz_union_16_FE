@@ -30,7 +30,7 @@ export interface SurveyApiSessionStartRequest {
 }
 
 export interface SurveyApiChatRequest {
-  user_answer: string;
+  message: string;
 }
 
 export interface SurveyApiProgress {
@@ -48,14 +48,16 @@ export interface SurveyApiLegacySessionResponseFields {
 export type SurveyApiSessionResponse = SurveyApiLegacySessionResponseFields & {
   session_id: string;
   ai_question?: string | null;
+  ai_message?: string | null;
+  warning_message?: string | null;
   progress?: SurveyApiProgress | null;
   recommendation_ready?: boolean | null;
   status?: SurveySessionStatus | null;
+  survey_answer?: string | null;
+  excluded_keywords?: string[] | null;
 };
 
-export interface SurveyApiResetResponse extends SurveyApiSessionResponse {
-  message: string;
-}
+export type SurveyApiResetResponse = SurveyApiSessionResponse;
 
 export interface SurveyChatRequest {
   session_id: string;
@@ -74,24 +76,13 @@ export type SurveySessionStartResponse = SurveySessionResponse;
 
 export type SurveyChatResponse = SurveySessionResponse;
 
-export interface SurveyResetRequest {
-  session_id: string;
-}
-
-export interface SurveyResetResponse {
-  message: string;
-  session_id: string;
-  assistant_message: string | null;
-  progress: SurveyProgress;
-  status: SurveySessionStatus;
-  recommendation_ready: boolean;
-}
+export type SurveyResetResponse = SurveySessionResponse;
 
 export interface SurveyResultQuery {
+  session_id: string;
   sort?: string;
   cursor?: string;
   page_size?: number;
-  session_id?: string;
 }
 
 export interface SurveyApiResultItem {
@@ -107,7 +98,6 @@ export interface SurveyApiResultItem {
 export type SurveyResultItem = RecommendationResultItemShape;
 
 export interface SurveyApiResultResponse {
-  session_id?: string;
   user_id?: number;
   count?: number | null;
   next?: string | null;

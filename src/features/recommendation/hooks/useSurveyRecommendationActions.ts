@@ -57,9 +57,7 @@ export const useSurveyRecommendationActions = ({
     }
 
     try {
-      const response = await resetSurveyMutation.mutateAsync({
-        session_id: surveySessionId,
-      });
+      const response = await resetSurveyMutation.mutateAsync();
 
       onBeforeReset?.();
       clearModerationState();

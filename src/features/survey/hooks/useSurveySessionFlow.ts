@@ -6,7 +6,10 @@ import {
   useResetSurveyMutation,
   useStartSurveySessionMutation,
 } from '../api/useSurveyApi';
-import { extractApiErrorMessage } from '../api/survey';
+import {
+  extractApiErrorMessage,
+  extractApiRetryAfterSeconds,
+} from '../api/survey';
 import { useSurveyStore } from '../store/useSurveyStore';
 
 const isRecoverableMockSessionError = (message: string | null) =>
@@ -43,6 +46,9 @@ export const useSurveySessionFlow = ({
   );
   const clearModerationState = useSurveyStore(
     (state) => state.clearModerationState,
+  );
+  const setChatBlockedUntil = useSurveyStore(
+    (state) => state.setChatBlockedUntil,
   );
   const addUserMessage = useSurveyStore((state) => state.addUserMessage);
   const hydrateInitialSession = useSurveyStore(
@@ -97,6 +103,19 @@ export const useSurveySessionFlow = ({
     }
   }, [bootstrapSurvey, hasBootstrapped, sessionId]);
 
+  const applyServerSideChatBlock = useCallback(
+    (requestError: unknown) => {
+      const retryAfterSeconds = extractApiRetryAfterSeconds(requestError);
+
+      if (retryAfterSeconds === null) {
+        return;
+      }
+
+      setChatBlockedUntil(Date.now() + retryAfterSeconds * 1000);
+    },
+    [setChatBlockedUntil],
+  );
+
   const submitMessage = useCallback(
     async ({
       content,
@@ -147,6 +166,7 @@ export const useSurveySessionFlow = ({
 
         return true;
       } catch (requestError) {
+        applyServerSideChatBlock(requestError);
         setError(extractApiErrorMessage(requestError));
         return false;
       } finally {
@@ -155,6 +175,7 @@ export const useSurveySessionFlow = ({
     },
     [
       addUserMessage,
+      applyServerSideChatBlock,
       applyChatResponse,
       clearError,
       continueSurveyMutation,
@@ -197,6 +218,7 @@ export const useSurveySessionFlow = ({
 
         applyChatResponse(response);
       } catch (requestError) {
+        applyServerSideChatBlock(requestError);
         setError(extractApiErrorMessage(requestError));
       } finally {
         setSubmitting(false);
@@ -211,6 +233,7 @@ export const useSurveySessionFlow = ({
     });
   }, [
     addUserMessage,
+    applyServerSideChatBlock,
     applyChatResponse,
     bootstrapSurvey,
     clearError,
@@ -247,9 +270,7 @@ export const useSurveySessionFlow = ({
     setSubmitting(true);
 
     try {
-      const response = await resetSurveyMutation.mutateAsync({
-        session_id: sessionId,
-      });
+      const response = await resetSurveyMutation.mutateAsync();
 
       clearModerationState();
       hydrateInitialSession(response);

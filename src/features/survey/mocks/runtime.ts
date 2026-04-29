@@ -126,7 +126,7 @@ export const continueMockSurveyChat = (
     } satisfies MockSurveySession);
 
   if (session.askedQuestions === 1) {
-    session.totalQuestions = getQuestionCountFromAnswer(payload.user_answer);
+    session.totalQuestions = getQuestionCountFromAnswer(payload.message);
   }
 
   if (session.askedQuestions >= session.totalQuestions) {
@@ -135,7 +135,7 @@ export const continueMockSurveyChat = (
 
     return {
       session_id: payload.session_id,
-      ai_question: null,
+      ai_message: null,
       progress: buildProgress(
         session.totalQuestions,
         session.totalQuestions,
@@ -152,7 +152,7 @@ export const continueMockSurveyChat = (
 
   return {
     session_id: payload.session_id,
-    ai_question: surveyQuestions[nextQuestionIndex] ?? null,
+    ai_message: surveyQuestions[nextQuestionIndex] ?? null,
     progress: buildProgress(session.askedQuestions, session.totalQuestions),
     status: 'IN_PROGRESS',
     recommendation_ready: false,
@@ -192,13 +192,9 @@ export const getMockSurveyResults = ({
   };
 };
 
-export const resetMockSurveySession = (
-  sessionId: string,
-): SurveyApiResetResponse => {
-  surveySessions.delete(sessionId);
-  if (latestCompletedSurveySessionId === sessionId) {
-    latestCompletedSurveySessionId = null;
-  }
+export const resetMockSurveySession = (): SurveyApiResetResponse => {
+  surveySessions.clear();
+  latestCompletedSurveySessionId = null;
 
   const nextSessionId = createSessionId();
   surveySessions.set(nextSessionId, {
@@ -207,7 +203,6 @@ export const resetMockSurveySession = (
   });
 
   return {
-    message: '설문이 초기화되었습니다.',
     session_id: nextSessionId,
     status: 'IN_PROGRESS',
     ai_question: surveyQuestions[0],
