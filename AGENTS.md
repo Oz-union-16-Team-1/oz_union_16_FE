@@ -14,7 +14,7 @@
 
 1. `README.md`: 설치, 실행, 브랜치, PR 흐름
 2. `docs/ai/project-context.md`: 서비스/화면/라우트 맥락
-3. `docs/ai/api-contract.md`: API 계약과 현재 불확실성
+3. `docs/ai/api-contract.md`: API 계약 인덱스와 공통 규칙
 4. `docs/ai/workflow.md`: 작업 진행 방식
 5. `docs/ai/code-quality.md`: 코드 품질 기준
 6. `docs/ai/task-template.md`: 기능 시작 전 미니 계획 템플릿

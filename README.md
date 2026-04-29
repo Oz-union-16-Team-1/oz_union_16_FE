@@ -96,7 +96,7 @@ feat, fix, docs, style, refactor, test, chore, perf, ci, revert
 
 - `AGENTS.md`: 팀원과 AI 에이전트가 먼저 읽는 진입 문서
 - `docs/ai/project-context.md`: 서비스와 화면 맥락
-- `docs/ai/api-contract.md`: API 계약과 불확실성
+- `docs/ai/api-contract.md`: API 계약 인덱스와 공통 규칙
 - `docs/ai/workflow.md`: 작업 흐름
 - `docs/ai/code-quality.md`: 코드 품질 기준
 - `docs/ai/task-template.md`: 기능 시작 전 미니 계획 템플릿
