@@ -6,41 +6,15 @@ export type { SocialAuthProvider } from '../types/auth';
 
 const PENDING_SOCIAL_PROVIDER_STORAGE_KEY = 'pending-social-auth-provider';
 
-const SOCIAL_AUTH_START_URL_ENV_KEYS: Record<SocialAuthProvider, string[]> = {
-  google: ['VITE_GOOGLE_LOGIN_URL', 'VITE_SOCIAL_LOGIN_GOOGLE_URL'],
-  kakao: ['VITE_KAKAO_LOGIN_URL', 'VITE_SOCIAL_LOGIN_KAKAO_URL'],
-  naver: ['VITE_NAVER_LOGIN_URL', 'VITE_SOCIAL_LOGIN_NAVER_URL'],
-};
-
 const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
   google: `${AUTH_BASE_PATH}/social-login/google`,
   kakao: `${AUTH_BASE_PATH}/social-login/kakao`,
   naver: `${AUTH_BASE_PATH}/social-login/naver`,
 };
 
-const getSocialLoginStartUrlFromEnv = (provider: SocialAuthProvider) => {
-  const env = import.meta.env as Record<string, string | undefined>;
-
-  for (const envKey of SOCIAL_AUTH_START_URL_ENV_KEYS[provider]) {
-    const value = env[envKey]?.trim();
-
-    if (value) {
-      return value;
-    }
-  }
-
-  return null;
-};
-
 export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
   if (mockServiceWorkerEnabled) {
     return SOCIAL_AUTH_START_PATHS[provider];
-  }
-
-  const configuredUrl = getSocialLoginStartUrlFromEnv(provider);
-
-  if (configuredUrl) {
-    return configuredUrl;
   }
 
   const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/$/, '');
@@ -67,6 +41,25 @@ export const clearPendingSocialAuthProvider = () => {
 
   window.sessionStorage.removeItem(PENDING_SOCIAL_PROVIDER_STORAGE_KEY);
 };
+
+export const getPendingSocialAuthProvider = (): SocialAuthProvider | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const provider = window.sessionStorage
+    .getItem(PENDING_SOCIAL_PROVIDER_STORAGE_KEY)
+    ?.trim();
+
+  if (provider === 'google' || provider === 'kakao' || provider === 'naver') {
+    return provider;
+  }
+
+  return null;
+};
+
+export const hasPendingSocialAuthProvider = () =>
+  Boolean(getPendingSocialAuthProvider());
 
 const getSocialCallbackErrorMessageFromCode = (errorCode: string | null) => {
   if (!errorCode) {

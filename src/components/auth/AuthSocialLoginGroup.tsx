@@ -95,7 +95,7 @@ function AuthSocialLoginGroup({
       setPendingSocialAuthProvider(provider);
       setRedirectingProvider(provider);
       setErrorMessage('');
-      window.location.assign(redirectUrl);
+      window.location.href = redirectUrl;
     } catch {
       clearPendingSocialAuthProvider();
       setRedirectingProvider(null);
