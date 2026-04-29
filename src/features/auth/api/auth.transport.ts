@@ -23,6 +23,8 @@ import type {
   LogoutResponse,
   ProfileImagePresignedUrlRequest,
   ProfileImagePresignedUrlResponse,
+  RawLikedGameItemResponse,
+  RawLikedGamesResponse,
   RefreshAccessTokenResponse,
   SignupRequest,
   SignupResponse,
@@ -54,6 +56,26 @@ const createCredentialedAuthRequestConfig = <T = unknown>(
     },
   };
 };
+
+const normalizeLikedGameGenres = (
+  genres: RawLikedGameItemResponse['genres'],
+) =>
+  Array.isArray(genres)
+    ? genres.map((genre) => genre.trim()).filter((genre) => genre.length > 0)
+    : genres
+        .split(',')
+        .map((genre) => genre.trim())
+        .filter((genre) => genre.length > 0);
+
+const normalizeLikedGamesResponse = (
+  response: RawLikedGamesResponse,
+): LikedGamesResponse => ({
+  count: response.count,
+  results: response.results.map((item) => ({
+    ...item,
+    genres: normalizeLikedGameGenres(item.genres),
+  })),
+});
 
 export const requestLogin = async (payload: LoginRequest) => {
   const requestConfig = createCredentialedAuthRequestConfig();
@@ -132,14 +154,14 @@ export const updateUserInfo = async (payload: UpdateUserInfoRequest) => {
 };
 
 export const getLikedGames = async (payload: LikedGamesRequest = {}) => {
-  const response = await api.get<LikedGamesResponse>(
+  const response = await api.get<RawLikedGamesResponse>(
     `${AUTH_BASE_PATH}/me/game-like`,
     createCredentialedAuthRequestConfig({
       params: payload,
     }),
   );
 
-  return response.data;
+  return normalizeLikedGamesResponse(response.data);
 };
 
 export const unlikeLikedGame = async (gameId: number) => {

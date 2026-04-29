@@ -47,6 +47,21 @@ export interface LikedGamesRequest {
   page_size?: number;
 }
 
+export type LikedGameGenresResponse = string | string[];
+
+export interface RawLikedGameItemResponse {
+  game_id: number;
+  game_title: string;
+  thumbnail_url: string | null;
+  genres: LikedGameGenresResponse;
+  liked_at: string;
+}
+
+export interface RawLikedGamesResponse {
+  count: number;
+  results: RawLikedGameItemResponse[];
+}
+
 export interface LikedGameItemResponse {
   game_id: number;
   game_title: string;

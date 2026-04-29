@@ -18,11 +18,11 @@ import type {
   CurrentUserProfileResponse,
   DeleteLikedGameResponse,
   LikedGameItemResponse,
-  LikedGamesResponse,
   LoginRequest,
   LogoutResponse,
   ProfileImagePresignedUrlRequest,
   ProfileImagePresignedUrlResponse,
+  RawLikedGamesResponse,
   SocialAuthProvider,
   SignupRequest,
   UpdateUserInfoRequest,
@@ -707,8 +707,11 @@ const accountHandlers = [
 
     return HttpResponse.json({
       count: likedGames.length,
-      results: pagedResults,
-    } satisfies LikedGamesResponse);
+      results: pagedResults.map((likedGame) => ({
+        ...likedGame,
+        genres: likedGame.genres.join(', '),
+      })),
+    } satisfies RawLikedGamesResponse);
   }),
 
   http.put(
