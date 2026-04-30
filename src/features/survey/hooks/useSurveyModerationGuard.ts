@@ -103,12 +103,6 @@ export const useSurveyModerationGuard = ({
     isChatTemporarilyBlocked ||
     hasExpiredChatBlock ||
     hasReachedNonGameChatLimit;
-  const guardrailStatusLabel = isChatTemporarilyBlocked
-    ? `${formatRemainingBlockTime(remainingBlockTimeMs)} 남음`
-    : hasExpiredChatBlock
-      ? '제한 종료'
-      : `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`;
-
   const inputPlaceholder = useMemo(() => {
     if (isHistoryView && recommendationReady) {
       return '완료된 설문 기록을 다시 보고 있어요.';
@@ -184,7 +178,6 @@ export const useSurveyModerationGuard = ({
     hasExpiredChatBlock,
     isTextareaDisabled,
     isRecommendationButtonDisabled,
-    guardrailStatusLabel,
     inputPlaceholder,
     applySuccessfulSubmissionModeration,
   };

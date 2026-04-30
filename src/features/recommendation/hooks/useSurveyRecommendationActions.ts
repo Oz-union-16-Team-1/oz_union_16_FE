@@ -65,7 +65,7 @@ export const useSurveyRecommendationActions = ({
       queryClient.removeQueries({ queryKey: ['survey-results'] });
       navigate(`/${ROUTES.SURVEY}`);
     } catch (requestError) {
-      setFeedbackMessage(extractApiErrorMessage(requestError));
+      setFeedbackMessage(extractApiErrorMessage(requestError, 'reset'));
     }
   };
 

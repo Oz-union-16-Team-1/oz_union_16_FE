@@ -73,7 +73,12 @@ export const useRecommendationResultsSource = ({
   const isResultNotFound =
     error instanceof AxiosError && error.response?.status === 404;
   const errorMessage =
-    error && !isResultNotFound ? extractApiErrorMessage(error) : null;
+    error && !isResultNotFound
+      ? extractApiErrorMessage(
+          error,
+          isSurveySource ? 'recommendations' : 'generic',
+        )
+      : null;
   const emptyStateMessage =
     isResultNotFound && isMatchSource
       ? '매칭 추천 결과가 아직 없습니다. 먼저 매칭 평가를 완료해 주세요.'

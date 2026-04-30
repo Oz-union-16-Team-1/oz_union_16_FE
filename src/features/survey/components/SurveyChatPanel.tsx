@@ -18,6 +18,7 @@ import { useSurveyStore } from '../store/useSurveyStore';
 import {
   formatRemainingBlockTime,
   GAME_RELATED_KEYWORDS,
+  NON_GAME_CHAT_MAX_STRIKES,
   useSurveyModerationGuard,
 } from '../hooks/useSurveyModerationGuard';
 import { useSurveySessionFlow } from '../hooks/useSurveySessionFlow';
@@ -35,27 +36,33 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
   const [isGuardrailPanelOpen, setIsGuardrailPanelOpen] = useState(false);
 
-  const sessionId = useSurveyStore((state) => state.sessionId);
-  const messages = useSurveyStore((state) => state.messages);
-  const progress = useSurveyStore((state) => state.progress);
-  const storedSessionId = useSurveyStore((state) => state.sessionId);
-  const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
-  const isSubmitting = useSurveyStore((state) => state.isSubmitting);
-  const error = useSurveyStore((state) => state.error);
-  const recommendationReady = useSurveyStore(
-    (state) => state.recommendationReady,
-  );
-  const lastSubmittedMessage = useSurveyStore(
-    (state) => state.lastSubmittedMessage,
-  );
+  const {
+    sessionId,
+    messages,
+    progress,
+    hasBootstrapped,
+    isSubmitting,
+    error,
+    recommendationReady,
+    lastSubmittedMessage,
+  } = useSurveyStore((state) => ({
+    sessionId: state.sessionId,
+    messages: state.messages,
+    progress: state.progress,
+    hasBootstrapped: state.hasBootstrapped,
+    isSubmitting: state.isSubmitting,
+    error: state.error,
+    recommendationReady: state.recommendationReady,
+    lastSubmittedMessage: state.lastSubmittedMessage,
+  }));
 
   const {
+    nonGameStrikeCount,
     remainingBlockTimeMs,
     isChatTemporarilyBlocked,
     hasExpiredChatBlock,
     isTextareaDisabled,
     isRecommendationButtonDisabled,
-    guardrailStatusLabel,
     inputPlaceholder,
     applySuccessfulSubmissionModeration,
   } = useSurveyModerationGuard({
@@ -92,6 +99,11 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     isHistoryView || enteredWithCompletedSurvey
       ? '추천 결과로 돌아가기'
       : '추천 결과 바로 보기';
+  const guardrailStatusLabel = isChatTemporarilyBlocked
+    ? `${formatRemainingBlockTime(remainingBlockTimeMs)} 남음`
+    : hasExpiredChatBlock
+      ? '제한 종료'
+      : `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -135,8 +147,8 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     }
 
     startTransition(() => {
-      const surveySessionQuery = storedSessionId
-        ? `?source=survey&session_id=${storedSessionId}`
+      const surveySessionQuery = sessionId
+        ? `?source=survey&session_id=${sessionId}`
         : '?source=survey';
       navigate(`/${ROUTES.RECOMMENDATION_LIST}${surveySessionQuery}`);
     });
