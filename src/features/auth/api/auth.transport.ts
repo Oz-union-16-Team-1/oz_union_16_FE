@@ -2,6 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 
 import { api } from '@/api/axios';
 import { apiBaseUrl } from '@/lib/env';
+import { normalizeThumbnailUrl } from '@/lib/normalizeThumbnailUrl';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
 import type {
@@ -74,6 +75,7 @@ const normalizeLikedGamesResponse = (
   count: response.count,
   results: response.results.map((item) => ({
     ...item,
+    thumbnail_url: normalizeThumbnailUrl(item.thumbnail_url),
     genres: normalizeLikedGameGenres(item.genres),
   })),
 });

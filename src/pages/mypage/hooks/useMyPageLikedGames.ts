@@ -12,6 +12,7 @@ import type { LikedGamesResponse } from '../../../features/auth/types/auth';
 import type { GameListItem } from '../../../features/games/types';
 import { syncLikedGamesStateInQueryCache } from '../../../features/games/queryCache';
 import type { FavoriteGamePreview } from '../../../features/mypage/types';
+import { normalizeThumbnailUrl } from '../../../lib/normalizeThumbnailUrl';
 import type { MyPageToastPayload } from '../types';
 import { toFavoriteGameListItem, toFavoriteGamePreview } from '../utils';
 
@@ -35,6 +36,7 @@ function useMyPageLikedGames({
   const unlikeLikedGameMutation = useUnlikeLikedGameMutation();
   const [selectedFavoriteGame, setSelectedFavoriteGame] =
     useState<FavoriteGamePreview | null>(null);
+  const [favoriteListRenderVersion, setFavoriteListRenderVersion] = useState(0);
   const serverFavoriteGames = useMemo(() => {
     return (likedGamesData?.results ?? []).map(toFavoriteGamePreview);
   }, [likedGamesData?.results]);
@@ -72,7 +74,9 @@ function useMyPageLikedGames({
         game_title:
           game.game_title.trim() || previousGame?.game_title?.trim() || 'N/A',
         thumbnail_url:
-          game.thumbnail_url ?? previousGame?.thumbnail_url ?? null,
+          normalizeThumbnailUrl(game.thumbnail_url) ??
+          normalizeThumbnailUrl(previousGame?.thumbnail_url) ??
+          null,
         genres:
           game.genres.length > 0 ? game.genres : (previousGame?.genres ?? []),
       };
@@ -110,6 +114,7 @@ function useMyPageLikedGames({
 
     try {
       await unlikeLikedGameMutation.mutateAsync(targetGameId);
+      setFavoriteListRenderVersion((current) => current + 1);
       setSelectedFavoriteGame(null);
       onToast({
         tone: 'success',
@@ -122,6 +127,7 @@ function useMyPageLikedGames({
           gameId: targetGameId,
           isLiked: false,
         });
+        setFavoriteListRenderVersion((current) => current + 1);
         setSelectedFavoriteGame(null);
         onToast({
           tone: 'success',
@@ -141,6 +147,7 @@ function useMyPageLikedGames({
   return {
     favoriteGames,
     favoriteCount,
+    favoriteListRenderVersion,
     isFavoriteGamesLoading,
     isFavoriteGamesError,
     isFetchingFavoriteGames: likedGamesQuery.isFetching,
