@@ -56,7 +56,7 @@ function AuthInputField({
           id={id}
           {...inputProps}
           hasError={Boolean(errorMessage)}
-          className={`flex-1 ${className}`}
+          className={`w-full min-w-0 flex-1 ${className}`}
         />
         {action}
         {toast}

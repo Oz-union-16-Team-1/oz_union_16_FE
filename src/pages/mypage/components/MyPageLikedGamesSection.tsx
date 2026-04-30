@@ -57,13 +57,13 @@ function MyPageLikedGamesSection({
               </p>
             </div>
           </div>
-          <p className="text-mypage-muted text-sm">
-            {isFavoriteGamesLoading
-              ? '찜 목록을 불러오는 중입니다.'
-              : favoriteCount > 0
-                ? `총 ${favoriteCount}개의 게임이 저장되어 있어요`
-                : '아직 저장된 게임이 없어요'}
-          </p>
+          {isFavoriteGamesLoading || favoriteCount > 0 ? (
+            <p className="text-mypage-muted text-sm">
+              {isFavoriteGamesLoading
+                ? '찜 목록을 불러오는 중입니다.'
+                : `총 ${favoriteCount}개의 게임이 저장되어 있어요`}
+            </p>
+          ) : null}
         </div>
 
         <div className={listContainerClass}>
