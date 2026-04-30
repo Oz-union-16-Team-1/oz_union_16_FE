@@ -200,15 +200,43 @@ export const uploadFileToS3 = async ({
   file,
   content_type,
 }: UploadFileToS3Request) => {
-  const resolvedContentType =
-    content_type || file.type || 'application/octet-stream';
+  const resolvedContentType = content_type?.trim() || file.type.trim();
 
-  await axios.put(presigned_url, file, {
-    headers: {
-      'Content-Type': resolvedContentType,
-    },
-    withCredentials: false,
-  });
+  try {
+    const uploadResponse = await fetch(presigned_url, {
+      method: 'PUT',
+      body: file,
+      credentials: 'omit',
+      mode: 'cors',
+      cache: 'no-store',
+      headers: resolvedContentType
+        ? {
+            'Content-Type': resolvedContentType,
+          }
+        : undefined,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error(
+        '프로필 이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.',
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      const normalizedMessage = error.message.trim().toLowerCase();
+
+      if (
+        normalizedMessage === 'failed to fetch' ||
+        normalizedMessage.includes('networkerror')
+      ) {
+        throw new Error(
+          '프로필 이미지 업로드 중 네트워크 또는 CORS 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        );
+      }
+    }
+
+    throw error;
+  }
 };
 
 export const confirmProfileImage = async (

@@ -109,6 +109,10 @@ export const extractAuthApiFieldErrors = (error: unknown) => {
 
 export const extractAuthApiErrorMessage = (error: unknown) => {
   if (!(error instanceof AxiosError)) {
+    if (error instanceof Error && error.message.trim()) {
+      return error.message;
+    }
+
     return '요청을 처리하는 중 알 수 없는 오류가 발생했습니다.';
   }
 

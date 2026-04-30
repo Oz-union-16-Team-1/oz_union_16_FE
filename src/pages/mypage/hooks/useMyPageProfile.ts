@@ -74,9 +74,17 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
           file_name: file.name,
           content_type: file.type || 'application/octet-stream',
         });
+      const presignedUrl = presignedResponse.presigned_url.trim();
+      const profileImageUrl = presignedResponse.img_url.trim();
+
+      if (!presignedUrl || !profileImageUrl) {
+        throw new Error(
+          '프로필 이미지 업로드 경로를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        );
+      }
 
       await uploadFileToS3Mutation.mutateAsync({
-        presigned_url: presignedResponse.presigned_url,
+        presigned_url: presignedUrl,
         file,
         content_type: file.type || 'application/octet-stream',
       });
@@ -87,7 +95,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
           currentProfile
             ? {
                 ...currentProfile,
-                profile_img_url: presignedResponse.img_url,
+                profile_img_url: profileImageUrl,
               }
             : currentProfile,
       );
@@ -95,16 +103,16 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
       if (previousProfile) {
         syncAuthAccount({
           ...previousProfile,
-          profile_img_url: presignedResponse.img_url,
+          profile_img_url: profileImageUrl,
         });
       }
 
       hasOptimisticProfileUpdate = true;
 
       await confirmProfileImageMutation.mutateAsync({
-        profile_img_url: presignedResponse.img_url,
+        profile_img_url: profileImageUrl,
       });
-      const confirmedProfileImageUrl = presignedResponse.img_url;
+      const confirmedProfileImageUrl = profileImageUrl;
 
       queryClient.setQueryData<CurrentUserProfileResponse>(
         authKeys.me(),
