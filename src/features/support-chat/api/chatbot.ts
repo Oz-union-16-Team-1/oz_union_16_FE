@@ -252,10 +252,6 @@ export const streamChatbotResponse = async ({
     {
       method: 'GET',
       accept: 'text/event-stream',
-      extraHeaders: {
-        Accept: 'text/event-stream',
-        'Cache-Control': 'no-cache',
-      },
       signal,
     },
   );
@@ -323,6 +319,10 @@ export const streamChatbotResponse = async ({
 export const extractSupportChatErrorMessage = (error: unknown) => {
   if (error instanceof DOMException && error.name === 'AbortError') {
     return '';
+  }
+
+  if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+    return '실시간 응답 연결에 실패했습니다. 네트워크 또는 CORS 설정을 확인해 주세요.';
   }
 
   if (error instanceof Error) {
