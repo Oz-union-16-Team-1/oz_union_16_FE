@@ -57,10 +57,12 @@ function MyPageAccountDangerZone({
         }
         description={
           isSocialAccount ? (
-            <p>
-              소셜 계정은 비밀번호 확인 없이 바로 탈퇴가 진행되며, 완료되면
-              로그인 화면으로 이동합니다.
-            </p>
+            <div className="mx-auto max-w-[23rem]">
+              <p>
+                소셜 계정은 비밀번호 확인 없이 바로 탈퇴가 진행되며, 완료되면
+                로그인 화면으로 이동합니다.
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               <p>
@@ -97,6 +99,7 @@ function MyPageAccountDangerZone({
         }
         confirmLabel="회원탈퇴"
         isPending={isDeletePending}
+        align={isSocialAccount ? 'center' : 'left'}
         onClose={onCloseDeleteModal}
         onConfirm={() => {
           void onConfirmDeleteAccount();

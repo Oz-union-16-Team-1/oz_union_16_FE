@@ -36,7 +36,7 @@ function PasswordChangePanel({
   onSubmit,
 }: PasswordChangePanelProps) {
   return (
-    <section className="bg-mypage-card border-mypage-panel mt-6 w-full rounded-3xl border px-4 py-5 text-left sm:px-5 sm:py-6">
+    <section className="bg-mypage-card border-mypage-panel mt-6 w-full min-w-0 rounded-3xl border px-4 py-5 text-left sm:px-5 sm:py-6">
       <div className="mb-5">
         <h2 className="text-xl font-semibold text-white">비밀번호 변경</h2>
         <p className="text-mypage-muted mt-2 text-sm/6">
@@ -44,7 +44,7 @@ function PasswordChangePanel({
         </p>
       </div>
 
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="w-full min-w-0 space-y-4" onSubmit={onSubmit}>
         <AuthInputField
           id="current-password"
           name="old_password"

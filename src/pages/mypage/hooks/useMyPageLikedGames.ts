@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { extractAuthApiErrorMessage } from '../../../features/auth/api/auth';
 import {
@@ -30,19 +30,30 @@ function useMyPageLikedGames({
   const unlikeLikedGameMutation = useUnlikeLikedGameMutation();
   const [selectedFavoriteGame, setSelectedFavoriteGame] =
     useState<FavoriteGamePreview | null>(null);
+  const [locallyRemovedGameIds, setLocallyRemovedGameIds] = useState<number[]>(
+    [],
+  );
   const serverFavoriteGames = useMemo(() => {
     return (likedGamesData?.results ?? []).map(toFavoriteGamePreview);
   }, [likedGamesData?.results]);
-  const [favoriteGames, setFavoriteGames] = useState<FavoriteGamePreview[]>([]);
-  const [favoriteCount, setFavoriteCount] = useState(0);
+  const hiddenGameIdSet = useMemo(
+    () => new Set(locallyRemovedGameIds),
+    [locallyRemovedGameIds],
+  );
+  const favoriteGames = useMemo(
+    () =>
+      serverFavoriteGames.filter((game) => !hiddenGameIdSet.has(game.gameId)),
+    [hiddenGameIdSet, serverFavoriteGames],
+  );
+  const favoriteCount = useMemo(() => {
+    const hiddenCount = serverFavoriteGames.reduce(
+      (count, game) => count + Number(hiddenGameIdSet.has(game.gameId)),
+      0,
+    );
+    const serverCount = likedGamesData?.count ?? serverFavoriteGames.length;
 
-  useEffect(() => {
-    setFavoriteGames(serverFavoriteGames);
-  }, [serverFavoriteGames]);
-
-  useEffect(() => {
-    setFavoriteCount(likedGamesData?.count ?? serverFavoriteGames.length);
-  }, [likedGamesData?.count, serverFavoriteGames.length]);
+    return Math.max(0, serverCount - hiddenCount);
+  }, [hiddenGameIdSet, likedGamesData?.count, serverFavoriteGames]);
 
   const refetchFavoriteGames = likedGamesQuery.refetch;
   const isFavoriteGamesLoading =
@@ -69,39 +80,40 @@ function useMyPageLikedGames({
       return;
     }
 
-    const removeFavoriteGameFromState = () => {
-      const isVisibleTarget = favoriteGames.some(
-        (game) => game.gameId === targetGameId,
+    const hideFavoriteGame = () => {
+      setLocallyRemovedGameIds((current) =>
+        current.includes(targetGameId) ? current : [...current, targetGameId],
+      );
+    };
+    const syncRemovedGamesAfterRefetch = async () => {
+      const refetchResult = await refetchFavoriteGames();
+      const nextVisibleGameIds = new Set(
+        (refetchResult.data?.results ?? []).map((game) => game.game_id),
       );
 
-      if (!isVisibleTarget) {
-        return;
-      }
-
-      setFavoriteGames((current) =>
-        current.filter((game) => game.gameId !== targetGameId),
+      setLocallyRemovedGameIds((current) =>
+        current.filter((gameId) => nextVisibleGameIds.has(gameId)),
       );
-      setFavoriteCount((current) => Math.max(0, current - 1));
     };
 
     try {
       await unlikeLikedGameMutation.mutateAsync(targetGameId);
-      removeFavoriteGameFromState();
+      hideFavoriteGame();
       setSelectedFavoriteGame(null);
       onToast({
         tone: 'success',
         message: '찜한 목록에서 삭제되었습니다.',
       });
-      void refetchFavoriteGames();
+      void syncRemovedGamesAfterRefetch();
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 404) {
-        removeFavoriteGameFromState();
+        hideFavoriteGame();
         setSelectedFavoriteGame(null);
         onToast({
           tone: 'success',
           message: '이미 삭제된 게임입니다.',
         });
-        void refetchFavoriteGames();
+        void syncRemovedGamesAfterRefetch();
         return;
       }
 
