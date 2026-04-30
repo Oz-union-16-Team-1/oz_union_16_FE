@@ -1,4 +1,9 @@
 import { apiBaseUrl } from '@/lib/env';
+import { useAuthStore } from '@/store/useAuthStore';
+import {
+  expireAuthSession,
+  refreshStoredAccessToken,
+} from '@/features/auth/utils/sessionManager';
 import type {
   ChatbotErrorResponse,
   ChatbotMessageRequest,
@@ -40,12 +45,24 @@ const getDefaultChatbotErrorMessage = (
   status: number | null,
   fallback = '챗봇 요청을 처리하는 중 오류가 발생했습니다.',
 ) => {
+  if (status === 401) {
+    return '로그인 정보가 만료되었거나 유효하지 않습니다. 다시 로그인해 주세요.';
+  }
+
   if (status === 400) {
     return '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
   }
 
   if (status === 404) {
-    return '만료되었거나 유효하지 않은 대화 세션입니다.';
+    return '만료되었거나 유효하지 않은 session_id 입니다.';
+  }
+
+  if (status === 409) {
+    return '이미 스트리밍이 진행 중입니다.';
+  }
+
+  if (status === 500) {
+    return '서버 응답 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
   }
 
   return fallback;
@@ -57,6 +74,7 @@ const extractChatbotErrorMessage = async (response: Response) => {
 
     return (
       data.error_detail ||
+      (typeof data.detail === 'string' ? data.detail : null) ||
       getDefaultChatbotErrorMessage(response.status, data.error_detail)
     );
   } catch {
@@ -64,14 +82,79 @@ const extractChatbotErrorMessage = async (response: Response) => {
   }
 };
 
-export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
-  const response = await fetch(createApiUrl(`${CHATBOT_BASE_PATH}/messages`), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
+const getSupportChatAccessToken = () => {
+  const accessToken = useAuthStore.getState().accessToken?.trim();
+
+  if (!accessToken) {
+    throw new Error('로그인 후 챗봇을 이용할 수 있습니다.');
+  }
+
+  return accessToken;
+};
+
+const createAuthorizedHeaders = ({
+  accept,
+  contentType,
+}: {
+  accept: string;
+  contentType?: string;
+}) => {
+  const headers = new Headers({
+    Accept: accept,
+    Authorization: `Bearer ${getSupportChatAccessToken()}`,
   });
+
+  if (contentType) {
+    headers.set('Content-Type', contentType);
+  }
+
+  return headers;
+};
+
+const fetchChatbotApi = async (
+  url: string,
+  init: Omit<RequestInit, 'headers'> & {
+    accept: string;
+    contentType?: string;
+  },
+) => {
+  const request = async () =>
+    fetch(url, {
+      ...init,
+      credentials: 'include',
+      headers: createAuthorizedHeaders({
+        accept: init.accept,
+        contentType: init.contentType,
+      }),
+    });
+
+  let response = await request();
+
+  if (response.status !== 401) {
+    return response;
+  }
+
+  try {
+    await refreshStoredAccessToken();
+  } catch (refreshError) {
+    expireAuthSession();
+    throw refreshError;
+  }
+
+  response = await request();
+  return response;
+};
+
+export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
+  const response = await fetchChatbotApi(
+    createApiUrl(`${CHATBOT_BASE_PATH}/messages`),
+    {
+      method: 'POST',
+      accept: 'application/json',
+      contentType: 'application/json',
+      body: JSON.stringify(payload),
+    },
+  );
 
   if (!response.ok) {
     throw new Error(await extractChatbotErrorMessage(response));
@@ -91,7 +174,8 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     }
 
     if (line.startsWith('data:')) {
-      dataLines.push(line.replace('data:', '').trim());
+      const rawValue = line.slice('data:'.length);
+      dataLines.push(rawValue.startsWith(' ') ? rawValue.slice(1) : rawValue);
     }
   }
 
@@ -102,6 +186,9 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
   let parsed: {
     session_id?: string;
     content?: string;
+    expires_at?: string;
+    expires_in_seconds?: number;
+    session_ttl_seconds?: number;
   };
 
   try {
@@ -122,6 +209,9 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     return {
       type: 'start',
       sessionId: parsed.session_id,
+      expiresAt: parsed.expires_at,
+      expiresInSeconds: parsed.expires_in_seconds,
+      sessionTtlSeconds: parsed.session_ttl_seconds,
     };
   }
 
@@ -151,13 +241,11 @@ export const streamChatbotResponse = async ({
   signal?: AbortSignal;
   onEvent: (event: ChatbotStreamEvent) => void;
 }) => {
-  const response = await fetch(
+  const response = await fetchChatbotApi(
     createApiUrl(`${CHATBOT_BASE_PATH}/stream`, { session_id: sessionId }),
     {
       method: 'GET',
-      headers: {
-        Accept: 'text/event-stream',
-      },
+      accept: 'text/event-stream',
       signal,
     },
   );
