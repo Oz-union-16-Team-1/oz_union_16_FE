@@ -95,9 +95,11 @@ const getSupportChatAccessToken = () => {
 const createAuthorizedHeaders = ({
   accept,
   contentType,
+  extraHeaders,
 }: {
   accept: string;
   contentType?: string;
+  extraHeaders?: HeadersInit;
 }) => {
   const headers = new Headers({
     Accept: accept,
@@ -108,6 +110,14 @@ const createAuthorizedHeaders = ({
     headers.set('Content-Type', contentType);
   }
 
+  if (extraHeaders) {
+    const normalizedExtraHeaders = new Headers(extraHeaders);
+
+    normalizedExtraHeaders.forEach((value, key) => {
+      headers.set(key, value);
+    });
+  }
+
   return headers;
 };
 
@@ -116,6 +126,7 @@ const fetchChatbotApi = async (
   init: Omit<RequestInit, 'headers'> & {
     accept: string;
     contentType?: string;
+    extraHeaders?: HeadersInit;
   },
 ) => {
   const request = async () =>
@@ -125,6 +136,7 @@ const fetchChatbotApi = async (
       headers: createAuthorizedHeaders({
         accept: init.accept,
         contentType: init.contentType,
+        extraHeaders: init.extraHeaders,
       }),
     });
 
@@ -246,6 +258,10 @@ export const streamChatbotResponse = async ({
     {
       method: 'GET',
       accept: 'text/event-stream',
+      extraHeaders: {
+        Accept: 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
       signal,
     },
   );
@@ -256,6 +272,14 @@ export const streamChatbotResponse = async ({
 
   if (!response.body) {
     throw new Error('챗봇 응답 스트림을 불러오지 못했습니다.');
+  }
+
+  const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? '';
+
+  if (!contentType.includes('text/event-stream')) {
+    throw new Error(
+      '챗봇 스트림 응답 형식이 올바르지 않습니다. 서버 설정을 확인해주세요.',
+    );
   }
 
   const reader = response.body.getReader();
