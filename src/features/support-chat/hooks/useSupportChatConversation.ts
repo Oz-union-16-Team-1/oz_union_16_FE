@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import {
   extractSupportChatErrorMessage,
+  isSupportChatSessionExpiredError,
   streamChatbotResponse,
 } from '@/features/support-chat/api/chatbot';
 import { useSendChatbotMessageMutation } from '@/features/support-chat/api/useSupportChatApi';
@@ -178,6 +179,21 @@ function useSupportChatConversation({
         }
 
         removeMessage(assistantPlaceholderMessageId);
+
+        if (isSupportChatSessionExpiredError(requestError)) {
+          if (typeof window !== 'undefined') {
+            window.alert('세션이 만료되었습니다.');
+          }
+
+          resetConversationState({
+            routeContext,
+            keepPanelOpen: false,
+            preserveBootstrap: true,
+            abortInFlightRequest: true,
+          });
+          return;
+        }
+
         const errorMessage = extractSupportChatErrorMessage(requestError);
 
         if (errorMessage) {
@@ -203,6 +219,8 @@ function useSupportChatConversation({
       sendMessageMutation,
       setSessionId,
       setSubmitting,
+      resetConversationState,
+      routeContext,
     ],
   );
 
