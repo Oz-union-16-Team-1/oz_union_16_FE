@@ -11,7 +11,6 @@ import {
   SendHorizontal,
   TriangleAlert,
 } from 'lucide-react';
-import CenteredLoadingState from '../../../components/common/CenteredLoadingState';
 
 import { ROUTES } from '../../../constants/routes';
 import { useSurveyStore } from '../store/useSurveyStore';
@@ -31,30 +30,98 @@ type SurveyChatPanelProps = {
   isHistoryView?: boolean;
 };
 
+export function SurveyChatLoadingState() {
+  return (
+    <section className="survey-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="border-b border-white/8 px-4 py-2.5 sm:px-5 md:px-6">
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="hidden sm:block" />
+
+          <div className="min-w-0 text-center">
+            <h2 className="text-[24px] font-bold tracking-[-0.03em] text-white sm:text-[28px] md:text-[31px]">
+              게임 선호도 설문조사
+            </h2>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            <div className="min-w-43 rounded-[22px] border border-white/10 bg-white/3 px-3.5 py-3 shadow-[0_14px_30px_rgba(0,0,0,0.16)] backdrop-blur-md">
+              <div className="flex items-center justify-between gap-3">
+                <div className="h-3.5 w-14 animate-pulse rounded-full bg-white/10" />
+                <div className="h-4 w-9 animate-pulse rounded-full bg-white/12" />
+              </div>
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/8">
+                <div className="h-full w-1/3 animate-pulse rounded-full bg-white/14" />
+              </div>
+            </div>
+
+            <div className="h-[52px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/3" />
+          </div>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3">
+        <div className="survey-panel flex h-full min-h-0 flex-col overflow-hidden border-white/6 bg-[linear-gradient(180deg,rgba(12,12,14,0.86),rgba(7,7,8,0.94))]">
+          <div className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-4.5 md:px-6">
+            <div className="flex justify-start">
+              <div className="flex max-w-[92%] items-start gap-[0.7rem] md:max-w-[78%]">
+                <div className="mt-1 h-[38px] w-[38px] shrink-0 animate-pulse rounded-2xl bg-white/8" />
+                <div className="rounded-[24px] rounded-tl-md border border-white/8 bg-white/4 px-4 py-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+                  <div className="space-y-2.5">
+                    <div className="h-4 w-32 animate-pulse rounded-full bg-white/10" />
+                    <div className="h-4 w-full max-w-92 animate-pulse rounded-full bg-white/8" />
+                    <div className="h-4 w-full max-w-80 animate-pulse rounded-full bg-white/8" />
+                    <div className="h-4 w-48 animate-pulse rounded-full bg-white/8" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-start">
+              <div className="flex max-w-[92%] items-start gap-2.5 md:max-w-[68%]">
+                <div className="mt-1 h-[38px] w-[38px] shrink-0 animate-pulse rounded-2xl bg-white/8" />
+                <div className="rounded-[24px] rounded-tl-md border border-white/7 bg-white/[0.03] px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
+                  <div className="space-y-2.5">
+                    <div className="h-4 w-full max-w-72 animate-pulse rounded-full bg-white/8" />
+                    <div className="h-4 w-40 animate-pulse rounded-full bg-white/8" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/8 px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
+            <div className="relative block h-15 overflow-hidden rounded-full border border-white/10 bg-[#0e0e10]">
+              <div className="h-full w-full py-4.25 pr-[5.8rem] pl-4 sm:pl-5">
+                <div className="h-6 w-full max-w-110 rounded-full bg-white/8" />
+              </div>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                <div className="h-11.5 w-11.5 rounded-full bg-white/10" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
   const [isGuardrailPanelOpen, setIsGuardrailPanelOpen] = useState(false);
 
-  const {
-    sessionId,
-    messages,
-    progress,
-    hasBootstrapped,
-    isSubmitting,
-    error,
-    recommendationReady,
-    lastSubmittedMessage,
-  } = useSurveyStore((state) => ({
-    sessionId: state.sessionId,
-    messages: state.messages,
-    progress: state.progress,
-    hasBootstrapped: state.hasBootstrapped,
-    isSubmitting: state.isSubmitting,
-    error: state.error,
-    recommendationReady: state.recommendationReady,
-    lastSubmittedMessage: state.lastSubmittedMessage,
-  }));
+  const sessionId = useSurveyStore((state) => state.sessionId);
+  const messages = useSurveyStore((state) => state.messages);
+  const progress = useSurveyStore((state) => state.progress);
+  const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
+  const isSubmitting = useSurveyStore((state) => state.isSubmitting);
+  const error = useSurveyStore((state) => state.error);
+  const recommendationReady = useSurveyStore(
+    (state) => state.recommendationReady,
+  );
+  const lastSubmittedMessage = useSurveyStore(
+    (state) => state.lastSubmittedMessage,
+  );
 
   const {
     nonGameStrikeCount,
@@ -161,6 +228,10 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     }
   };
 
+  if (!messages.length && isSubmitting) {
+    return <SurveyChatLoadingState />;
+  }
+
   return (
     <section className="survey-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="border-b border-white/8 px-4 py-2.5 sm:px-5 md:px-6">
@@ -194,15 +265,6 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
             ref={viewportRef}
             className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-4.5 md:px-6"
           >
-            {!messages.length && isSubmitting ? (
-              <CenteredLoadingState
-                label="Survey"
-                title="AI가 첫 질문을 준비하고 있습니다."
-                hint="취향을 더 잘 이해할 수 있도록 질문 흐름을 정리하고 있어요."
-                className="py-6"
-              />
-            ) : null}
-
             {messages.map((message) => (
               <SurveyMessageBubble key={message.id} message={message} />
             ))}

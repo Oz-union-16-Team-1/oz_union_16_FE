@@ -28,41 +28,34 @@ export const useSurveySessionFlow = ({
   queueFocusRestore,
   cancelFocusRestore,
 }: UseSurveySessionFlowOptions) => {
-  const {
-    sessionId,
-    hasBootstrapped,
-    isSubmitting,
-    error,
-    lastSubmittedMessage,
-    clearError,
-    setHasBootstrapped,
-    setSubmitting,
-    setError,
-    setLastSubmittedMessage,
-    clearModerationState,
-    setChatBlockedUntil,
-    addUserMessage,
-    hydrateInitialSession,
-    applyChatResponse,
-    resetSurveyState,
-  } = useSurveyStore((state) => ({
-    sessionId: state.sessionId,
-    hasBootstrapped: state.hasBootstrapped,
-    isSubmitting: state.isSubmitting,
-    error: state.error,
-    lastSubmittedMessage: state.lastSubmittedMessage,
-    clearError: state.clearError,
-    setHasBootstrapped: state.setHasBootstrapped,
-    setSubmitting: state.setSubmitting,
-    setError: state.setError,
-    setLastSubmittedMessage: state.setLastSubmittedMessage,
-    clearModerationState: state.clearModerationState,
-    setChatBlockedUntil: state.setChatBlockedUntil,
-    addUserMessage: state.addUserMessage,
-    hydrateInitialSession: state.hydrateInitialSession,
-    applyChatResponse: state.applyChatResponse,
-    resetSurveyState: state.resetSurveyState,
-  }));
+  const sessionId = useSurveyStore((state) => state.sessionId);
+  const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
+  const isSubmitting = useSurveyStore((state) => state.isSubmitting);
+  const error = useSurveyStore((state) => state.error);
+  const lastSubmittedMessage = useSurveyStore(
+    (state) => state.lastSubmittedMessage,
+  );
+  const clearError = useSurveyStore((state) => state.clearError);
+  const setHasBootstrapped = useSurveyStore(
+    (state) => state.setHasBootstrapped,
+  );
+  const setSubmitting = useSurveyStore((state) => state.setSubmitting);
+  const setError = useSurveyStore((state) => state.setError);
+  const setLastSubmittedMessage = useSurveyStore(
+    (state) => state.setLastSubmittedMessage,
+  );
+  const clearModerationState = useSurveyStore(
+    (state) => state.clearModerationState,
+  );
+  const setChatBlockedUntil = useSurveyStore(
+    (state) => state.setChatBlockedUntil,
+  );
+  const addUserMessage = useSurveyStore((state) => state.addUserMessage);
+  const hydrateInitialSession = useSurveyStore(
+    (state) => state.hydrateInitialSession,
+  );
+  const applyChatResponse = useSurveyStore((state) => state.applyChatResponse);
+  const resetSurveyState = useSurveyStore((state) => state.resetSurveyState);
 
   const startSessionMutation = useStartSurveySessionMutation();
   const continueSurveyMutation = useContinueSurveyMutation();
@@ -85,7 +78,6 @@ export const useSurveySessionFlow = ({
         });
         hydrateInitialSession(response);
       } catch (requestError) {
-        setHasBootstrapped(false);
         setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
         setSubmitting(false);
@@ -105,10 +97,10 @@ export const useSurveySessionFlow = ({
   );
 
   useEffect(() => {
-    if (!sessionId && !hasBootstrapped) {
+    if (!sessionId && !hasBootstrapped && !error) {
       void bootstrapSurvey();
     }
-  }, [bootstrapSurvey, hasBootstrapped, sessionId]);
+  }, [bootstrapSurvey, error, hasBootstrapped, sessionId]);
 
   const ensureSessionId = useCallback(async () => {
     if (sessionId) {

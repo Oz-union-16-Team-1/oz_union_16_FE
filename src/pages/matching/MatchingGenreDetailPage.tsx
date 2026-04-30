@@ -11,7 +11,6 @@ import {
 } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
-import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -74,6 +73,54 @@ const getMatchCandidatesErrorMessage = (error: unknown) => {
   return extractApiErrorMessage(error);
 };
 
+function MatchingDetailSkeleton() {
+  return (
+    <section className="mx-auto mt-9 max-w-255 animate-pulse sm:mt-10 md:mt-12">
+      <div className="text-center">
+        <div className="mx-auto h-4 w-20 rounded-full bg-[#792222]/35" />
+        <div className="mx-auto mt-3 h-10 w-72 rounded-full bg-white/9" />
+      </div>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-[1.32fr_0.92fr] lg:gap-5 xl:mt-9">
+        <div className="overflow-hidden rounded-[28px] border border-white/8 bg-[#0c0c0d] p-3">
+          <div className="aspect-video rounded-[22px] bg-white/[0.05]" />
+          <div className="mt-4 h-4 w-28 rounded-full bg-white/8" />
+          <div className="mt-3 h-4 w-full rounded-full bg-white/7" />
+          <div className="mt-2 h-4 w-5/6 rounded-full bg-white/7" />
+        </div>
+
+        <div className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-6">
+          <div className="h-9 w-2/3 rounded-full bg-white/9" />
+          <div className="mt-4 h-4 w-full rounded-full bg-white/7" />
+          <div className="mt-2 h-4 w-4/5 rounded-full bg-white/7" />
+
+          <div className="mt-5 grid gap-1.5 sm:grid-cols-2">
+            <div className="h-16 rounded-[14px] border border-white/8 bg-white/3" />
+            <div className="h-16 rounded-[14px] border border-white/8 bg-white/3" />
+          </div>
+
+          <div className="mt-7 h-4 w-44 rounded-full bg-white/8" />
+          <div className="mt-4 flex gap-2">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-10 w-10 rounded-full bg-white/[0.06]"
+              />
+            ))}
+          </div>
+
+          <div className="mt-auto pt-8">
+            <div className="flex gap-3">
+              <div className="h-12 flex-1 rounded-full bg-white/[0.05]" />
+              <div className="h-12 flex-1 rounded-full bg-white/[0.08]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MatchingGenreDetailPage() {
   const { genreSlug } = useParams();
   const location = useLocation();
@@ -96,6 +143,15 @@ function MatchingGenreDetailPage() {
     () => matchCandidatesQuery.data?.results ?? [],
     [matchCandidatesQuery.data?.results],
   );
+  const candidateSetKey = useMemo(
+    () =>
+      genre
+        ? `${genre.slug}:${candidateRetryNo}:${candidates
+            .map((candidate) => candidate.game_id)
+            .join(',')}`
+        : null,
+    [candidateRetryNo, candidates, genre],
+  );
   const currentIndex = useMatchingStore((state) => state.currentIndex);
   const evaluationsByGameId = useMatchingStore(
     (state) => state.evaluationsByGameId,
@@ -117,7 +173,7 @@ function MatchingGenreDetailPage() {
 
   useEffect(() => {
     hasInitializedFlowRef.current = false;
-  }, [genre?.slug, matchCandidatesQuery.dataUpdatedAt]);
+  }, [candidateSetKey]);
 
   useEffect(() => {
     if (!genre || candidates.length === 0 || hasInitializedFlowRef.current) {
@@ -127,7 +183,13 @@ function MatchingGenreDetailPage() {
     restartFlow(genre, candidates);
     hasInitializedFlowRef.current = true;
     resetSubmitMatchResponsesMutation();
-  }, [genre, candidates, restartFlow, resetSubmitMatchResponsesMutation]);
+  }, [
+    candidateSetKey,
+    candidates,
+    genre,
+    restartFlow,
+    resetSubmitMatchResponsesMutation,
+  ]);
 
   const displayCandidates = candidates;
   const totalSteps = displayCandidates.length;
@@ -255,12 +317,7 @@ function MatchingGenreDetailPage() {
             </Link>
           </section>
         ) : authGate.accessStatus === 'loading' ? (
-          <CenteredLoadingState
-            label="Matching"
-            title="매칭 화면을 불러오는 중입니다."
-            hint="트레일러와 평가 흐름을 준비하고 있어요."
-            className="mx-auto max-w-190"
-          />
+          <MatchingDetailSkeleton />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 진행할 수 있어요."
@@ -269,12 +326,7 @@ function MatchingGenreDetailPage() {
             align="center"
           />
         ) : matchCandidatesQuery.isLoading ? (
-          <CenteredLoadingState
-            label="Matching"
-            title="매칭 후보 게임을 불러오는 중입니다."
-            hint="이번 장르에 맞는 후보를 정리하고 있어요."
-            className="mx-auto max-w-190"
-          />
+          <MatchingDetailSkeleton />
         ) : matchCandidatesQuery.error ? (
           <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">
