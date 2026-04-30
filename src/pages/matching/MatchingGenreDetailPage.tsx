@@ -143,6 +143,15 @@ function MatchingGenreDetailPage() {
     () => matchCandidatesQuery.data?.results ?? [],
     [matchCandidatesQuery.data?.results],
   );
+  const candidateSetKey = useMemo(
+    () =>
+      genre
+        ? `${genre.slug}:${candidateRetryNo}:${candidates
+            .map((candidate) => candidate.game_id)
+            .join(',')}`
+        : null,
+    [candidateRetryNo, candidates, genre],
+  );
   const currentIndex = useMatchingStore((state) => state.currentIndex);
   const evaluationsByGameId = useMatchingStore(
     (state) => state.evaluationsByGameId,
@@ -164,7 +173,7 @@ function MatchingGenreDetailPage() {
 
   useEffect(() => {
     hasInitializedFlowRef.current = false;
-  }, [genre?.slug, matchCandidatesQuery.dataUpdatedAt]);
+  }, [candidateSetKey]);
 
   useEffect(() => {
     if (!genre || candidates.length === 0 || hasInitializedFlowRef.current) {
@@ -174,7 +183,13 @@ function MatchingGenreDetailPage() {
     restartFlow(genre, candidates);
     hasInitializedFlowRef.current = true;
     resetSubmitMatchResponsesMutation();
-  }, [genre, candidates, restartFlow, resetSubmitMatchResponsesMutation]);
+  }, [
+    candidateSetKey,
+    candidates,
+    genre,
+    restartFlow,
+    resetSubmitMatchResponsesMutation,
+  ]);
 
   const displayCandidates = candidates;
   const totalSteps = displayCandidates.length;

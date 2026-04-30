@@ -42,19 +42,13 @@ function SurveyPage() {
   const authGate = useAuthGate();
   const canAccessSurvey = authGate.accessStatus === 'authorized';
   const account = useAuthStore((state) => state.account);
-  const {
-    syncOwnerKey,
-    storedOwnerKey,
-    surveySessionId,
-    messages,
-    recommendationReady,
-  } = useSurveyStore((state) => ({
-    syncOwnerKey: state.syncOwnerKey,
-    storedOwnerKey: state.ownerKey,
-    surveySessionId: state.sessionId,
-    messages: state.messages,
-    recommendationReady: state.recommendationReady,
-  }));
+  const syncOwnerKey = useSurveyStore((state) => state.syncOwnerKey);
+  const storedOwnerKey = useSurveyStore((state) => state.ownerKey);
+  const surveySessionId = useSurveyStore((state) => state.sessionId);
+  const messages = useSurveyStore((state) => state.messages);
+  const recommendationReady = useSurveyStore(
+    (state) => state.recommendationReady,
+  );
   const isHistoryMode = searchParams.get('mode') === 'history';
   const [enteredWithCompletedSurvey, setEnteredWithCompletedSurvey] = useState<
     boolean | null

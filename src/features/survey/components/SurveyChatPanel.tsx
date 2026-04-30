@@ -81,25 +81,18 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
   const [isGuardrailPanelOpen, setIsGuardrailPanelOpen] = useState(false);
 
-  const {
-    sessionId,
-    messages,
-    progress,
-    hasBootstrapped,
-    isSubmitting,
-    error,
-    recommendationReady,
-    lastSubmittedMessage,
-  } = useSurveyStore((state) => ({
-    sessionId: state.sessionId,
-    messages: state.messages,
-    progress: state.progress,
-    hasBootstrapped: state.hasBootstrapped,
-    isSubmitting: state.isSubmitting,
-    error: state.error,
-    recommendationReady: state.recommendationReady,
-    lastSubmittedMessage: state.lastSubmittedMessage,
-  }));
+  const sessionId = useSurveyStore((state) => state.sessionId);
+  const messages = useSurveyStore((state) => state.messages);
+  const progress = useSurveyStore((state) => state.progress);
+  const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
+  const isSubmitting = useSurveyStore((state) => state.isSubmitting);
+  const error = useSurveyStore((state) => state.error);
+  const recommendationReady = useSurveyStore(
+    (state) => state.recommendationReady,
+  );
+  const lastSubmittedMessage = useSurveyStore(
+    (state) => state.lastSubmittedMessage,
+  );
 
   const {
     nonGameStrikeCount,
