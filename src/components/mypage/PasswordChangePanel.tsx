@@ -36,7 +36,7 @@ function PasswordChangePanel({
   onSubmit,
 }: PasswordChangePanelProps) {
   return (
-    <section className="bg-mypage-card border-mypage-panel mt-6 w-full min-w-0 rounded-3xl border px-4 py-5 text-left sm:px-5 sm:py-6">
+    <section className="bg-mypage-card border-mypage-panel mt-6 w-full max-w-full min-w-0 overflow-hidden rounded-3xl border px-4 py-5 text-left sm:px-5 sm:py-6">
       <div className="mb-5">
         <h2 className="text-xl font-semibold text-white">비밀번호 변경</h2>
         <p className="text-mypage-muted mt-2 text-sm/6">
@@ -44,7 +44,7 @@ function PasswordChangePanel({
         </p>
       </div>
 
-      <form className="w-full min-w-0 space-y-4" onSubmit={onSubmit}>
+      <form className="grid w-full min-w-0 gap-4" onSubmit={onSubmit}>
         <AuthInputField
           id="current-password"
           name="old_password"
@@ -92,11 +92,11 @@ function PasswordChangePanel({
           <AuthFormMessage tone={messageTone}>{message}</AuthFormMessage>
         ) : null}
 
-        <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+        <div className="flex w-full min-w-0 flex-col gap-3 pt-2 sm:flex-row sm:flex-nowrap sm:justify-end">
           <AuthButton
             type="button"
             variant="secondary"
-            className="w-full sm:w-auto sm:min-w-28"
+            className="w-full sm:w-auto sm:min-w-28 sm:flex-none"
             onClick={onCancel}
             disabled={isPending}
           >
@@ -104,7 +104,7 @@ function PasswordChangePanel({
           </AuthButton>
           <AuthButton
             type="submit"
-            className="w-full sm:w-auto sm:min-w-32"
+            className="w-full sm:w-auto sm:min-w-32 sm:flex-none"
             disabled={isPending}
           >
             {isPending ? '변경 중...' : '저장'}
