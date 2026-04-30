@@ -18,9 +18,32 @@ const CHATBOT_BASE_PATH = '/api/v1/chatbot';
 type MockChatSession = {
   id: string;
   lastReply: string;
+  expiresAt: string;
+  expiresInSeconds: number;
+  sessionTtlSeconds: number;
 };
 
 const chatSessions = new Map<string, MockChatSession>();
+const CHAT_SESSION_TTL_SECONDS = 1800;
+
+const getAuthorizedUser = (authorization: string | null) => {
+  if (!authorization?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authorization.replace('Bearer ', '').trim();
+  const loginId = token.replace(/^mock-access-token-/, '');
+
+  if (!loginId || loginId === token) {
+    return null;
+  }
+
+  return loginId;
+};
+
+const isExpiredSession = (session: MockChatSession) =>
+  Number.isFinite(Date.parse(session.expiresAt)) &&
+  Date.parse(session.expiresAt) <= Date.now();
 
 const splitMessageIntoChunks = (message: string) => {
   const chunks: string[] = [];
@@ -35,9 +58,9 @@ const splitMessageIntoChunks = (message: string) => {
   return chunks;
 };
 
-const createStreamResponse = (sessionId: string, reply: string) => {
+const createStreamResponse = (session: MockChatSession) => {
   const encoder = new TextEncoder();
-  const chunks = splitMessageIntoChunks(reply);
+  const chunks = splitMessageIntoChunks(session.lastReply);
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -50,7 +73,12 @@ const createStreamResponse = (sessionId: string, reply: string) => {
       };
 
       void (async () => {
-        await pushEvent('start', { session_id: sessionId });
+        await pushEvent('start', {
+          session_id: session.id,
+          expires_at: session.expiresAt,
+          expires_in_seconds: session.expiresInSeconds,
+          session_ttl_seconds: session.sessionTtlSeconds,
+        });
 
         for (const chunk of chunks) {
           await delay(140);
@@ -58,7 +86,7 @@ const createStreamResponse = (sessionId: string, reply: string) => {
         }
 
         await delay(100);
-        await pushEvent('complete', { session_id: sessionId });
+        await pushEvent('complete', { session_id: session.id });
         controller.close();
       })().catch((error) => {
         controller.error(error);
@@ -77,6 +105,13 @@ const createStreamResponse = (sessionId: string, reply: string) => {
 
 export const supportChatHandlers = [
   http.post(`${CHATBOT_BASE_PATH}/messages`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const loginId = getAuthorizedUser(authorization);
+
+    if (!loginId) {
+      return mockErrorResponse(401, '로그인 후 챗봇을 이용할 수 있습니다.');
+    }
+
     const body = (await request.json()) as ChatbotMessageRequest;
     const message = body.message.trim();
 
@@ -87,37 +122,42 @@ export const supportChatHandlers = [
       );
     }
 
-    let sessionId = body.session_id;
-
-    if (sessionId !== undefined && !chatSessions.has(sessionId)) {
-      return mockErrorResponse(
-        404,
-        '만료되었거나 유효하지 않은 session_id 입니다.',
-      );
-    }
-
-    if (sessionId === undefined) {
-      sessionId = crypto.randomUUID();
-    }
+    const sessionId = crypto.randomUUID();
 
     const matchedEntry = findSupportFaqEntry(message);
     const reply =
       matchedEntry?.answer ??
       buildSupportChatFallbackMessage(createDefaultRouteContext());
+    const expiresAt = new Date(
+      Date.now() + CHAT_SESSION_TTL_SECONDS * 1000,
+    ).toISOString();
 
     chatSessions.set(sessionId, {
       id: sessionId,
       lastReply: reply,
+      expiresAt,
+      expiresInSeconds: CHAT_SESSION_TTL_SECONDS,
+      sessionTtlSeconds: CHAT_SESSION_TTL_SECONDS,
     });
 
     await delay(180);
 
     return HttpResponse.json({
       session_id: sessionId,
+      expires_at: expiresAt,
+      expires_in_seconds: CHAT_SESSION_TTL_SECONDS,
+      session_ttl_seconds: CHAT_SESSION_TTL_SECONDS,
     } satisfies ChatbotMessageResponse);
   }),
 
   http.get(`${CHATBOT_BASE_PATH}/stream`, async ({ request }) => {
+    const authorization = request.headers.get('Authorization');
+    const loginId = getAuthorizedUser(authorization);
+
+    if (!loginId) {
+      return mockErrorResponse(401, '로그인 후 챗봇을 이용할 수 있습니다.');
+    }
+
     const url = new URL(request.url);
     const sessionId = url.searchParams.get('session_id')?.trim() ?? '';
 
@@ -128,9 +168,20 @@ export const supportChatHandlers = [
     const session = chatSessions.get(sessionId);
 
     if (!session) {
-      return mockErrorResponse(404, '스트리밍 대상 세션을 찾을 수 없습니다.');
+      return mockErrorResponse(
+        404,
+        '만료되었거나 유효하지 않은 session_id 입니다.',
+      );
     }
 
-    return createStreamResponse(sessionId, session.lastReply);
+    if (isExpiredSession(session)) {
+      chatSessions.delete(sessionId);
+      return mockErrorResponse(
+        404,
+        '만료되었거나 유효하지 않은 session_id 입니다.',
+      );
+    }
+
+    return createStreamResponse(session);
   }),
 ];
