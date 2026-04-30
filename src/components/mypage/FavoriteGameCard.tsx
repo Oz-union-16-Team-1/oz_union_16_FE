@@ -15,8 +15,8 @@ function FavoriteGameCard({
   onFavoriteClick,
 }: FavoriteGameCardProps) {
   return (
-    <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover box-border flex h-[22rem] w-full min-w-0 flex-col overflow-hidden rounded-[22px] border transition duration-200 sm:h-[24rem] lg:h-[25rem]">
-      <div className="bg-mypage-soft relative h-[15rem] overflow-hidden sm:h-[16.5rem] lg:h-[17.5rem]">
+    <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover box-border flex h-[21rem] w-full min-w-0 flex-col overflow-hidden rounded-[22px] border transition duration-200 sm:h-[23rem] xl:h-[24rem]">
+      <div className="bg-mypage-soft relative h-[15.75rem] overflow-hidden sm:h-[17.4rem] xl:h-[18.5rem]">
         <button
           type="button"
           onClick={() => onClick?.(game)}
@@ -52,12 +52,12 @@ function FavoriteGameCard({
       <button
         type="button"
         onClick={() => onClick?.(game)}
-        className="flex min-w-0 flex-1 cursor-pointer flex-col gap-1.5 px-3 py-3 text-left sm:gap-2 sm:px-4 sm:py-4"
+        className="flex min-w-0 flex-1 cursor-pointer flex-col gap-1 px-3 py-2.5 text-left sm:px-4 sm:py-3"
       >
         <h3 className="line-clamp-1 text-sm/5 font-semibold text-white sm:text-base/6 lg:text-lg/7">
           {game.title}
         </h3>
-        <p className="text-mypage-muted line-clamp-1 text-[11px]/4 sm:text-xs/5 lg:text-sm/6">
+        <p className="text-mypage-muted line-clamp-1 text-[11px]/4 sm:text-xs/5">
           {game.summary}
         </p>
       </button>

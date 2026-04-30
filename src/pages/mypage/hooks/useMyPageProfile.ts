@@ -153,7 +153,7 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
       });
       onToast({
         tone: 'success',
-        message: '프로필이 변경되었습니다.',
+        message: '닉네임이 변경되었습니다.',
       });
 
       return true;

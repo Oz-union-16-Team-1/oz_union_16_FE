@@ -176,7 +176,7 @@ export const getLikedGames = async (payload: LikedGamesRequest = {}) => {
 
 export const unlikeLikedGame = async (gameId: number) => {
   const response = await api.delete<DeleteLikedGameResponse>(
-    `${AUTH_BASE_PATH}/me/game-like/${gameId}`,
+    `/api/v1/games/${gameId}/like`,
     createCredentialedAuthRequestConfig(),
   );
 

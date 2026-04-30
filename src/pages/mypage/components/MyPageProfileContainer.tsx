@@ -5,11 +5,14 @@ import PasswordChangePanel, {
   type PasswordChangeFieldName,
   type PasswordChangeValues,
 } from '../../../components/mypage/PasswordChangePanel';
+import type { CurrentUserSocialResponse } from '../../../features/auth/types/auth';
+import type { MyPageToast } from '../types';
 
 type MyPageProfileContainerProps = {
   nickname: string;
   name: string;
   genderLabel: string;
+  socialAccount?: CurrentUserSocialResponse | null;
   profileImageUrl?: string | null;
   isProfileLoading: boolean;
   isProfileImageUploading: boolean;
@@ -25,6 +28,8 @@ type MyPageProfileContainerProps = {
   passwordPanelMessage?: string;
   passwordPanelMessageTone?: 'success' | 'error';
   isPasswordChangePending: boolean;
+  toast: MyPageToast;
+  onToastClose: () => void;
   onPasswordValueChange: (
     fieldName: PasswordChangeFieldName,
     value: string,
@@ -38,6 +43,7 @@ function MyPageProfileContainer({
   nickname,
   name,
   genderLabel,
+  socialAccount = null,
   profileImageUrl,
   isProfileLoading,
   isProfileImageUploading,
@@ -53,6 +59,8 @@ function MyPageProfileContainer({
   passwordPanelMessage,
   passwordPanelMessageTone = 'error',
   isPasswordChangePending,
+  toast,
+  onToastClose,
   onPasswordValueChange,
   onPasswordBlur,
   onPasswordCancel,
@@ -63,11 +71,14 @@ function MyPageProfileContainer({
       nickname={nickname}
       name={name}
       genderLabel={genderLabel}
+      socialAccount={socialAccount}
       profileImageUrl={profileImageUrl}
       isProfileLoading={isProfileLoading}
       isProfileImageUploading={isProfileImageUploading}
       isProfileUpdating={isProfileUpdating}
       isLoggingOut={isLoggingOut}
+      toast={toast}
+      onToastClose={onToastClose}
       isPasswordPanelOpen={isPasswordPanelOpen}
       onPasswordToggle={onPasswordToggle}
       onLogout={onLogout}

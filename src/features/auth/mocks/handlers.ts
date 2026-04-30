@@ -899,7 +899,8 @@ const accountHandlers = [
       await delay(200);
 
       return HttpResponse.json({
-        detail: '찜한 게임이 목록에서 삭제되었습니다.',
+        game_id: gameId,
+        like_count: getCurrentLikeCount(gameId),
       } satisfies DeleteLikedGameResponse);
     },
   ),

@@ -37,6 +37,10 @@ function MyPageLikedGamesSection({
     onOpenGameDetail,
     onToast,
   });
+  const hasFavoriteGames = favoriteGames.length > 0;
+  const listContainerClass = hasFavoriteGames
+    ? 'mypage-scrollbar mt-5 max-w-full overflow-x-hidden overflow-y-auto pr-1 max-h-[38rem]'
+    : 'mt-5 max-w-full';
 
   return (
     <>
@@ -62,11 +66,11 @@ function MyPageLikedGamesSection({
           </p>
         </div>
 
-        <div className="mypage-scrollbar mt-5 box-border h-[22rem] max-w-full overflow-x-hidden overflow-y-auto pr-1 sm:h-[24rem] lg:h-[25rem]">
+        <div className={listContainerClass}>
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
-          ) : favoriteCount > 0 ? (
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+          ) : hasFavoriteGames ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {favoriteGames.map((game) => (
                 <FavoriteGameCard
                   key={game.gameId}

@@ -44,7 +44,8 @@ export interface ChangePasswordResponse {
 }
 
 export interface DeleteLikedGameResponse {
-  detail: string;
+  game_id: number;
+  like_count: number | null;
 }
 
 export interface LikedGamesRequest {
