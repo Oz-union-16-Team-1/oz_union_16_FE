@@ -37,6 +37,7 @@ function FavoriteGameCard({
             <img
               src={game.thumbnailUrl ?? undefined}
               alt={`${game.title} 썸네일`}
+              onLoad={() => setFailedThumbnailKey(null)}
               onError={() => setFailedThumbnailKey(currentThumbnailKey)}
               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
               loading="lazy"
