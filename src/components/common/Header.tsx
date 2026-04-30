@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { ROUTE_PATHS, ROUTES } from '../../constants/routes';
 import useHeaderAuthState from '../../features/auth/hooks/useHeaderAuthState';
+import headerLogoImage from '../../assets/header-logo.png';
 import HeaderProfileMenu from './HeaderProfileMenu';
 
 type HeaderProps = {
@@ -46,15 +47,17 @@ const Header = ({ fixed = true }: HeaderProps) => {
         fixed ? 'fixed top-0 z-50' : 'relative'
       }`}
     >
-      <div className="flex h-full w-full items-center justify-between px-[clamp(1rem,5vw,20rem)] py-3">
+      <div className="flex h-full w-full items-center justify-between px-[clamp(1rem,5vw,20rem)] py-1">
         <Link
           to={ROUTE_PATHS.HOME}
           aria-label="메인 페이지로 이동"
-          className="flex h-9 w-18 cursor-pointer items-center justify-center"
+          className="flex h-14 shrink-0 cursor-pointer items-center justify-center"
         >
-          <h1 className="header-logo text-2xl leading-none font-bold lg:text-[26px]">
-            PGTI
-          </h1>
+          <img
+            src={headerLogoImage}
+            alt="PGTI 로고"
+            className="h-full w-auto object-contain"
+          />
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
