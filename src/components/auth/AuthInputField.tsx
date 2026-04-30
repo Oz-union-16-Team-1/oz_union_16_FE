@@ -40,23 +40,23 @@ function AuthInputField({
 
   return (
     <div
-      className={`w-full min-w-0 space-y-2 ${containerClassName} sm:space-y-2.5`}
+      className={`w-full max-w-none min-w-0 space-y-2.5 ${containerClassName} sm:space-y-2.5`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <label
           htmlFor={id}
-          className="text-login-label block min-w-0 text-sm font-medium"
+          className="text-login-label block min-w-0 text-[0.95rem] font-medium sm:text-sm"
         >
           {label}
         </label>
         {labelAction ? <div className="shrink-0">{labelAction}</div> : null}
       </div>
-      <div className="relative flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="relative flex w-full max-w-none min-w-0 flex-col items-stretch gap-3.5 sm:flex-row sm:items-stretch sm:gap-3">
         <InputControl
           id={id}
           {...inputProps}
           hasError={Boolean(errorMessage)}
-          className={`w-full min-w-0 flex-1 ${className}`}
+          className={`w-full max-w-none min-w-0 flex-1 ${className}`}
         />
         {action}
         {toast}

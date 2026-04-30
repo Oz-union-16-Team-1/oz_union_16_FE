@@ -36,15 +36,18 @@ function PasswordChangePanel({
   onSubmit,
 }: PasswordChangePanelProps) {
   return (
-    <section className="bg-mypage-card border-mypage-panel mt-6 w-full max-w-full min-w-0 overflow-hidden rounded-3xl border px-4 py-5 text-left sm:px-5 sm:py-6">
-      <div className="mb-5">
+    <section className="bg-mypage-card border-mypage-panel mt-5 w-full max-w-full min-w-0 overflow-hidden rounded-[28px] border px-3.5 py-5 text-left sm:mt-6 sm:rounded-3xl sm:px-5 sm:py-6">
+      <div className="mb-6 sm:mb-5">
         <h2 className="text-xl font-semibold text-white">비밀번호 변경</h2>
         <p className="text-mypage-muted mt-2 text-sm/6">
           현재 비밀번호를 확인한 뒤 새 비밀번호로 변경할 수 있습니다.
         </p>
       </div>
 
-      <form className="grid w-full min-w-0 gap-4" onSubmit={onSubmit}>
+      <form
+        className="grid w-full min-w-0 grid-cols-1 gap-5 sm:gap-4"
+        onSubmit={onSubmit}
+      >
         <AuthInputField
           id="current-password"
           name="old_password"
@@ -58,6 +61,8 @@ function PasswordChangePanel({
           onBlur={() => onFieldBlur('currentPassword')}
           errorMessage={errors.currentPassword}
           disabled={isPending}
+          containerClassName="w-full min-w-0 max-w-none"
+          className="w-full max-w-none min-w-0"
         />
 
         <AuthInputField
@@ -71,6 +76,8 @@ function PasswordChangePanel({
           onBlur={() => onFieldBlur('newPassword')}
           errorMessage={errors.newPassword}
           disabled={isPending}
+          containerClassName="w-full min-w-0 max-w-none"
+          className="w-full max-w-none min-w-0"
         />
 
         <AuthInputField
@@ -86,13 +93,15 @@ function PasswordChangePanel({
           onBlur={() => onFieldBlur('newPasswordConfirm')}
           errorMessage={errors.newPasswordConfirm}
           disabled={isPending}
+          containerClassName="w-full min-w-0 max-w-none"
+          className="w-full max-w-none min-w-0"
         />
 
         {message ? (
           <AuthFormMessage tone={messageTone}>{message}</AuthFormMessage>
         ) : null}
 
-        <div className="flex w-full min-w-0 flex-col gap-3 pt-2 sm:flex-row sm:flex-nowrap sm:justify-end">
+        <div className="flex w-full min-w-0 flex-col gap-3 pt-3 sm:flex-row sm:flex-nowrap sm:justify-end sm:pt-2">
           <AuthButton
             type="button"
             variant="secondary"

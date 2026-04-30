@@ -132,9 +132,9 @@ function MyPageProfileSection({
         </div>
       ) : null}
 
-      <div className="relative px-4 pt-0 pb-5 sm:px-6 sm:pb-7 lg:px-8 lg:pb-8">
-        <div className="mt-0 rounded-[28px] bg-[#111114] px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8 lg:pb-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative w-full min-w-0 px-3.5 pt-0 pb-5 sm:px-6 sm:pb-7 lg:px-8 lg:pb-8">
+        <div className="mt-0 w-full min-w-0 rounded-[28px] bg-[#111114] px-3.5 pb-5 sm:px-6 sm:pb-6 lg:px-8 lg:pb-7">
+          <div className="flex w-full min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
               <div className="-mt-9 sm:-mt-10">
                 <div className="group relative h-[8.4rem] w-[8.4rem] sm:h-[9.2rem] sm:w-[9.2rem]">
@@ -241,7 +241,7 @@ function MyPageProfileSection({
             </div>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.035] px-4 py-4 sm:px-5 sm:py-5">
+          <div className="mt-6 rounded-[24px] border border-white/8 bg-white/[0.035] px-3.5 py-4 sm:px-5 sm:py-5">
             <div className="divide-y divide-white/7">
               <div className="py-5 pt-1">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -343,7 +343,9 @@ function MyPageProfileSection({
             </div>
           </div>
 
-          {children ? <div className="mt-6">{children}</div> : null}
+          {children ? (
+            <div className="mt-6 w-full min-w-0">{children}</div>
+          ) : null}
         </div>
       </div>
     </section>
