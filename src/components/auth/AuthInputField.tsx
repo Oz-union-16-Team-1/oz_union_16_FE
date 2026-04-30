@@ -51,7 +51,7 @@ function AuthInputField({
         </label>
         {labelAction ? <div className="shrink-0">{labelAction}</div> : null}
       </div>
-      <div className="relative flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
+      <div className="relative flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-stretch">
         <InputControl
           id={id}
           {...inputProps}
