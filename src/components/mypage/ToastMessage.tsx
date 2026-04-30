@@ -5,6 +5,7 @@ type ToastMessageTone = 'success' | 'error';
 type ToastMessageVariant =
   | 'fixed'
   | 'fixedCenter'
+  | 'fixedTopCenter'
   | 'absoluteCenter'
   | 'absoluteTopCenter';
 
@@ -35,11 +36,13 @@ function ToastMessage({
   } else if (variant === 'fixedCenter') {
     positioningClass =
       'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
+  } else if (variant === 'fixedTopCenter') {
+    positioningClass = 'fixed top-24 left-1/2 -translate-x-1/2 sm:top-28';
   }
 
   return (
     <div
-      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-70 flex w-fit max-w-[min(92vw,360px)] items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
+      className={`bg-mypage-panel border-mypage-panel shadow-mypage-float z-80 flex w-max items-start gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl ${positioningClass} ${className}`}
     >
       <span
         className={`mt-0.5 shrink-0 ${
@@ -48,7 +51,7 @@ function ToastMessage({
       >
         <Icon size={18} />
       </span>
-      <p className="min-w-0 text-sm/6 font-medium wrap-break-word text-white">
+      <p className="text-sm/6 font-medium whitespace-nowrap text-white">
         {message}
       </p>
       <button
