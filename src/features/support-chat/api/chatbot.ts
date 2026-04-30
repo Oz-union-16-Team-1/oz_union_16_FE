@@ -1,9 +1,4 @@
 import { apiBaseUrl } from '@/lib/env';
-import { useAuthStore } from '@/store/useAuthStore';
-import {
-  expireAuthSession,
-  refreshStoredAccessToken,
-} from '@/features/auth/utils/sessionManager';
 import type {
   ChatbotErrorResponse,
   ChatbotMessageRequest,
@@ -46,7 +41,7 @@ const getDefaultChatbotErrorMessage = (
   fallback = '챗봇 요청을 처리하는 중 오류가 발생했습니다.',
 ) => {
   if (status === 401) {
-    return '로그인 정보가 만료되었거나 유효하지 않습니다. 다시 로그인해 주세요.';
+    return '챗봇 요청 권한이 없습니다.';
   }
 
   if (status === 400) {
@@ -82,17 +77,7 @@ const extractChatbotErrorMessage = async (response: Response) => {
   }
 };
 
-const getSupportChatAccessToken = () => {
-  const accessToken = useAuthStore.getState().accessToken?.trim();
-
-  if (!accessToken) {
-    throw new Error('로그인 후 챗봇을 이용할 수 있습니다.');
-  }
-
-  return accessToken;
-};
-
-const createAuthorizedHeaders = ({
+const createChatbotHeaders = ({
   accept,
   contentType,
   extraHeaders,
@@ -103,7 +88,6 @@ const createAuthorizedHeaders = ({
 }) => {
   const headers = new Headers({
     Accept: accept,
-    Authorization: `Bearer ${getSupportChatAccessToken()}`,
   });
 
   if (contentType) {
@@ -133,28 +117,14 @@ const fetchChatbotApi = async (
     fetch(url, {
       ...init,
       credentials: 'include',
-      headers: createAuthorizedHeaders({
+      headers: createChatbotHeaders({
         accept: init.accept,
         contentType: init.contentType,
         extraHeaders: init.extraHeaders,
       }),
     });
 
-  let response = await request();
-
-  if (response.status !== 401) {
-    return response;
-  }
-
-  try {
-    await refreshStoredAccessToken();
-  } catch (refreshError) {
-    expireAuthSession();
-    throw refreshError;
-  }
-
-  response = await request();
-  return response;
+  return request();
 };
 
 export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
