@@ -11,9 +11,6 @@ import type { SupportChatRouteContext } from '@/features/support-chat/types/supp
 const SUPPORT_CHAT_INPUT_VALIDATION_MESSAGE =
   '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
 
-const isRecoverableSessionError = (message: string) =>
-  message.includes('session_id') || message.includes('유효하지 않은');
-
 export type SupportChatConversationResetOptions = {
   routeContext?: SupportChatRouteContext;
   keepPanelOpen?: boolean;
@@ -34,7 +31,6 @@ function useSupportChatConversation({
   const sendMessageMutation = useSendChatbotMessageMutation();
 
   const {
-    sessionId,
     messages,
     quickActions,
     showQuickActions,
@@ -130,29 +126,9 @@ function useSupportChatConversation({
       setSubmitting(true);
 
       try {
-        let response;
-
-        try {
-          response = await sendMessageMutation.mutateAsync({
-            message: trimmedMessage,
-            session_id: sessionId ?? undefined,
-          });
-        } catch (requestError) {
-          const errorMessage = extractSupportChatErrorMessage(requestError);
-
-          if (requestGeneration !== requestGenerationRef.current) {
-            return;
-          }
-
-          if (sessionId && isRecoverableSessionError(errorMessage)) {
-            setSessionId(null);
-            response = await sendMessageMutation.mutateAsync({
-              message: trimmedMessage,
-            });
-          } else {
-            throw requestError;
-          }
-        }
+        const response = await sendMessageMutation.mutateAsync({
+          message: trimmedMessage,
+        });
 
         if (requestGeneration !== requestGenerationRef.current) {
           return;
@@ -178,12 +154,24 @@ function useSupportChatConversation({
               );
             }
 
+            if (event.type === 'start') {
+              setSessionId(event.sessionId);
+            }
+
             if (event.type === 'complete') {
+              setSessionId(event.sessionId);
               finalizeAssistantMessage(assistantPlaceholderMessageId);
               setSubmitting(false);
             }
           },
         });
+
+        if (requestGeneration !== requestGenerationRef.current) {
+          return;
+        }
+
+        finalizeAssistantMessage(assistantPlaceholderMessageId);
+        setSubmitting(false);
       } catch (requestError) {
         if (requestGeneration !== requestGenerationRef.current) {
           return;
@@ -213,7 +201,6 @@ function useSupportChatConversation({
       isSubmitting,
       removeMessage,
       sendMessageMutation,
-      sessionId,
       setSessionId,
       setSubmitting,
     ],
