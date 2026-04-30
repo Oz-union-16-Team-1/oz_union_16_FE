@@ -35,7 +35,6 @@ interface SurveyStoreState {
   clearModerationState: () => void;
   addUserMessage: (content: string) => void;
   hydrateInitialSession: (payload: SurveySessionStartResponse) => void;
-  beginSession: (payload: SurveySessionStartResponse) => void;
   applyChatResponse: (payload: SurveyChatResponse) => void;
   resetSurveyState: () => void;
 }
@@ -69,6 +68,23 @@ const getInitialMessages = (payload: SurveySessionStartResponse) => {
   }
 
   return [];
+};
+
+const appendAssistantMessageIfNeeded = (
+  messages: SurveyMessage[],
+  content: string | null,
+) => {
+  if (!content) {
+    return messages;
+  }
+
+  const lastMessage = messages.at(-1);
+
+  if (lastMessage?.role === 'assistant' && lastMessage.content === content) {
+    return messages;
+  }
+
+  return [...messages, createMessage('assistant', content)];
 };
 
 const createInitialState = (ownerKey: string | null = null) => ({
@@ -130,36 +146,6 @@ export const useSurveyStore = create<SurveyStoreState>()(
           messages: getInitialMessages(payload),
           ownerKey: state.ownerKey,
         })),
-      beginSession: (payload) =>
-        set((state) => ({
-          sessionId: payload.session_id,
-          status: payload.status,
-          progress: payload.progress ?? state.progress,
-          hasBootstrapped: true,
-          isSubmitting: false,
-          error: null,
-          recommendationReady: payload.recommendation_ready,
-          messages:
-            state.messages.length === 0
-              ? getInitialMessages(payload)
-              : payload.assistant_message
-                ? state.messages.at(-1)?.role === 'assistant' &&
-                  state.messages.at(-1)?.content === payload.assistant_message
-                  ? state.messages
-                  : [
-                      ...state.messages,
-                      createMessage('assistant', payload.assistant_message),
-                    ]
-                : payload.recommendation_ready
-                  ? state.messages.at(-1)?.role === 'assistant' &&
-                    state.messages.at(-1)?.content === COMPLETION_GUIDE_MESSAGE
-                    ? state.messages
-                    : [
-                        ...state.messages,
-                        createMessage('assistant', COMPLETION_GUIDE_MESSAGE),
-                      ]
-                  : state.messages,
-        })),
       applyChatResponse: (payload) =>
         set((state) => ({
           status: payload.status,
@@ -169,23 +155,17 @@ export const useSurveyStore = create<SurveyStoreState>()(
           error: null,
           messages: (() => {
             if (payload.assistant_message) {
-              return state.messages.at(-1)?.role === 'assistant' &&
-                state.messages.at(-1)?.content === payload.assistant_message
-                ? state.messages
-                : [
-                    ...state.messages,
-                    createMessage('assistant', payload.assistant_message),
-                  ];
+              return appendAssistantMessageIfNeeded(
+                state.messages,
+                payload.assistant_message,
+              );
             }
 
             if (payload.recommendation_ready) {
-              return state.messages.at(-1)?.role === 'assistant' &&
-                state.messages.at(-1)?.content === COMPLETION_GUIDE_MESSAGE
-                ? state.messages
-                : [
-                    ...state.messages,
-                    createMessage('assistant', COMPLETION_GUIDE_MESSAGE),
-                  ];
+              return appendAssistantMessageIfNeeded(
+                state.messages,
+                COMPLETION_GUIDE_MESSAGE,
+              );
             }
 
             return state.messages;

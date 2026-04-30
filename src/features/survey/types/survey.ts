@@ -25,10 +25,6 @@ export interface SurveySessionStartRequest {
   is_reset?: boolean;
 }
 
-export interface SurveyApiSessionStartRequest {
-  is_reset?: boolean;
-}
-
 export interface SurveyApiChatRequest {
   message: string;
 }
@@ -80,7 +76,6 @@ export type SurveyResetResponse = SurveySessionResponse;
 
 export interface SurveyResultQuery {
   session_id: string;
-  sort?: string;
   cursor?: string;
   page_size?: number;
 }

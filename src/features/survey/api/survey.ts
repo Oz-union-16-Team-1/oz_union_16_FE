@@ -19,7 +19,6 @@ import type {
   SurveyResetResponse,
   SurveyResultQuery,
   SurveyResultResponse,
-  SurveyApiSessionStartRequest,
   SurveySessionStartRequest,
   SurveySessionStartResponse,
   SurveyProgress,
@@ -34,9 +33,53 @@ interface ErrorResponseBody {
   retry_after_seconds?: number;
 }
 
+type SurveyErrorMessageContext =
+  | 'generic'
+  | 'start'
+  | 'continue'
+  | 'reset'
+  | 'recommendations';
+
 const SURVEY_BASE_PATH = '/api/v1/survey';
 const SURVEY_CHATBOT_BASE_PATH = `${SURVEY_BASE_PATH}/chatbot`;
 const SURVEY_CHATBOT_REQUEST_TIMEOUT_MS = 45_000;
+
+const SURVEY_TIMEOUT_ERROR_MESSAGES: Record<SurveyErrorMessageContext, string> =
+  {
+    generic:
+      '응답 생성이 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
+    start:
+      '첫 질문 준비가 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
+    continue:
+      '다음 질문 준비가 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
+    reset:
+      '설문 초기화가 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
+    recommendations:
+      '추천 결과를 불러오는 데 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
+  };
+
+const SURVEY_CONNECTION_ERROR_MESSAGES: Record<
+  SurveyErrorMessageContext,
+  string
+> = {
+  generic: '서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  start: '첫 질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+  continue: '다음 질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+  reset: '설문을 초기화하지 못했어요. 잠시 후 다시 시도해 주세요.',
+  recommendations: '추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+};
+
+const SURVEY_FALLBACK_ERROR_MESSAGES: Record<
+  SurveyErrorMessageContext,
+  string
+> = {
+  generic:
+    '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+  start: '첫 질문을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.',
+  continue: '다음 질문을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+  reset: '설문을 초기화하지 못했어요. 잠시 후 다시 시도해 주세요.',
+  recommendations: '추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+};
 
 const clampProgressRate = (value: number | null | undefined) => {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -147,7 +190,7 @@ export const startSurveySession = async (
   try {
     const response = await api.post<SurveyApiSessionResponse>(
       `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
-      payload satisfies SurveyApiSessionStartRequest,
+      payload,
       {
         timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
       },
@@ -220,7 +263,6 @@ export const getSurveyResults = async (query: SurveyResultQuery) => {
         params: {
           cursor: query.cursor,
           page_size: query.page_size,
-          sort: query.sort,
         },
       },
     );
@@ -241,17 +283,20 @@ export const getSurveyResults = async (query: SurveyResultQuery) => {
   }
 };
 
-export const extractApiErrorMessage = (error: unknown) => {
+export const extractApiErrorMessage = (
+  error: unknown,
+  context: SurveyErrorMessageContext = 'generic',
+) => {
   if (!(error instanceof AxiosError)) {
-    return '요청을 처리하는 중 알 수 없는 오류가 발생했습니다.';
+    return SURVEY_FALLBACK_ERROR_MESSAGES[context];
   }
 
   if (error.code === 'ECONNABORTED') {
-    return '응답 생성이 평소보다 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.';
+    return SURVEY_TIMEOUT_ERROR_MESSAGES[context];
   }
 
   if (!error.response) {
-    return '서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    return SURVEY_CONNECTION_ERROR_MESSAGES[context];
   }
 
   const data = error.response?.data as ErrorResponseBody | undefined;
@@ -276,7 +321,7 @@ export const extractApiErrorMessage = (error: unknown) => {
     }
   }
 
-  return '요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+  return SURVEY_FALLBACK_ERROR_MESSAGES[context];
 };
 
 export const extractApiRetryAfterSeconds = (error: unknown) => {

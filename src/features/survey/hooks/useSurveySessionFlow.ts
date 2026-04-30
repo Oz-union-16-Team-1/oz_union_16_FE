@@ -28,34 +28,41 @@ export const useSurveySessionFlow = ({
   queueFocusRestore,
   cancelFocusRestore,
 }: UseSurveySessionFlowOptions) => {
-  const sessionId = useSurveyStore((state) => state.sessionId);
-  const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
-  const isSubmitting = useSurveyStore((state) => state.isSubmitting);
-  const error = useSurveyStore((state) => state.error);
-  const lastSubmittedMessage = useSurveyStore(
-    (state) => state.lastSubmittedMessage,
-  );
-  const clearError = useSurveyStore((state) => state.clearError);
-  const setHasBootstrapped = useSurveyStore(
-    (state) => state.setHasBootstrapped,
-  );
-  const setSubmitting = useSurveyStore((state) => state.setSubmitting);
-  const setError = useSurveyStore((state) => state.setError);
-  const setLastSubmittedMessage = useSurveyStore(
-    (state) => state.setLastSubmittedMessage,
-  );
-  const clearModerationState = useSurveyStore(
-    (state) => state.clearModerationState,
-  );
-  const setChatBlockedUntil = useSurveyStore(
-    (state) => state.setChatBlockedUntil,
-  );
-  const addUserMessage = useSurveyStore((state) => state.addUserMessage);
-  const hydrateInitialSession = useSurveyStore(
-    (state) => state.hydrateInitialSession,
-  );
-  const applyChatResponse = useSurveyStore((state) => state.applyChatResponse);
-  const resetSurveyState = useSurveyStore((state) => state.resetSurveyState);
+  const {
+    sessionId,
+    hasBootstrapped,
+    isSubmitting,
+    error,
+    lastSubmittedMessage,
+    clearError,
+    setHasBootstrapped,
+    setSubmitting,
+    setError,
+    setLastSubmittedMessage,
+    clearModerationState,
+    setChatBlockedUntil,
+    addUserMessage,
+    hydrateInitialSession,
+    applyChatResponse,
+    resetSurveyState,
+  } = useSurveyStore((state) => ({
+    sessionId: state.sessionId,
+    hasBootstrapped: state.hasBootstrapped,
+    isSubmitting: state.isSubmitting,
+    error: state.error,
+    lastSubmittedMessage: state.lastSubmittedMessage,
+    clearError: state.clearError,
+    setHasBootstrapped: state.setHasBootstrapped,
+    setSubmitting: state.setSubmitting,
+    setError: state.setError,
+    setLastSubmittedMessage: state.setLastSubmittedMessage,
+    clearModerationState: state.clearModerationState,
+    setChatBlockedUntil: state.setChatBlockedUntil,
+    addUserMessage: state.addUserMessage,
+    hydrateInitialSession: state.hydrateInitialSession,
+    applyChatResponse: state.applyChatResponse,
+    resetSurveyState: state.resetSurveyState,
+  }));
 
   const startSessionMutation = useStartSurveySessionMutation();
   const continueSurveyMutation = useContinueSurveyMutation();
@@ -79,7 +86,7 @@ export const useSurveySessionFlow = ({
         hydrateInitialSession(response);
       } catch (requestError) {
         setHasBootstrapped(false);
-        setError(extractApiErrorMessage(requestError));
+        setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
         setSubmitting(false);
       }
@@ -102,6 +109,19 @@ export const useSurveySessionFlow = ({
       void bootstrapSurvey();
     }
   }, [bootstrapSurvey, hasBootstrapped, sessionId]);
+
+  const ensureSessionId = useCallback(async () => {
+    if (sessionId) {
+      return sessionId;
+    }
+
+    const sessionResponse = await startSessionMutation.mutateAsync({
+      is_reset: false,
+    });
+    hydrateInitialSession(sessionResponse);
+
+    return sessionResponse.session_id;
+  }, [hydrateInitialSession, sessionId, startSessionMutation]);
 
   const applyServerSideChatBlock = useCallback(
     (requestError: unknown) => {
@@ -135,39 +155,23 @@ export const useSurveySessionFlow = ({
       setSubmitting(true);
 
       try {
-        if (!sessionId) {
-          const sessionResponse = await startSessionMutation.mutateAsync({
-            is_reset: false,
-          });
-          hydrateInitialSession(sessionResponse);
+        const activeSessionId = await ensureSessionId();
 
-          if (appendUserMessage) {
-            addUserMessage(trimmed);
-          }
-
-          const response = await continueSurveyMutation.mutateAsync({
-            session_id: sessionResponse.session_id,
-            user_answer: trimmed,
-          });
-
-          applyChatResponse(response);
-        } else {
-          if (appendUserMessage) {
-            addUserMessage(trimmed);
-          }
-
-          const response = await continueSurveyMutation.mutateAsync({
-            session_id: sessionId,
-            user_answer: trimmed,
-          });
-
-          applyChatResponse(response);
+        if (appendUserMessage) {
+          addUserMessage(trimmed);
         }
+
+        const response = await continueSurveyMutation.mutateAsync({
+          session_id: activeSessionId,
+          user_answer: trimmed,
+        });
+
+        applyChatResponse(response);
 
         return true;
       } catch (requestError) {
         applyServerSideChatBlock(requestError);
-        setError(extractApiErrorMessage(requestError));
+        setError(extractApiErrorMessage(requestError, 'continue'));
         return false;
       } finally {
         setSubmitting(false);
@@ -179,10 +183,52 @@ export const useSurveySessionFlow = ({
       applyChatResponse,
       clearError,
       continueSurveyMutation,
-      hydrateInitialSession,
+      ensureSessionId,
       isSubmitting,
-      sessionId,
       setError,
+      setLastSubmittedMessage,
+      setSubmitting,
+    ],
+  );
+
+  const retryWithFreshSession = useCallback(
+    async (content: string) => {
+      clearError();
+      resetSurveyState();
+      setHasBootstrapped(true);
+      setLastSubmittedMessage(content);
+      setSubmitting(true);
+
+      try {
+        const sessionResponse = await startSessionMutation.mutateAsync({
+          is_reset: true,
+        });
+        hydrateInitialSession(sessionResponse);
+        addUserMessage(content);
+
+        const response = await continueSurveyMutation.mutateAsync({
+          session_id: sessionResponse.session_id,
+          user_answer: content,
+        });
+
+        applyChatResponse(response);
+      } catch (requestError) {
+        applyServerSideChatBlock(requestError);
+        setError(extractApiErrorMessage(requestError, 'continue'));
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [
+      addUserMessage,
+      applyServerSideChatBlock,
+      applyChatResponse,
+      clearError,
+      continueSurveyMutation,
+      hydrateInitialSession,
+      resetSurveyState,
+      setError,
+      setHasBootstrapped,
       setLastSubmittedMessage,
       setSubmitting,
       startSessionMutation,
@@ -198,32 +244,7 @@ export const useSurveySessionFlow = ({
     }
 
     if (isRecoverableMockSessionError(error)) {
-      clearError();
-      resetSurveyState();
-      setHasBootstrapped(true);
-      setLastSubmittedMessage(lastSubmittedMessage);
-      setSubmitting(true);
-
-      try {
-        const sessionResponse = await startSessionMutation.mutateAsync({
-          is_reset: true,
-        });
-        hydrateInitialSession(sessionResponse);
-        addUserMessage(lastSubmittedMessage);
-
-        const response = await continueSurveyMutation.mutateAsync({
-          session_id: sessionResponse.session_id,
-          user_answer: lastSubmittedMessage,
-        });
-
-        applyChatResponse(response);
-      } catch (requestError) {
-        applyServerSideChatBlock(requestError);
-        setError(extractApiErrorMessage(requestError));
-      } finally {
-        setSubmitting(false);
-      }
-
+      await retryWithFreshSession(lastSubmittedMessage);
       return;
     }
 
@@ -232,22 +253,11 @@ export const useSurveySessionFlow = ({
       appendUserMessage: false,
     });
   }, [
-    addUserMessage,
-    applyServerSideChatBlock,
-    applyChatResponse,
     bootstrapSurvey,
-    clearError,
-    continueSurveyMutation,
     error,
-    hydrateInitialSession,
     lastSubmittedMessage,
     queueFocusRestore,
-    resetSurveyState,
-    setError,
-    setHasBootstrapped,
-    setLastSubmittedMessage,
-    setSubmitting,
-    startSessionMutation,
+    retryWithFreshSession,
     submitMessage,
   ]);
 
@@ -275,7 +285,7 @@ export const useSurveySessionFlow = ({
       clearModerationState();
       hydrateInitialSession(response);
     } catch (requestError) {
-      const errorMessage = extractApiErrorMessage(requestError);
+      const errorMessage = extractApiErrorMessage(requestError, 'reset');
 
       if (isRecoverableMockSessionError(errorMessage)) {
         resetSurveyState();
