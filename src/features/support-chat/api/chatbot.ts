@@ -116,7 +116,6 @@ const fetchChatbotApi = async (
   const request = async () =>
     fetch(url, {
       ...init,
-      credentials: 'include',
       headers: createChatbotHeaders({
         accept: init.accept,
         contentType: init.contentType,
