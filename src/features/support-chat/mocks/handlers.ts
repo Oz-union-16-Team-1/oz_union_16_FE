@@ -26,21 +26,6 @@ type MockChatSession = {
 const chatSessions = new Map<string, MockChatSession>();
 const CHAT_SESSION_TTL_SECONDS = 1800;
 
-const getAuthorizedUser = (authorization: string | null) => {
-  if (!authorization?.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authorization.replace('Bearer ', '').trim();
-  const loginId = token.replace(/^mock-access-token-/, '');
-
-  if (!loginId || loginId === token) {
-    return null;
-  }
-
-  return loginId;
-};
-
 const isExpiredSession = (session: MockChatSession) =>
   Number.isFinite(Date.parse(session.expiresAt)) &&
   Date.parse(session.expiresAt) <= Date.now();
@@ -105,13 +90,6 @@ const createStreamResponse = (session: MockChatSession) => {
 
 export const supportChatHandlers = [
   http.post(`${CHATBOT_BASE_PATH}/messages`, async ({ request }) => {
-    const authorization = request.headers.get('Authorization');
-    const loginId = getAuthorizedUser(authorization);
-
-    if (!loginId) {
-      return mockErrorResponse(401, '로그인 후 챗봇을 이용할 수 있습니다.');
-    }
-
     const body = (await request.json()) as ChatbotMessageRequest;
     const message = body.message.trim();
 
@@ -151,13 +129,6 @@ export const supportChatHandlers = [
   }),
 
   http.get(`${CHATBOT_BASE_PATH}/stream`, async ({ request }) => {
-    const authorization = request.headers.get('Authorization');
-    const loginId = getAuthorizedUser(authorization);
-
-    if (!loginId) {
-      return mockErrorResponse(401, '로그인 후 챗봇을 이용할 수 있습니다.');
-    }
-
     const url = new URL(request.url);
     const sessionId = url.searchParams.get('session_id')?.trim() ?? '';
 
