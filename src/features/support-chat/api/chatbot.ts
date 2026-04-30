@@ -9,6 +9,28 @@ import type {
 // 고객센터 챗봇 전용 엔드포인트.
 // 설문 챗봇(`/api/v1/survey/chatbot/*`)과 경로를 명확히 분리해 사용한다.
 const CHATBOT_BASE_PATH = '/api/v1/chatbot';
+const EXPIRED_CHATBOT_SESSION_MESSAGE =
+  '만료되었거나 유효하지 않은 session_id 입니다.';
+
+class ChatbotRequestError extends Error {
+  status: number | null;
+
+  constructor(message: string, status: number | null) {
+    super(message);
+    this.name = 'ChatbotRequestError';
+    this.status = status;
+  }
+}
+
+const normalizeChatbotApiPath = (path: string) => {
+  const prefixedPath = path.startsWith('/api/v1') ? path : `/api/v1${path}`;
+  const normalizedPath = prefixedPath.replace(/\/+$/, '');
+
+  return normalizedPath || CHATBOT_BASE_PATH;
+};
+
+const buildChatbotApiPath = (segment: 'messages' | 'stream') =>
+  normalizeChatbotApiPath(`${CHATBOT_BASE_PATH}/${segment}`);
 
 const createApiUrl = (
   path: string,
@@ -41,7 +63,7 @@ const getDefaultChatbotErrorMessage = (
   fallback = '챗봇 요청을 처리하는 중 오류가 발생했습니다.',
 ) => {
   if (status === 401) {
-    return '챗봇 요청 권한이 없습니다.';
+    return '세션이 만료되었습니다.';
   }
 
   if (status === 400) {
@@ -49,7 +71,7 @@ const getDefaultChatbotErrorMessage = (
   }
 
   if (status === 404) {
-    return '만료되었거나 유효하지 않은 session_id 입니다.';
+    return EXPIRED_CHATBOT_SESSION_MESSAGE;
   }
 
   if (status === 409) {
@@ -128,7 +150,7 @@ const fetchChatbotApi = async (
 
 export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
   const response = await fetchChatbotApi(
-    createApiUrl(`${CHATBOT_BASE_PATH}/messages`),
+    createApiUrl(buildChatbotApiPath('messages')),
     {
       method: 'POST',
       accept: 'application/json',
@@ -138,7 +160,10 @@ export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
   );
 
   if (!response.ok) {
-    throw new Error(await extractChatbotErrorMessage(response));
+    throw new ChatbotRequestError(
+      await extractChatbotErrorMessage(response),
+      response.status,
+    );
   }
 
   return (await response.json()) as ChatbotMessageResponse;
@@ -223,20 +248,19 @@ export const streamChatbotResponse = async ({
   onEvent: (event: ChatbotStreamEvent) => void;
 }) => {
   const response = await fetchChatbotApi(
-    createApiUrl(`${CHATBOT_BASE_PATH}/stream`, { session_id: sessionId }),
+    createApiUrl(buildChatbotApiPath('stream'), { session_id: sessionId }),
     {
       method: 'GET',
       accept: 'text/event-stream',
-      extraHeaders: {
-        Accept: 'text/event-stream',
-        'Cache-Control': 'no-cache',
-      },
       signal,
     },
   );
 
   if (!response.ok) {
-    throw new Error(await extractChatbotErrorMessage(response));
+    throw new ChatbotRequestError(
+      await extractChatbotErrorMessage(response),
+      response.status,
+    );
   }
 
   if (!response.body) {
@@ -297,9 +321,34 @@ export const extractSupportChatErrorMessage = (error: unknown) => {
     return '';
   }
 
+  if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+    return '실시간 응답 연결에 실패했습니다. 네트워크 또는 CORS 설정을 확인해 주세요.';
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
 
   return '챗봇 요청을 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+};
+
+export const isSupportChatSessionExpiredError = (error: unknown) => {
+  if (error instanceof ChatbotRequestError) {
+    if (error.status === 401) {
+      return true;
+    }
+
+    if (error.status === 404) {
+      return error.message.includes('session_id');
+    }
+  }
+
+  if (error instanceof Error) {
+    return (
+      error.message.includes('세션이 만료') ||
+      error.message.includes(EXPIRED_CHATBOT_SESSION_MESSAGE)
+    );
+  }
+
+  return false;
 };
