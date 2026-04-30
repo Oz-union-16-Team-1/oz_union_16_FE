@@ -12,18 +12,38 @@ const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
   naver: `${AUTH_BASE_PATH}/social-login/naver`,
 };
 
+const SOCIAL_AUTH_LOCAL_START_PATHS: Record<SocialAuthProvider, string> = {
+  google: `${AUTH_BASE_PATH}/social-login/google/local`,
+  kakao: `${AUTH_BASE_PATH}/social-login/kakao/local`,
+  naver: `${AUTH_BASE_PATH}/social-login/naver/local`,
+};
+
+const LOCAL_FRONTEND_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
+const isLocalFrontendRuntime = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return LOCAL_FRONTEND_HOSTNAMES.has(window.location.hostname);
+};
+
 export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
+  const socialLoginStartPath = isLocalFrontendRuntime()
+    ? SOCIAL_AUTH_LOCAL_START_PATHS[provider]
+    : SOCIAL_AUTH_START_PATHS[provider];
+
   if (mockServiceWorkerEnabled) {
-    return SOCIAL_AUTH_START_PATHS[provider];
+    return socialLoginStartPath;
   }
 
   const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/$/, '');
 
   if (normalizedApiBaseUrl) {
-    return `${normalizedApiBaseUrl}${SOCIAL_AUTH_START_PATHS[provider]}`;
+    return `${normalizedApiBaseUrl}${socialLoginStartPath}`;
   }
 
-  return SOCIAL_AUTH_START_PATHS[provider];
+  return socialLoginStartPath;
 };
 
 export const setPendingSocialAuthProvider = (provider: SocialAuthProvider) => {

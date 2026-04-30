@@ -19,19 +19,25 @@ const DEFAULT_REFRESH_ERROR_MESSAGE =
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const handledSearchRef = useRef<string | null>(null);
+  const restorePromiseRef = useRef<Promise<void> | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     '소셜 로그인 세션을 확인하는 중입니다.',
   );
 
   useEffect(() => {
-    if (handledSearchRef.current === location.search) {
-      return;
-    }
-
-    handledSearchRef.current = location.search;
-
     let isMounted = true;
+
+    const ensureRestorePromise = () => {
+      if (!restorePromiseRef.current) {
+        restorePromiseRef.current = restoreAuthSession()
+          .then(() => undefined)
+          .finally(() => {
+            restorePromiseRef.current = null;
+          });
+      }
+
+      return restorePromiseRef.current;
+    };
 
     const handleAuthCallback = async () => {
       const searchParams = new URLSearchParams(location.search);
@@ -48,13 +54,19 @@ function AuthCallbackPage() {
       }
 
       try {
-        await restoreAuthSession();
+        await ensureRestorePromise();
 
         if (!isMounted) {
           return;
         }
 
         clearPendingSocialAuthProvider();
+
+        if (typeof window !== 'undefined') {
+          window.location.replace(ROUTES.HOME);
+          return;
+        }
+
         navigate(ROUTES.HOME, { replace: true });
       } catch (error) {
         if (!isMounted) {

@@ -101,6 +101,7 @@
 
 - 기본 개발 서버는 `https://localhost:5173`를 사용합니다.
 - 로컬 소셜 로그인과 `Secure` refresh 쿠키 검증은 HTTPS 개발 서버 기준으로 확인합니다.
+- 로컬 프론트에서 소셜 로그인을 시작할 때는 backend의 `/api/v1/accounts/social-login/{provider}/local` 시작 경로를 사용합니다.
 - backend CORS 허용 origin에 `https://localhost:5173`가 포함되어야 합니다.
 - 소셜 로그인 로컬 redirect URI를 사용한다면 `https://localhost:5173/callback` 기준으로 등록합니다.
 
