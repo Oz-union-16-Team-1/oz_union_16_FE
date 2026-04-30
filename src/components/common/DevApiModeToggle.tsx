@@ -1,3 +1,5 @@
+import { ArrowRightLeft } from 'lucide-react';
+
 import {
   canToggleDevApiMode,
   configuredApiBaseUrl,
@@ -37,22 +39,70 @@ function DevApiModeToggle({
 
   if (isFab) {
     return (
-      <button
-        type="button"
-        onClick={() => toggleDevApiMode(isMockMode ? 'real' : 'mock')}
-        className={`support-chat-fab group relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none ${className}`}
-        aria-label={
-          isMockMode
-            ? '현재 MSW 사용 중, 클릭하면 실서버로 전환'
-            : '현재 실서버 사용 중, 클릭하면 MSW로 전환'
-        }
-        title={isMockMode ? '현재 MSW 사용 중' : '현재 실서버 사용 중'}
+      <div
+        className={`relative flex h-14 w-[12rem] items-center rounded-full border border-[#ff6b63]/36 bg-[#120b0b]/92 p-1 shadow-[0_22px_48px_rgba(0,0,0,0.42),0_0_28px_rgba(223,59,51,0.24)] backdrop-blur-xl ${className}`}
+        role="group"
+        aria-label="개발 API 모드 전환"
       >
-        <span className="support-chat-fab-glow" />
-        <span className="relative z-10 text-[10px] font-extrabold tracking-[0.08em]">
-          {isMockMode ? 'MSW' : 'REAL'}
+        <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_54%)]" />
+        <span
+          className="pointer-events-none absolute top-1 left-1 h-12 w-[4.5rem] rounded-full border border-[#ff8d84]/42 bg-[linear-gradient(180deg,#ff6b5f_0%,#d92b22_100%)] shadow-[0_14px_30px_rgba(217,43,34,0.32),inset_0_1px_0_rgba(255,255,255,0.18)] transition-transform duration-300 ease-out motion-reduce:transition-none"
+          style={{
+            transform: `translateX(${isMockMode ? 0 : 112}px)`,
+          }}
+          aria-hidden="true"
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            if (!isMockMode) {
+              toggleDevApiMode('mock');
+            }
+          }}
+          className={`relative z-10 flex h-full w-[4.5rem] cursor-pointer items-center justify-center rounded-full text-sm font-extrabold tracking-[0.04em] transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
+            isMockMode ? 'text-white' : 'text-white/58 hover:text-white/82'
+          }`}
+          aria-pressed={isMockMode}
+          aria-label="MSW 모드로 전환"
+          title="MSW 모드"
+        >
+          <span
+            className={
+              isMockMode ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]' : ''
+            }
+          >
+            MSW
+          </span>
+        </button>
+
+        <span className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+          <ArrowRightLeft size={15} />
         </span>
-      </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (isMockMode) {
+              toggleDevApiMode('real');
+            }
+          }}
+          className={`relative z-10 flex h-full w-[4.5rem] cursor-pointer items-center justify-center rounded-full text-sm font-extrabold tracking-[0.02em] transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
+            !isMockMode ? 'text-white' : 'text-white/58 hover:text-white/82'
+          }`}
+          aria-pressed={!isMockMode}
+          aria-label="실 API 모드로 전환"
+          title="실 API 모드"
+        >
+          <span
+            className={
+              !isMockMode ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.22)]' : ''
+            }
+          >
+            실 API
+          </span>
+        </button>
+      </div>
     );
   }
 
