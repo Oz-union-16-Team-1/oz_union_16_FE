@@ -11,6 +11,7 @@ import {
   SendHorizontal,
   TriangleAlert,
 } from 'lucide-react';
+import CenteredLoadingState from '../../../components/common/CenteredLoadingState';
 
 import { ROUTES } from '../../../constants/routes';
 import { useSurveyStore } from '../store/useSurveyStore';
@@ -182,11 +183,12 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
             className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-4.5 md:px-6"
           >
             {!messages.length && isSubmitting ? (
-              <div className="flex w-full justify-start">
-                <div className="rounded-3xl border border-white/8 bg-white/4 px-4 py-3.5 text-sm text-white/60">
-                  AI가 첫 질문을 준비하고 있습니다...
-                </div>
-              </div>
+              <CenteredLoadingState
+                label="Survey"
+                title="AI가 첫 질문을 준비하고 있습니다."
+                hint="취향을 더 잘 이해할 수 있도록 질문 흐름을 정리하고 있어요."
+                className="py-6"
+              />
             ) : null}
 
             {messages.map((message) => (

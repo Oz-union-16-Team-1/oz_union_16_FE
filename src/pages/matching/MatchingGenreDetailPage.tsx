@@ -11,6 +11,7 @@ import {
 } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
+import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -254,11 +255,11 @@ function MatchingGenreDetailPage() {
             </Link>
           </section>
         ) : authGate.accessStatus === 'loading' ? (
-          <AuthGateStatusPanel
-            title="인증 상태를 확인하는 중입니다."
-            description="잠시만 기다려 주세요. 세션 확인 후 매칭 화면을 불러옵니다."
-            align="center"
-            className="mx-auto max-w-190 sm:py-12"
+          <CenteredLoadingState
+            label="Matching"
+            title="매칭 화면을 불러오는 중입니다."
+            hint="트레일러와 평가 흐름을 준비하고 있어요."
+            className="mx-auto max-w-190"
           />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
@@ -268,9 +269,12 @@ function MatchingGenreDetailPage() {
             align="center"
           />
         ) : matchCandidatesQuery.isLoading ? (
-          <section className="survey-panel mx-auto max-w-190 px-6 py-10 text-center text-white/68 sm:px-8 sm:py-12">
-            매칭 후보 게임을 불러오는 중입니다...
-          </section>
+          <CenteredLoadingState
+            label="Matching"
+            title="매칭 후보 게임을 불러오는 중입니다."
+            hint="이번 장르에 맞는 후보를 정리하고 있어요."
+            className="mx-auto max-w-190"
+          />
         ) : matchCandidatesQuery.error ? (
           <section className="survey-panel mx-auto max-w-190 px-6 py-10 sm:px-8 sm:py-12">
             <p className="text-sm font-semibold tracking-[0.2em] text-[#ff8c8c] uppercase">

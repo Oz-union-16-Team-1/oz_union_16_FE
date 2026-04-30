@@ -3,6 +3,7 @@ import { useLayoutEffect, useMemo } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
+import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -55,11 +56,11 @@ function MatchingListPage() {
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
         {authGate.accessStatus === 'loading' ? (
-          <AuthGateStatusPanel
-            title="인증 상태를 확인하는 중입니다."
-            description="잠시만 기다려 주세요. 세션 확인 후 장르별 매칭 화면을 보여드릴게요."
-            align="center"
-            className="mx-auto max-w-190 sm:py-12"
+          <CenteredLoadingState
+            label="Matching"
+            title="장르별 매칭을 준비하고 있어요."
+            hint="취향에 맞는 장르 카드를 정리하고 있습니다."
+            className="mx-auto max-w-190"
           />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel

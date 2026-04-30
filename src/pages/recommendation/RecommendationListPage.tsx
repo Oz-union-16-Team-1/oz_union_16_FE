@@ -10,6 +10,7 @@ import { Link } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
+import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -95,8 +96,8 @@ function RecommendationRow({
           </div>
         </div>
 
-        <p className="mt-2 text-[11px] font-medium tracking-[0.22em] text-white/32 uppercase">
-          {item.genres.join(' · ') || '장르 정보 준비 중'}
+        <p className="mt-2 text-sm leading-6 break-keep text-white/54">
+          {item.genres.join(' / ') || '장르 정보 준비 중'}
         </p>
       </div>
 
@@ -179,7 +180,6 @@ function RecommendationListPage() {
     isMatchSource,
     isSurveySource,
     recommendationItems,
-    recommendationHighlights,
     errorMessage,
     emptyStateMessage,
     isResultNotFound,
@@ -232,25 +232,17 @@ function RecommendationListPage() {
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-8 sm:px-4 sm:pt-28 sm:pb-10 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
         <section className="mx-auto flex min-h-0 w-full max-w-245 flex-1 flex-col">
           <div className="mb-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-end">
+              <div className="hidden md:block" />
+
+              <div className="text-center">
                 <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
                   게임 추천 리스트
                 </h1>
-                <div className="mt-5 flex flex-wrap gap-2.5">
-                  {recommendationHighlights.map((highlight) => (
-                    <span
-                      key={highlight}
-                      className="inline-flex items-center rounded-full border border-white/8 bg-white/3 px-3 py-1.5 text-xs font-medium text-white/68 backdrop-blur-sm"
-                    >
-                      {highlight}
-                    </span>
-                  ))}
-                </div>
               </div>
 
               {shouldShowSurveyActions ? (
-                <div className="flex flex-wrap items-center gap-2.5 md:justify-end">
+                <div className="flex flex-wrap items-center justify-center gap-2.5 md:justify-end">
                   <button
                     type="button"
                     onClick={handleViewPreviousSurvey}
@@ -268,14 +260,17 @@ function RecommendationListPage() {
                     {isResettingSurvey ? '설문 초기화 중...' : '설문 초기화'}
                   </button>
                 </div>
-              ) : null}
+              ) : (
+                <div className="hidden md:block" />
+              )}
             </div>
           </div>
 
           {authGate.accessStatus === 'loading' ? (
-            <AuthGateStatusPanel
-              title="인증 상태를 확인하는 중입니다."
-              description="잠시만 기다려 주세요. 세션 확인 후 추천 결과를 불러옵니다."
+            <CenteredLoadingState
+              label="Recommendation"
+              title="추천 결과 화면을 불러오는 중입니다."
+              hint="추천 결과와 좋아요 상태를 함께 불러오고 있어요."
             />
           ) : !canAccessPage ? (
             <AuthGateStatusPanel
@@ -324,9 +319,12 @@ function RecommendationListPage() {
               ) : null}
 
               {isLoading ? (
-                <div className="px-4 py-14 text-center text-white/65 sm:px-6 lg:px-7">
-                  추천 결과를 불러오는 중입니다...
-                </div>
+                <CenteredLoadingState
+                  label="Recommendation"
+                  title="추천 결과를 불러오는 중입니다."
+                  hint="게임 취향에 맞는 결과를 정리하고 있어요."
+                  className="px-4 py-14 sm:px-6 lg:px-7"
+                />
               ) : error && !isResultNotFound ? (
                 <div className="px-4 py-12 text-[#ffc2c2] sm:px-6 lg:px-7">
                   {errorMessage}
