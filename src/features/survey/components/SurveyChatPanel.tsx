@@ -7,11 +7,11 @@ import {
 import { useNavigate } from 'react-router';
 import {
   ChevronRight,
+  LoaderCircle,
   RotateCcw,
   SendHorizontal,
   TriangleAlert,
 } from 'lucide-react';
-import CenteredLoadingState from '../../../components/common/CenteredLoadingState';
 
 import { ROUTES } from '../../../constants/routes';
 import { useSurveyStore } from '../store/useSurveyStore';
@@ -30,6 +30,51 @@ import SurveyProgress from './SurveyProgress';
 type SurveyChatPanelProps = {
   isHistoryView?: boolean;
 };
+
+type SurveyChatLoadingStateProps = {
+  message?: string;
+};
+
+export function SurveyChatLoadingState({
+  message = 'AI가 첫 질문을 준비하고 있습니다.',
+}: SurveyChatLoadingStateProps) {
+  return (
+    <section className="survey-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="border-b border-white/8 px-4 py-2.5 sm:px-5 md:px-6">
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="hidden sm:block" />
+
+          <div className="min-w-0 text-center">
+            <h2 className="text-[24px] font-bold tracking-[-0.03em] text-white sm:text-[28px] md:text-[31px]">
+              게임 선호도 설문조사
+            </h2>
+          </div>
+
+          <div className="hidden sm:block" />
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3">
+        <div className="survey-panel flex h-full min-h-0 flex-col overflow-hidden border-white/6 bg-[linear-gradient(180deg,rgba(12,12,14,0.86),rgba(7,7,8,0.94))]">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-10">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#8d2c2c]/28 bg-[#180909]/52 text-[#f1b8b8] shadow-[0_0_0_8px_rgba(255,255,255,0.015)]">
+                <LoaderCircle size={20} className="animate-spin" />
+              </span>
+              <p className="text-sm font-medium break-keep text-white/70 sm:text-[15px]">
+                {message}
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-white/8 px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
+            <div className="h-15 rounded-full border border-white/8 bg-white/[0.03]" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const navigate = useNavigate();
@@ -195,12 +240,16 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
             className="survey-message-scroll max-h-none flex-1 space-y-4 px-4 py-4 sm:px-5 sm:py-4.5 md:px-6"
           >
             {!messages.length && isSubmitting ? (
-              <CenteredLoadingState
-                label="Survey"
-                title="AI가 첫 질문을 준비하고 있습니다."
-                hint="취향을 더 잘 이해할 수 있도록 질문 흐름을 정리하고 있어요."
-                className="py-6"
-              />
+              <div className="flex min-h-full items-center justify-center py-6">
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#8d2c2c]/28 bg-[#180909]/52 text-[#f1b8b8] shadow-[0_0_0_8px_rgba(255,255,255,0.015)]">
+                    <LoaderCircle size={18} className="animate-spin" />
+                  </span>
+                  <p className="text-sm font-medium break-keep text-white/70 sm:text-[15px]">
+                    AI가 첫 질문을 준비하고 있습니다.
+                  </p>
+                </div>
+              </div>
             ) : null}
 
             {messages.map((message) => (

@@ -1,18 +1,35 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight } from 'lucide-react';
 import { useLayoutEffect, useMemo } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
-import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
+import { getMatchCandidates } from '../../features/matching/api/matching';
 import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
 import { MATCHING_GENRES } from '../../features/matching/genres';
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
 
+function MatchingGenreCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)]">
+      <div className="animate-pulse overflow-hidden rounded-[18px] border border-white/5 bg-white/[0.02]">
+        <div className="aspect-[16/8.4] w-full bg-[linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.08),rgba(255,255,255,0.03))]" />
+        <div className="space-y-3 px-4 py-4">
+          <div className="h-6 w-36 rounded-full bg-white/10" />
+          <div className="h-4 w-full rounded-full bg-white/7" />
+          <div className="h-4 w-4/5 rounded-full bg-white/7" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MatchingListPage() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const authGate = useAuthGate();
   const canAccessPage = authGate.accessStatus === 'authorized';
   const canFetchGenreImages = canAccessPage;
@@ -21,6 +38,7 @@ function MatchingListPage() {
     MATCHING_GENRES.map((genre) => genre.genreId),
     canFetchGenreImages,
   );
+  const hasGenreImageError = genreImageQueries.some((query) => query.error);
   const genreImageMap = useMemo(
     () =>
       new Map(
@@ -31,6 +49,23 @@ function MatchingListPage() {
       ),
     [genreImageQueries],
   );
+  const areGenreImagesReady =
+    canAccessPage &&
+    MATCHING_GENRES.every((genre) => genreImageMap.has(genre.genreId));
+  const shouldShowGenreImageSkeleton =
+    canAccessPage && !hasGenreImageError && !areGenreImagesReady;
+
+  const prefetchMatchCandidates = (genreId: number) => {
+    if (!canAccessPage) {
+      return;
+    }
+
+    void queryClient.prefetchQuery({
+      queryKey: ['match-candidates', genreId, 'server'],
+      queryFn: () => getMatchCandidates(genreId),
+      staleTime: 60_000,
+    });
+  };
 
   useLayoutEffect(() => {
     resetFlow();
@@ -56,12 +91,20 @@ function MatchingListPage() {
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
         {authGate.accessStatus === 'loading' ? (
-          <CenteredLoadingState
-            label="Matching"
-            title="장르별 매칭을 준비하고 있어요."
-            hint="취향에 맞는 장르 카드를 정리하고 있습니다."
-            className="mx-auto max-w-190"
-          />
+          <section className="mx-auto max-w-240 animate-pulse">
+            <div className="mb-7 text-center sm:mb-8">
+              <div className="mx-auto h-4 w-24 rounded-full bg-[#792222]/35" />
+              <div className="mx-auto mt-3 h-10 w-72 rounded-full bg-white/9" />
+              <div className="mx-auto mt-3 h-4 w-full max-w-130 rounded-full bg-white/7" />
+              <div className="mx-auto mt-2 h-4 w-4/5 max-w-110 rounded-full bg-white/7" />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {MATCHING_GENRES.map((genre) => (
+                <MatchingGenreCardSkeleton key={genre.slug} />
+              ))}
+            </div>
+          </section>
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 시작할 수 있어요."
@@ -84,39 +127,49 @@ function MatchingListPage() {
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {MATCHING_GENRES.map((genre) => (
-                <Link
-                  key={genre.slug}
-                  to={`/${ROUTES.MATCHING_LIST}/${genre.slug}`}
-                  className="group overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)] transition hover:border-[#a31c1c]/65 hover:bg-[#111112]"
-                >
-                  <div className="relative overflow-hidden rounded-[18px]">
-                    <img
-                      src={
-                        genreImageMap.get(genre.genreId) ?? genre.thumbnailUrl
-                      }
-                      alt={genre.title}
-                      className="aspect-[16/8.4] w-full object-cover transition duration-300 group-hover:scale-[1.025] group-hover:brightness-110"
-                    />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,8,0.1),rgba(6,6,8,0.28)_34%,rgba(6,6,8,0.86))]" />
-                    <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-3">
-                      <div>
-                        <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-white">
-                          {genre.title}
-                        </h2>
-                        <p className="mt-1.5 max-w-[24ch] text-[13px] leading-5 font-medium break-keep text-white/86 [text-shadow:0_1px_10px_rgba(0,0,0,0.65)]">
-                          {genre.description}
-                        </p>
+            {shouldShowGenreImageSkeleton ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {MATCHING_GENRES.map((genre) => (
+                  <MatchingGenreCardSkeleton key={genre.slug} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {MATCHING_GENRES.map((genre) => (
+                  <Link
+                    key={genre.slug}
+                    to={`/${ROUTES.MATCHING_LIST}/${genre.slug}`}
+                    onMouseEnter={() => prefetchMatchCandidates(genre.genreId)}
+                    onFocus={() => prefetchMatchCandidates(genre.genreId)}
+                    className="group overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)] transition hover:border-[#a31c1c]/65 hover:bg-[#111112]"
+                  >
+                    <div className="relative overflow-hidden rounded-[18px]">
+                      <img
+                        src={
+                          genreImageMap.get(genre.genreId) ?? genre.thumbnailUrl
+                        }
+                        alt={genre.title}
+                        className="aspect-[16/8.4] w-full object-cover transition duration-300 group-hover:scale-[1.025] group-hover:brightness-110"
+                      />
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,8,0.1),rgba(6,6,8,0.28)_34%,rgba(6,6,8,0.86))]" />
+                      <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-3">
+                        <div>
+                          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-white">
+                            {genre.title}
+                          </h2>
+                          <p className="mt-1.5 max-w-[24ch] text-[13px] leading-5 font-medium break-keep text-white/86 [text-shadow:0_1px_10px_rgba(0,0,0,0.65)]">
+                            {genre.description}
+                          </p>
+                        </div>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/28 text-white/78 transition group-hover:border-[#b02525]/60 group-hover:text-white">
+                          <ChevronRight size={17} />
+                        </span>
                       </div>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/28 text-white/78 transition group-hover:border-[#b02525]/60 group-hover:text-white">
-                        <ChevronRight size={17} />
-                      </span>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </section>
         )}
       </main>

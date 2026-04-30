@@ -10,7 +10,6 @@ import { Link } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
-import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
@@ -134,6 +133,41 @@ function RecommendationRow({
 type RecommendationBackdropProps = {
   items: RecommendationDisplayItem[];
 };
+
+function RecommendationRowSkeleton() {
+  return (
+    <div className="grid animate-pulse gap-4 px-4 py-5 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
+      <div className="overflow-hidden rounded-[20px] border border-white/6 bg-white/[0.03]">
+        <div className="h-23.5 w-full bg-[linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.08),rgba(255,255,255,0.03))] sm:h-22" />
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="h-7 w-48 rounded-full bg-white/10 sm:h-8 sm:w-56" />
+          <div className="h-6 w-16 rounded-full bg-[#702525]/35" />
+        </div>
+        <div className="mt-3 h-4 w-3/5 rounded-full bg-white/7" />
+      </div>
+
+      <div className="flex items-center justify-end gap-3 lg:min-w-24">
+        <div className="h-10 w-10 rounded-full bg-white/[0.05]" />
+        <div className="h-10 w-10 rounded-full bg-white/[0.05]" />
+      </div>
+    </div>
+  );
+}
+
+function RecommendationListSkeleton() {
+  return (
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
+      <div className="divide-y divide-white/8">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <RecommendationRowSkeleton key={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
   const backdropItems =
@@ -267,11 +301,7 @@ function RecommendationListPage() {
           </div>
 
           {authGate.accessStatus === 'loading' ? (
-            <CenteredLoadingState
-              label="Recommendation"
-              title="추천 결과 화면을 불러오는 중입니다."
-              hint="추천 결과와 좋아요 상태를 함께 불러오고 있어요."
-            />
+            <RecommendationListSkeleton />
           ) : !canAccessPage ? (
             <AuthGateStatusPanel
               title="로그인 후 추천 결과를 볼 수 있어요."
@@ -319,12 +349,7 @@ function RecommendationListPage() {
               ) : null}
 
               {isLoading ? (
-                <CenteredLoadingState
-                  label="Recommendation"
-                  title="추천 결과를 불러오는 중입니다."
-                  hint="게임 취향에 맞는 결과를 정리하고 있어요."
-                  className="px-4 py-14 sm:px-6 lg:px-7"
-                />
+                <RecommendationListSkeleton />
               ) : error && !isResultNotFound ? (
                 <div className="px-4 py-12 text-[#ffc2c2] sm:px-6 lg:px-7">
                   {errorMessage}

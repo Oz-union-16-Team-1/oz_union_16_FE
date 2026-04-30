@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
-import CenteredLoadingState from '../../components/common/CenteredLoadingState';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
-import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
+import SurveyChatPanel, {
+  SurveyChatLoadingState,
+} from '../../features/survey/components/SurveyChatPanel';
 import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
 import { mockTopGames } from '../../features/games/mockGames';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -140,12 +141,7 @@ function SurveyPage() {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
         {authGate.accessStatus === 'loading' ? (
-          <CenteredLoadingState
-            label="Survey"
-            title="AI가 첫 질문을 준비하고 있습니다."
-            hint="질문 흐름을 정리하고 있어요."
-            className="mx-auto max-w-190"
-          />
+          <SurveyChatLoadingState />
         ) : canAccessSurvey ? (
           <SurveyChatPanel isHistoryView={isHistoryMode} />
         ) : (
