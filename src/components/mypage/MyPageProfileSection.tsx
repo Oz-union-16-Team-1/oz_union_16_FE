@@ -1,18 +1,24 @@
 import { Camera, CircleUserRound, LoaderCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import type { CurrentUserSocialResponse } from '../../features/auth/types/auth';
+import type { MyPageToast } from '../../pages/mypage/types';
 import AuthButton from '../auth/AuthButton';
 import InputControl from '../common/InputControl';
+import ToastMessage from './ToastMessage';
 
 type MyPageProfileSectionProps = {
   nickname: string;
   name: string;
   genderLabel: string;
+  socialAccount?: CurrentUserSocialResponse | null;
   profileImageUrl?: string | null;
   isProfileLoading?: boolean;
   isProfileImageUploading?: boolean;
   isProfileUpdating?: boolean;
   isLoggingOut: boolean;
+  toast?: MyPageToast;
+  onToastClose?: () => void;
   isPasswordPanelOpen: boolean;
   onPasswordToggle: () => void;
   onLogout: () => void;
@@ -25,11 +31,14 @@ function MyPageProfileSection({
   nickname,
   name,
   genderLabel,
+  socialAccount = null,
   profileImageUrl = null,
   isProfileLoading = false,
   isProfileImageUploading = false,
   isProfileUpdating = false,
   isLoggingOut,
+  toast = null,
+  onToastClose,
   isPasswordPanelOpen,
   onPasswordToggle,
   onLogout,
@@ -47,6 +56,37 @@ function MyPageProfileSection({
   const [isNicknameEditMode, setIsNicknameEditMode] = useState(false);
   const [nextNickname, setNextNickname] = useState(nickname);
   const [nicknameFieldError, setNicknameFieldError] = useState('');
+  const normalizedSocialType = socialAccount?.social_type?.trim().toLowerCase();
+  const accountBadge =
+    socialAccount?.is_social === true
+      ? normalizedSocialType === 'google'
+        ? {
+            label: '구글',
+            className:
+              'border-[#4285F4]/30 bg-[#4285F4]/14 text-[#8ab4ff] shadow-[0_8px_20px_rgba(66,133,244,0.14)]',
+          }
+        : normalizedSocialType === 'naver'
+          ? {
+              label: '네이버',
+              className:
+                'border-[#03C75A]/30 bg-[#03C75A]/14 text-[#68e6a5] shadow-[0_8px_20px_rgba(3,199,90,0.14)]',
+            }
+          : normalizedSocialType === 'kakao'
+            ? {
+                label: '카카오',
+                className:
+                  'border-[#FEE500]/24 bg-[#FEE500]/14 text-[#ffe768] shadow-[0_8px_20px_rgba(254,229,0,0.12)]',
+              }
+            : {
+                label: '소셜회원',
+                className:
+                  'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
+              }
+      : {
+          label: '일반회원',
+          className:
+            'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
+        };
 
   const handleNicknameSave = async () => {
     const trimmedNickname = nextNickname.trim();
@@ -80,6 +120,17 @@ function MyPageProfileSection({
     <section className="relative overflow-hidden rounded-[32px] border border-white/8 bg-[#19191d] shadow-[0_28px_80px_rgba(0,0,0,0.32)]">
       <div className="h-[5.5rem] bg-[linear-gradient(135deg,#8b2836_0%,#aa3848_38%,#c84b5e_100%)] sm:h-[6.4rem]" />
       <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
+      {toast ? (
+        <div className="pointer-events-none absolute inset-x-0 top-[2.7rem] z-80 flex justify-center px-4 sm:top-[3.05rem]">
+          <ToastMessage
+            message={toast.message}
+            tone={toast.tone}
+            onClose={onToastClose ?? (() => {})}
+            variant="inlineCenter"
+            className="pointer-events-auto"
+          />
+        </div>
+      ) : null}
 
       <div className="relative px-4 pt-0 pb-5 sm:px-6 sm:pb-7 lg:px-8 lg:pb-8">
         <div className="mt-0 rounded-[28px] bg-[#111114] px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8 lg:pb-7">
@@ -155,9 +206,16 @@ function MyPageProfileSection({
                 </div>
               ) : (
                 <div className="min-w-0 pt-2">
-                  <p className="truncate text-[clamp(2rem,3.6vw,2.8rem)] font-semibold tracking-[-0.04em] text-white">
-                    {nickname}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="max-w-full truncate text-[clamp(2rem,3.6vw,2.8rem)] font-semibold tracking-[-0.04em] text-white">
+                      {nickname}
+                    </p>
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[-0.01em] ${accountBadge.className}`}
+                    >
+                      {accountBadge.label}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

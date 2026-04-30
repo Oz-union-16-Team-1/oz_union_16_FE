@@ -6,6 +6,7 @@ type ToastMessageVariant =
   | 'fixed'
   | 'fixedCenter'
   | 'fixedTopCenter'
+  | 'inlineCenter'
   | 'absoluteCenter'
   | 'absoluteTopCenter';
 
@@ -38,6 +39,8 @@ function ToastMessage({
       'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2';
   } else if (variant === 'fixedTopCenter') {
     positioningClass = 'fixed top-24 left-1/2 -translate-x-1/2 sm:top-28';
+  } else if (variant === 'inlineCenter') {
+    positioningClass = 'mx-auto';
   }
 
   return (
