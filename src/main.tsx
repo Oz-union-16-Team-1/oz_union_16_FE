@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import App from './App';
+import MainPageLoadingFallback from './components/common/MainPageLoadingFallback';
 import LegacyRouteRedirect from './components/common/LegacyRouteRedirect';
 import { ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
@@ -23,20 +24,7 @@ const LazySignupPage = lazy(() => import('./pages/SignupPage'));
 // eslint-disable-next-line react-refresh/only-export-components
 const LazyMyPage = lazy(() => import('./pages/mypage/MyPage'));
 
-const authPageFallback = (
-  <div className="bg-login-page flex min-h-dvh flex-col text-white">
-    <div className="header-shell h-16 w-full lg:h-18" aria-hidden="true" />
-    <main className="auth-layout-main relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div aria-hidden="true" className="auth-layout-backdrop" />
-      <div aria-hidden="true" className="auth-layout-grid" />
-      <section className="auth-layout-panel w-full max-w-130 rounded-[28px] border px-4 py-5 backdrop-blur-sm sm:rounded-3xl sm:px-8 sm:py-8">
-        <div className="mx-auto w-full max-w-110 text-center text-white/68">
-          화면을 불러오는 중입니다...
-        </div>
-      </section>
-    </main>
-  </div>
-);
+const authPageFallback = <MainPageLoadingFallback />;
 
 const router = createBrowserRouter([
   {
