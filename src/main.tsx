@@ -82,16 +82,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.MY_PAGE,
         element: (
-          <Suspense
-            fallback={
-              <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
-                <div className="app-aurora pointer-events-none absolute inset-0 opacity-70" />
-                <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-310 items-center justify-center px-4 text-center text-white/70 sm:px-6 md:px-8">
-                  마이페이지를 불러오는 중입니다...
-                </main>
-              </div>
-            }
-          >
+          <Suspense fallback={authPageFallback}>
             <LazyMyPage />
           </Suspense>
         ),
