@@ -244,9 +244,13 @@ export const uploadFileToS3 = async ({
 export const confirmProfileImage = async (
   payload: ConfirmProfileImageRequest,
 ) => {
-  const response = await api.patch<ConfirmProfileImageResponse>(
+  const requestBody: ConfirmProfileImageRequest = {
+    profile_img_url: payload.profile_img_url.trim(),
+  };
+
+  const response = await api.put<ConfirmProfileImageResponse>(
     `${AUTH_BASE_PATH}/me/profile-image`,
-    payload,
+    requestBody,
     createCredentialedAuthRequestConfig(),
   );
 
