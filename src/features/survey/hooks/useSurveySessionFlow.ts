@@ -36,6 +36,7 @@ export const useSurveySessionFlow = ({
     (state) => state.lastSubmittedMessage,
   );
   const clearError = useSurveyStore((state) => state.clearError);
+  const setPendingAction = useSurveyStore((state) => state.setPendingAction);
   const setHasBootstrapped = useSurveyStore(
     (state) => state.setHasBootstrapped,
   );
@@ -61,6 +62,32 @@ export const useSurveySessionFlow = ({
   const continueSurveyMutation = useContinueSurveyMutation();
   const resetSurveyMutation = useResetSurveyMutation();
 
+  const requestSessionStart = useCallback(
+    async (isReset: boolean) => {
+      const response = await startSessionMutation.mutateAsync({
+        is_reset: isReset,
+      });
+      hydrateInitialSession(response);
+
+      return response;
+    },
+    [hydrateInitialSession, startSessionMutation],
+  );
+
+  const requestSurveyMessage = useCallback(
+    async (activeSessionId: string, content: string) => {
+      const response = await continueSurveyMutation.mutateAsync({
+        session_id: activeSessionId,
+        user_answer: content,
+      });
+
+      applyChatResponse(response);
+
+      return response;
+    },
+    [applyChatResponse, continueSurveyMutation],
+  );
+
   const bootstrapSurvey = useCallback(
     async (force = false) => {
       if ((hasBootstrapped && !force) || (isSubmitting && !force)) {
@@ -69,30 +96,29 @@ export const useSurveySessionFlow = ({
 
       clearError();
       resetSurveyState();
+      setPendingAction('start');
       setHasBootstrapped(true);
       setSubmitting(true);
 
       try {
-        const response = await startSessionMutation.mutateAsync({
-          is_reset: false,
-        });
-        hydrateInitialSession(response);
+        await requestSessionStart(false);
       } catch (requestError) {
         setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
     [
       clearError,
       hasBootstrapped,
-      hydrateInitialSession,
       isSubmitting,
+      requestSessionStart,
       resetSurveyState,
       setError,
       setHasBootstrapped,
+      setPendingAction,
       setSubmitting,
-      startSessionMutation,
     ],
   );
 
@@ -107,13 +133,10 @@ export const useSurveySessionFlow = ({
       return sessionId;
     }
 
-    const sessionResponse = await startSessionMutation.mutateAsync({
-      is_reset: false,
-    });
-    hydrateInitialSession(sessionResponse);
+    const sessionResponse = await requestSessionStart(false);
 
     return sessionResponse.session_id;
-  }, [hydrateInitialSession, sessionId, startSessionMutation]);
+  }, [requestSessionStart, sessionId]);
 
   const applyServerSideChatBlock = useCallback(
     (requestError: unknown) => {
@@ -144,6 +167,7 @@ export const useSurveySessionFlow = ({
 
       clearError();
       setLastSubmittedMessage(trimmed);
+      setPendingAction('continue');
       setSubmitting(true);
 
       try {
@@ -153,12 +177,7 @@ export const useSurveySessionFlow = ({
           addUserMessage(trimmed);
         }
 
-        const response = await continueSurveyMutation.mutateAsync({
-          session_id: activeSessionId,
-          user_answer: trimmed,
-        });
-
-        applyChatResponse(response);
+        await requestSurveyMessage(activeSessionId, trimmed);
 
         return true;
       } catch (requestError) {
@@ -166,19 +185,20 @@ export const useSurveySessionFlow = ({
         setError(extractApiErrorMessage(requestError, 'continue'));
         return false;
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
     [
       addUserMessage,
       applyServerSideChatBlock,
-      applyChatResponse,
       clearError,
-      continueSurveyMutation,
       ensureSessionId,
       isSubmitting,
+      requestSurveyMessage,
       setError,
       setLastSubmittedMessage,
+      setPendingAction,
       setSubmitting,
     ],
   );
@@ -187,43 +207,35 @@ export const useSurveySessionFlow = ({
     async (content: string) => {
       clearError();
       resetSurveyState();
+      setPendingAction('continue');
       setHasBootstrapped(true);
       setLastSubmittedMessage(content);
       setSubmitting(true);
 
       try {
-        const sessionResponse = await startSessionMutation.mutateAsync({
-          is_reset: true,
-        });
-        hydrateInitialSession(sessionResponse);
+        const sessionResponse = await requestSessionStart(true);
         addUserMessage(content);
-
-        const response = await continueSurveyMutation.mutateAsync({
-          session_id: sessionResponse.session_id,
-          user_answer: content,
-        });
-
-        applyChatResponse(response);
+        await requestSurveyMessage(sessionResponse.session_id, content);
       } catch (requestError) {
         applyServerSideChatBlock(requestError);
         setError(extractApiErrorMessage(requestError, 'continue'));
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
     [
       addUserMessage,
       applyServerSideChatBlock,
-      applyChatResponse,
       clearError,
-      continueSurveyMutation,
-      hydrateInitialSession,
+      requestSessionStart,
+      requestSurveyMessage,
       resetSurveyState,
       setError,
       setHasBootstrapped,
       setLastSubmittedMessage,
+      setPendingAction,
       setSubmitting,
-      startSessionMutation,
     ],
   );
 
@@ -269,6 +281,7 @@ export const useSurveySessionFlow = ({
     }
 
     queueFocusRestore();
+    setPendingAction('reset');
     setSubmitting(true);
 
     try {
@@ -288,6 +301,7 @@ export const useSurveySessionFlow = ({
 
       setError(errorMessage);
     } finally {
+      setPendingAction(null);
       setSubmitting(false);
     }
   }, [
@@ -302,6 +316,7 @@ export const useSurveySessionFlow = ({
     sessionId,
     setError,
     setHasBootstrapped,
+    setPendingAction,
     setSubmitting,
   ]);
 
