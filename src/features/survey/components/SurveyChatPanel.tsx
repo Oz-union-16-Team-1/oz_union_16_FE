@@ -132,6 +132,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const progress = useSurveyStore((state) => state.progress);
   const hasBootstrapped = useSurveyStore((state) => state.hasBootstrapped);
   const isSubmitting = useSurveyStore((state) => state.isSubmitting);
+  const pendingAction = useSurveyStore((state) => state.pendingAction);
   const error = useSurveyStore((state) => state.error);
   const recommendationReady = useSurveyStore(
     (state) => state.recommendationReady,
@@ -191,11 +192,10 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
       : moderationHeuristicEnabled
         ? `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`
         : '실서버 기준';
-  const pendingAssistantMessage = recommendationReady
-    ? null
-    : messages.length === 0
-      ? null
-      : 'AI가 답변을 정리하고 있습니다.';
+  const pendingAssistantMessage =
+    pendingAction === 'continue' && !recommendationReady
+      ? 'AI가 답변을 정리하고 있습니다.'
+      : null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -253,7 +253,10 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     }
   };
 
-  if (!messages.length && isSubmitting) {
+  if (
+    isSubmitting &&
+    (pendingAction === 'start' || pendingAction === 'reset')
+  ) {
     return <SurveyChatLoadingState />;
   }
 

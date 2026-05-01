@@ -36,6 +36,7 @@ export const useSurveySessionFlow = ({
     (state) => state.lastSubmittedMessage,
   );
   const clearError = useSurveyStore((state) => state.clearError);
+  const setPendingAction = useSurveyStore((state) => state.setPendingAction);
   const setHasBootstrapped = useSurveyStore(
     (state) => state.setHasBootstrapped,
   );
@@ -95,6 +96,7 @@ export const useSurveySessionFlow = ({
 
       clearError();
       resetSurveyState();
+      setPendingAction('start');
       setHasBootstrapped(true);
       setSubmitting(true);
 
@@ -103,6 +105,7 @@ export const useSurveySessionFlow = ({
       } catch (requestError) {
         setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
@@ -114,6 +117,7 @@ export const useSurveySessionFlow = ({
       resetSurveyState,
       setError,
       setHasBootstrapped,
+      setPendingAction,
       setSubmitting,
     ],
   );
@@ -163,6 +167,7 @@ export const useSurveySessionFlow = ({
 
       clearError();
       setLastSubmittedMessage(trimmed);
+      setPendingAction('continue');
       setSubmitting(true);
 
       try {
@@ -180,6 +185,7 @@ export const useSurveySessionFlow = ({
         setError(extractApiErrorMessage(requestError, 'continue'));
         return false;
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
@@ -192,6 +198,7 @@ export const useSurveySessionFlow = ({
       requestSurveyMessage,
       setError,
       setLastSubmittedMessage,
+      setPendingAction,
       setSubmitting,
     ],
   );
@@ -200,6 +207,7 @@ export const useSurveySessionFlow = ({
     async (content: string) => {
       clearError();
       resetSurveyState();
+      setPendingAction('continue');
       setHasBootstrapped(true);
       setLastSubmittedMessage(content);
       setSubmitting(true);
@@ -212,6 +220,7 @@ export const useSurveySessionFlow = ({
         applyServerSideChatBlock(requestError);
         setError(extractApiErrorMessage(requestError, 'continue'));
       } finally {
+        setPendingAction(null);
         setSubmitting(false);
       }
     },
@@ -225,6 +234,7 @@ export const useSurveySessionFlow = ({
       setError,
       setHasBootstrapped,
       setLastSubmittedMessage,
+      setPendingAction,
       setSubmitting,
     ],
   );
@@ -271,6 +281,7 @@ export const useSurveySessionFlow = ({
     }
 
     queueFocusRestore();
+    setPendingAction('reset');
     setSubmitting(true);
 
     try {
@@ -290,6 +301,7 @@ export const useSurveySessionFlow = ({
 
       setError(errorMessage);
     } finally {
+      setPendingAction(null);
       setSubmitting(false);
     }
   }, [
@@ -304,6 +316,7 @@ export const useSurveySessionFlow = ({
     sessionId,
     setError,
     setHasBootstrapped,
+    setPendingAction,
     setSubmitting,
   ]);
 

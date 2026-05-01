@@ -12,6 +12,7 @@ import {
 } from '../types/survey';
 
 interface SurveyStoreState {
+  pendingAction: 'start' | 'continue' | 'reset' | null;
   ownerKey: string | null;
   sessionId: string | null;
   messages: SurveyMessage[];
@@ -25,6 +26,7 @@ interface SurveyStoreState {
   nonGameStrikeCount: number;
   chatBlockedUntil: number | null;
   syncOwnerKey: (ownerKey: string) => void;
+  setPendingAction: (pendingAction: SurveyStoreState['pendingAction']) => void;
   setHasBootstrapped: (hasBootstrapped: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   setError: (error: string | null) => void;
@@ -117,6 +119,7 @@ const getSessionStatePatch = (
 });
 
 const createInitialState = (ownerKey: string | null = null) => ({
+  pendingAction: null as SurveyStoreState['pendingAction'],
   ownerKey,
   sessionId: null,
   messages: [] as SurveyMessage[],
@@ -143,6 +146,7 @@ export const useSurveyStore = create<SurveyStoreState>()(
                 ...createInitialState(ownerKey),
               },
         ),
+      setPendingAction: (pendingAction) => set({ pendingAction }),
       setHasBootstrapped: (hasBootstrapped) => set({ hasBootstrapped }),
       setSubmitting: (isSubmitting) => set({ isSubmitting }),
       setError: (error) => set({ error }),
