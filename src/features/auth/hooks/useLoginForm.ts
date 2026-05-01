@@ -67,6 +67,7 @@ function useLoginForm() {
   const loginMutation = useLoginMutation();
   const [mockAccounts, setMockAccounts] = useState<DevMockLoginAccount[]>([]);
   const [isMockPanelOpen, setIsMockPanelOpen] = useState(false);
+  const [isLoginFlowLoading, setIsLoginFlowLoading] = useState(false);
   const mockPanelRef = useRef<HTMLDivElement | null>(null);
 
   const [formValues, setFormValues] = useState<LoginRequest>({
@@ -282,11 +283,13 @@ function useLoginForm() {
     };
 
     let accessToken: string;
+    setIsLoginFlowLoading(true);
 
     try {
       const response = await loginMutation.mutateAsync(payload);
       accessToken = response.access_token;
     } catch (error) {
+      setIsLoginFlowLoading(false);
       const resolvedError = resolveLoginApiError(error, payload);
 
       setApiFieldErrors(resolvedError.fieldErrors);
@@ -299,6 +302,7 @@ function useLoginForm() {
       await hydrateAuthSessionFromAccessToken(accessToken);
       navigate(ROUTES.HOME);
     } catch {
+      setIsLoginFlowLoading(false);
       setFormMessage(
         '로그인 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
       );
@@ -312,6 +316,7 @@ function useLoginForm() {
     noticeMessage,
     showNoticeMessage,
     showFormMessage: feedbackVisibility.showFormMessage,
+    isLoginFlowLoading,
     isSubmitting: loginMutation.isPending,
     visibleMockAccounts,
     showMockAccounts,
