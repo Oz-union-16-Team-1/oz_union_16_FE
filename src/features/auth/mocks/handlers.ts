@@ -789,7 +789,7 @@ const accountHandlers = [
     },
   ),
 
-  http.patch(`${AUTH_BASE_PATH}/me/profile-image`, async ({ request }) => {
+  http.put(`${AUTH_BASE_PATH}/me/profile-image`, async ({ request }) => {
     const authorization = request.headers.get('Authorization');
     const user = getAuthorizedUser(authorization);
 
