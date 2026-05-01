@@ -23,6 +23,7 @@ function MyPageLikedGamesSection({
   const {
     favoriteGames,
     favoriteCount,
+    favoriteListRenderVersion,
     isFavoriteGamesLoading,
     isFavoriteGamesError,
     isFetchingFavoriteGames,
@@ -73,7 +74,7 @@ function MyPageLikedGamesSection({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {favoriteGames.map((game) => (
                 <FavoriteGameCard
-                  key={game.gameId}
+                  key={`${game.gameId}:${game.thumbnailUrl ?? 'none'}:${favoriteListRenderVersion}`}
                   game={game}
                   onClick={handleFavoriteGameCardClick}
                   onFavoriteClick={setSelectedFavoriteGame}

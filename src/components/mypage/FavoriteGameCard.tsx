@@ -1,7 +1,11 @@
-import { useState } from 'react';
 import { X } from 'lucide-react';
+import { useState } from 'react';
 
 import type { FavoriteGamePreview } from '../../features/mypage/types';
+import {
+  isIgdbImageId,
+  normalizeThumbnailUrl,
+} from '../../lib/normalizeThumbnailUrl';
 import ActionButton from '../common/ActionButton';
 
 type FavoriteGameCardProps = {
@@ -15,15 +19,22 @@ function FavoriteGameCard({
   onClick,
   onFavoriteClick,
 }: FavoriteGameCardProps) {
+  const [igdbExtension, setIgdbExtension] = useState<'jpg' | 'png'>('jpg');
+  const normalizedThumbnailUrl =
+    normalizeThumbnailUrl(game.thumbnailUrl, {
+      igdbExtension,
+    }) ?? '';
   const [failedThumbnailKey, setFailedThumbnailKey] = useState<string | null>(
     null,
   );
-  const currentThumbnailKey = game.thumbnailUrl
-    ? `${game.gameId}:${game.thumbnailUrl}`
+  const currentThumbnailKey = normalizedThumbnailUrl
+    ? `${game.gameId}:${normalizedThumbnailUrl}`
     : null;
-  const hasThumbnail = Boolean(game.thumbnailUrl);
+  const hasThumbnail = normalizedThumbnailUrl.length > 0;
   const canRenderThumbnail =
     hasThumbnail && failedThumbnailKey !== currentThumbnailKey;
+  const canRetryWithPng =
+    igdbExtension === 'jpg' && isIgdbImageId(game.thumbnailUrl);
 
   return (
     <article className="group border-mypage-card bg-mypage-card shadow-mypage-float hover:bg-mypage-card-hover box-border flex w-full min-w-0 flex-col overflow-hidden rounded-[22px] border transition duration-200">
@@ -35,10 +46,18 @@ function FavoriteGameCard({
         >
           {canRenderThumbnail ? (
             <img
-              src={game.thumbnailUrl ?? undefined}
+              key={currentThumbnailKey ?? `thumbnail-fallback-${game.gameId}`}
+              src={normalizedThumbnailUrl || undefined}
               alt={`${game.title} 썸네일`}
               onLoad={() => setFailedThumbnailKey(null)}
-              onError={() => setFailedThumbnailKey(currentThumbnailKey)}
+              onError={() => {
+                if (canRetryWithPng) {
+                  setIgdbExtension('png');
+                  return;
+                }
+
+                setFailedThumbnailKey(currentThumbnailKey);
+              }}
               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
               loading="lazy"
             />
