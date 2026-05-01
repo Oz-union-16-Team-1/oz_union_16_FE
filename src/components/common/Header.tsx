@@ -51,11 +51,14 @@ const Header = ({ fixed = true }: HeaderProps) => {
         <Link
           to={ROUTE_PATHS.HOME}
           aria-label="메인 페이지로 이동"
-          className="flex h-14 shrink-0 cursor-pointer items-center justify-center"
+          className="flex h-8 shrink-0 cursor-pointer items-center justify-center sm:h-9 lg:h-10"
         >
           <img
             src={headerLogoImage}
             alt="PGTI 로고"
+            width={756}
+            height={404}
+            decoding="async"
             className="h-full w-auto object-contain"
           />
         </Link>
