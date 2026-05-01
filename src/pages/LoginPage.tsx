@@ -11,6 +11,7 @@ import {
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
 } from '../components/auth/authSharedStyles';
 import DevApiModeToggle from '../components/common/DevApiModeToggle';
+import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
 import useLoginForm, {
@@ -32,6 +33,7 @@ function LoginPage() {
     noticeMessage,
     showNoticeMessage,
     showFormMessage,
+    isLoginFlowLoading,
     isSubmitting,
     visibleMockAccounts,
     showMockAccounts,
@@ -44,6 +46,10 @@ function LoginPage() {
     closeMockPanel,
     toggleMockPanel,
   } = useLoginForm();
+
+  if (isLoginFlowLoading) {
+    return <MainPageLoadingFallback />;
+  }
 
   return (
     <>
