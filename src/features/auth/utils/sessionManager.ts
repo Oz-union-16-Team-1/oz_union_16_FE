@@ -16,6 +16,14 @@ import type {
   CurrentUserSocialResponse,
 } from '../types/auth';
 
+type RestoredAuthSession = {
+  accessToken: string;
+  profile: CurrentUserProfileResponse;
+  socialAccount: CurrentUserSocialResponse;
+};
+
+let restoreAuthSessionPromise: Promise<RestoredAuthSession> | null = null;
+
 export const setAuthBootstrapLoading = () => {
   useAuthStore.getState().setAuthBootstrapStatus('loading');
 };
@@ -110,6 +118,16 @@ export const restoreAuthSession = async () => {
 
     throw error;
   }
+};
+
+export const ensureAuthSessionRestored = () => {
+  if (!restoreAuthSessionPromise) {
+    restoreAuthSessionPromise = restoreAuthSession().finally(() => {
+      restoreAuthSessionPromise = null;
+    });
+  }
+
+  return restoreAuthSessionPromise;
 };
 
 export const notifyAuthSessionExpired = (

@@ -63,6 +63,7 @@ interface AuthState {
 
 export type AuthSessionStateSnapshot = {
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
   isAuthReady: boolean;
   authBootstrapStatus: AuthBootstrapStatus;
   accessStatus: AuthAccessStatus;

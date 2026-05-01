@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
@@ -15,26 +15,12 @@ import {
   hasPendingSocialAuthProvider,
 } from '../utils/socialAuth';
 import {
-  restoreAuthSession,
+  ensureAuthSessionRestored,
   setAuthBootstrapLoading,
   setAuthBootstrapReady,
 } from '../utils/sessionManager';
-
-let authBootstrapPromise: Promise<void> | null = null;
 const DEFAULT_SOCIAL_AUTH_ERROR_MESSAGE =
   '세션을 확인하지 못했습니다. 다시 로그인해 주세요.';
-
-const ensureAuthBootstrap = (): Promise<void> => {
-  if (!authBootstrapPromise) {
-    authBootstrapPromise = restoreAuthSession()
-      .then(() => undefined)
-      .finally(() => {
-        authBootstrapPromise = null;
-      });
-  }
-
-  return authBootstrapPromise;
-};
 
 function useAuthBootstrap() {
   const location = useLocation();
@@ -42,18 +28,15 @@ function useAuthBootstrap() {
   const authBootstrapStatus = useAuthStore(
     (state) => state.authBootstrapStatus,
   );
-  const hasBootstrappedRef = useRef(false);
 
   useEffect(() => {
     clearLegacyAuthStorage();
   }, []);
 
   useEffect(() => {
-    if (hasBootstrappedRef.current) {
+    if (authBootstrapStatus !== 'idle') {
       return;
     }
-
-    hasBootstrappedRef.current = true;
 
     const store = useAuthStore.getState();
 
@@ -81,7 +64,7 @@ function useAuthBootstrap() {
     let isMounted = true;
     setAuthBootstrapLoading();
 
-    void ensureAuthBootstrap()
+    void ensureAuthSessionRestored()
       .catch((error) => {
         if (!hasPendingSocialProvider || !isMounted) {
           return;
@@ -101,7 +84,10 @@ function useAuthBootstrap() {
           clearPendingSocialAuthProvider();
         }
 
-        if (isMounted) {
+        if (
+          isMounted &&
+          useAuthStore.getState().authBootstrapStatus === 'loading'
+        ) {
           setAuthBootstrapReady();
         }
       });
@@ -109,7 +95,7 @@ function useAuthBootstrap() {
     return () => {
       isMounted = false;
     };
-  }, [location.pathname, navigate]);
+  }, [authBootstrapStatus, location.pathname, navigate]);
 
   return {
     authBootstrapStatus,

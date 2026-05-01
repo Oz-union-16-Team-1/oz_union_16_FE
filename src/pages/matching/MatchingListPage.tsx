@@ -5,6 +5,7 @@ import { Link, Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
+import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { getMatchCandidates } from '../../features/matching/api/matching';
@@ -84,28 +85,17 @@ function MatchingListPage() {
     );
   }
 
+  if (authGate.needsAuthCheck) {
+    return <MainPageLoadingFallback />;
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
       <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
-        {authGate.accessStatus === 'loading' ? (
-          <section className="mx-auto max-w-240 animate-pulse">
-            <div className="mb-7 text-center sm:mb-8">
-              <div className="mx-auto h-4 w-24 rounded-full bg-[#792222]/35" />
-              <div className="mx-auto mt-3 h-10 w-72 rounded-full bg-white/9" />
-              <div className="mx-auto mt-3 h-4 w-full max-w-130 rounded-full bg-white/7" />
-              <div className="mx-auto mt-2 h-4 w-4/5 max-w-110 rounded-full bg-white/7" />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {MATCHING_GENRES.map((genre) => (
-                <MatchingGenreCardSkeleton key={genre.slug} />
-              ))}
-            </div>
-          </section>
-        ) : !canAccessPage ? (
+        {!canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 시작할 수 있어요."
             description="로그인하면 장르를 고르고 트레일러를 보며 별점을 남긴 뒤, 취향에 맞는 추천 결과까지 바로 이어서 확인할 수 있어요."

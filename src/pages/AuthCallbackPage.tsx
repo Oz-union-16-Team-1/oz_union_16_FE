@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import AuthLayout from '../components/layout/AuthLayout';
@@ -10,7 +10,7 @@ import {
 } from '../features/auth/utils/socialAuth';
 import {
   clearAuthSession,
-  restoreAuthSession,
+  ensureAuthSessionRestored,
 } from '../features/auth/utils/sessionManager';
 
 const DEFAULT_REFRESH_ERROR_MESSAGE =
@@ -19,25 +19,12 @@ const DEFAULT_REFRESH_ERROR_MESSAGE =
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const restorePromiseRef = useRef<Promise<void> | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     '소셜 로그인 세션을 확인하는 중입니다.',
   );
 
   useEffect(() => {
     let isMounted = true;
-
-    const ensureRestorePromise = () => {
-      if (!restorePromiseRef.current) {
-        restorePromiseRef.current = restoreAuthSession()
-          .then(() => undefined)
-          .finally(() => {
-            restorePromiseRef.current = null;
-          });
-      }
-
-      return restorePromiseRef.current;
-    };
 
     const handleAuthCallback = async () => {
       const searchParams = new URLSearchParams(location.search);
@@ -54,7 +41,7 @@ function AuthCallbackPage() {
       }
 
       try {
-        await ensureRestorePromise();
+        await ensureAuthSessionRestored();
 
         if (!isMounted) {
           return;

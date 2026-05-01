@@ -7,6 +7,7 @@ type UseAuthGateOptions = {
 
 export type UseAuthGateResult = {
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
   isAuthReady: boolean;
   authBootstrapStatus: 'idle' | 'loading' | 'ready';
   isMockMode: boolean;
@@ -19,8 +20,13 @@ export type UseAuthGateResult = {
 
 function useAuthGate(options: UseAuthGateOptions = {}): UseAuthGateResult {
   const { allowMockBypass = false } = options;
-  const { isAuthenticated, authBootstrapStatus, isAuthReady, accessStatus } =
-    useAuthSessionState();
+  const {
+    isAuthenticated,
+    isAuthLoading,
+    authBootstrapStatus,
+    isAuthReady,
+    accessStatus,
+  } = useAuthSessionState();
   const isMockMode = isMockServiceWorkerEnabled();
   const canBypassAuth = allowMockBypass && isMockMode;
   const canAccessAuthenticatedRoute =
@@ -36,6 +42,7 @@ function useAuthGate(options: UseAuthGateOptions = {}): UseAuthGateResult {
 
   return {
     isAuthenticated,
+    isAuthLoading,
     isAuthReady,
     authBootstrapStatus,
     isMockMode,

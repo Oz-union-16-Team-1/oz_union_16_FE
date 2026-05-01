@@ -12,6 +12,7 @@ import {
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
+import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { likeGame, unlikeGame } from '../../features/games/gameApi';
@@ -262,6 +263,10 @@ function MatchingGenreDetailPage() {
     );
   }
 
+  if (authGate.needsAuthCheck) {
+    return <MainPageLoadingFallback />;
+  }
+
   const handleSubmit = async () => {
     if (!genre || !allCandidatesRated || displayCandidates.length === 0) {
       return;
@@ -316,8 +321,6 @@ function MatchingGenreDetailPage() {
               장르 선택으로 돌아가기
             </Link>
           </section>
-        ) : authGate.accessStatus === 'loading' ? (
-          <MatchingDetailSkeleton />
         ) : !canAccessPage ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 진행할 수 있어요."

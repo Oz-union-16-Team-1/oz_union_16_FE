@@ -11,6 +11,7 @@ import { Link } from 'react-router';
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
 import LazyHeader from '../../components/common/LazyHeader';
+import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
@@ -258,6 +259,10 @@ function RecommendationListPage() {
     setFeedbackMessage,
   });
 
+  if (authGate.needsAuthCheck) {
+    return <MainPageLoadingFallback />;
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <RecommendationBackdrop items={recommendationItems} />
@@ -300,9 +305,7 @@ function RecommendationListPage() {
             </div>
           </div>
 
-          {authGate.accessStatus === 'loading' ? (
-            <RecommendationListSkeleton />
-          ) : !canAccessPage ? (
+          {!canAccessPage ? (
             <AuthGateStatusPanel
               title="로그인 후 추천 결과를 볼 수 있어요."
               description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를 켜두면 추천 결과 흐름을 확인할 수 있습니다."

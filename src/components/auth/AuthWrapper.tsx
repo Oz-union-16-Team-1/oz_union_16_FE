@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import MainPageLoadingFallback from '../common/MainPageLoadingFallback';
 import useAuthGate, {
   type UseAuthGateResult,
 } from '../../features/auth/hooks/useAuthGate';
@@ -16,7 +17,7 @@ function AuthWrapper({
   children,
   gate,
   allowMockBypass = false,
-  loadingFallback = null,
+  loadingFallback = <MainPageLoadingFallback />,
   unauthorizedFallback = null,
 }: AuthWrapperProps) {
   const fallbackGate = useAuthGate({ allowMockBypass });

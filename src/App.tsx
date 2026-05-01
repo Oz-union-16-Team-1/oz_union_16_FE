@@ -9,6 +9,7 @@ import {
   type AuthSessionExpiredDetail,
 } from './features/auth/constants/session';
 import useAuthBootstrap from './features/auth/hooks/useAuthBootstrap';
+import { useAuthStore } from './store/useAuthStore';
 import SupportChatWidget from './components/support-chat/SupportChatWidget';
 
 function App() {
@@ -18,6 +19,10 @@ function App() {
 
   useEffect(() => {
     const handleSessionExpired = (event: Event) => {
+      if (useAuthStore.getState().authBootstrapStatus === 'loading') {
+        return;
+      }
+
       const customEvent = event as CustomEvent<AuthSessionExpiredDetail>;
       const noticeMessage =
         customEvent.detail?.noticeMessage ||
