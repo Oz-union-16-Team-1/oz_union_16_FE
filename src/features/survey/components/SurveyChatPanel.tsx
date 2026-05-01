@@ -6,6 +6,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router';
 import {
+  LoaderCircle,
   ChevronRight,
   RotateCcw,
   SendHorizontal,
@@ -105,6 +106,22 @@ export function SurveyChatLoadingState() {
   );
 }
 
+function SurveyPendingAssistantBubble({ message }: { message: string }) {
+  return (
+    <div className="flex w-full justify-start">
+      <div className="flex max-w-[92%] items-start gap-[0.7rem] md:max-w-[78%]">
+        <div className="mt-1 h-[38px] w-[38px] shrink-0 rounded-2xl bg-white/8" />
+        <div className="rounded-[24px] rounded-tl-md border border-white/8 bg-white/4 px-4 py-3.5 text-left shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+          <div className="flex items-center gap-2.5 text-white/78">
+            <LoaderCircle size={16} className="animate-spin text-[#ff8d8d]" />
+            <p className="text-[15px] leading-6 break-keep">{message}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
@@ -124,6 +141,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
   );
 
   const {
+    moderationHeuristicEnabled,
     nonGameStrikeCount,
     remainingBlockTimeMs,
     isChatTemporarilyBlocked,
@@ -170,7 +188,14 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
     ? `${formatRemainingBlockTime(remainingBlockTimeMs)} 남음`
     : hasExpiredChatBlock
       ? '제한 종료'
-      : `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`;
+      : moderationHeuristicEnabled
+        ? `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`
+        : '실서버 기준';
+  const pendingAssistantMessage = recommendationReady
+    ? null
+    : messages.length === 0
+      ? null
+      : 'AI가 답변을 정리하고 있습니다.';
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -268,6 +293,10 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
             {messages.map((message) => (
               <SurveyMessageBubble key={message.id} message={message} />
             ))}
+
+            {isSubmitting && pendingAssistantMessage ? (
+              <SurveyPendingAssistantBubble message={pendingAssistantMessage} />
+            ) : null}
 
             {error ? (
               <div className="rounded-3xl border border-[#7d2424] bg-[#220a0a] px-5 py-4 text-[#ffb4b4]">

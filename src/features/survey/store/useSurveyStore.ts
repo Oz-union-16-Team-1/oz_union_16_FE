@@ -87,6 +87,35 @@ const appendAssistantMessageIfNeeded = (
   return [...messages, createMessage('assistant', content)];
 };
 
+const getFollowUpAssistantMessage = (payload: SurveyChatResponse) => {
+  if (payload.assistant_message) {
+    return payload.assistant_message;
+  }
+
+  if (payload.recommendation_ready) {
+    return COMPLETION_GUIDE_MESSAGE;
+  }
+
+  return null;
+};
+
+const getSessionStatePatch = (
+  payload: SurveySessionStartResponse,
+  ownerKey: string | null,
+) => ({
+  ownerKey,
+  sessionId: payload.session_id,
+  status: payload.status,
+  progress: payload.progress ?? { ...DEFAULT_SURVEY_PROGRESS },
+  hasBootstrapped: true,
+  isSubmitting: false,
+  error: null,
+  recommendationReady: payload.recommendation_ready,
+  lastSubmittedMessage: null,
+  nonGameStrikeCount: 0,
+  chatBlockedUntil: null,
+});
+
 const createInitialState = (ownerKey: string | null = null) => ({
   ownerKey,
   sessionId: null,
@@ -133,18 +162,8 @@ export const useSurveyStore = create<SurveyStoreState>()(
         })),
       hydrateInitialSession: (payload) =>
         set((state) => ({
-          sessionId: payload.session_id,
-          status: payload.status,
-          progress: payload.progress ?? { ...DEFAULT_SURVEY_PROGRESS },
-          isSubmitting: false,
-          hasBootstrapped: true,
-          error: null,
-          recommendationReady: payload.recommendation_ready,
-          lastSubmittedMessage: null,
-          nonGameStrikeCount: 0,
-          chatBlockedUntil: null,
+          ...getSessionStatePatch(payload, state.ownerKey),
           messages: getInitialMessages(payload),
-          ownerKey: state.ownerKey,
         })),
       applyChatResponse: (payload) =>
         set((state) => ({
@@ -153,23 +172,10 @@ export const useSurveyStore = create<SurveyStoreState>()(
           recommendationReady: payload.recommendation_ready,
           isSubmitting: false,
           error: null,
-          messages: (() => {
-            if (payload.assistant_message) {
-              return appendAssistantMessageIfNeeded(
-                state.messages,
-                payload.assistant_message,
-              );
-            }
-
-            if (payload.recommendation_ready) {
-              return appendAssistantMessageIfNeeded(
-                state.messages,
-                COMPLETION_GUIDE_MESSAGE,
-              );
-            }
-
-            return state.messages;
-          })(),
+          messages: appendAssistantMessageIfNeeded(
+            state.messages,
+            getFollowUpAssistantMessage(payload),
+          ),
         })),
       resetSurveyState: () =>
         set((state) => ({

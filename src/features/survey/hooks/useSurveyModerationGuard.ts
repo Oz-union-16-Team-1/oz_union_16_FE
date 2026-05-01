@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { isMockServiceWorkerEnabled } from '../../../lib/env';
 import { useSurveyStore } from '../store/useSurveyStore';
 
 export const NON_GAME_CHAT_MAX_STRIKES = 3;
@@ -69,6 +70,7 @@ export const useSurveyModerationGuard = ({
   isSubmitting,
   recommendationReady,
 }: UseSurveyModerationGuardOptions) => {
+  const moderationHeuristicEnabled = isMockServiceWorkerEnabled();
   const nonGameStrikeCount = useSurveyStore(
     (state) => state.nonGameStrikeCount,
   );
@@ -80,18 +82,42 @@ export const useSurveyModerationGuard = ({
     (state) => state.setChatBlockedUntil,
   );
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const didResetLocalModerationRef = useRef(false);
+
+  useEffect(() => {
+    if (moderationHeuristicEnabled || didResetLocalModerationRef.current) {
+      return;
+    }
+
+    didResetLocalModerationRef.current = true;
+
+    if (nonGameStrikeCount !== 0) {
+      setNonGameStrikeCount(0);
+    }
+
+    if (chatBlockedUntil !== null) {
+      setChatBlockedUntil(null);
+    }
+  }, [
+    chatBlockedUntil,
+    moderationHeuristicEnabled,
+    nonGameStrikeCount,
+    setChatBlockedUntil,
+    setNonGameStrikeCount,
+  ]);
 
   const remainingBlockTimeMs = chatBlockedUntil
     ? Math.max(chatBlockedUntil - currentTime, 0)
     : 0;
-  const hasReachedNonGameChatLimit =
-    nonGameStrikeCount >= NON_GAME_CHAT_MAX_STRIKES;
-  const isChatTemporarilyBlocked = Boolean(
-    chatBlockedUntil && remainingBlockTimeMs > 0,
-  );
-  const hasExpiredChatBlock = Boolean(
-    chatBlockedUntil && remainingBlockTimeMs <= 0,
-  );
+  const hasReachedNonGameChatLimit = moderationHeuristicEnabled
+    ? nonGameStrikeCount >= NON_GAME_CHAT_MAX_STRIKES
+    : false;
+  const isChatTemporarilyBlocked = moderationHeuristicEnabled
+    ? Boolean(chatBlockedUntil && remainingBlockTimeMs > 0)
+    : false;
+  const hasExpiredChatBlock = moderationHeuristicEnabled
+    ? Boolean(chatBlockedUntil && remainingBlockTimeMs <= 0)
+    : false;
   const isTextareaDisabled =
     isSubmitting ||
     recommendationReady ||
@@ -149,6 +175,10 @@ export const useSurveyModerationGuard = ({
         onBlocked?: () => void;
       },
     ) => {
+      if (!moderationHeuristicEnabled) {
+        return;
+      }
+
       const isGameRelatedMessage = isLikelyGameRelatedMessage(content);
       const nextStrikeCount = isGameRelatedMessage
         ? nonGameStrikeCount
@@ -167,13 +197,18 @@ export const useSurveyModerationGuard = ({
         options?.onBlocked?.();
       }
     },
-    [nonGameStrikeCount, setChatBlockedUntil, setNonGameStrikeCount],
+    [
+      moderationHeuristicEnabled,
+      nonGameStrikeCount,
+      setChatBlockedUntil,
+      setNonGameStrikeCount,
+    ],
   );
 
   return {
+    moderationHeuristicEnabled,
     nonGameStrikeCount,
     remainingBlockTimeMs,
-    hasReachedNonGameChatLimit,
     isChatTemporarilyBlocked,
     hasExpiredChatBlock,
     isTextareaDisabled,

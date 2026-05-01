@@ -61,6 +61,32 @@ export const useSurveySessionFlow = ({
   const continueSurveyMutation = useContinueSurveyMutation();
   const resetSurveyMutation = useResetSurveyMutation();
 
+  const requestSessionStart = useCallback(
+    async (isReset: boolean) => {
+      const response = await startSessionMutation.mutateAsync({
+        is_reset: isReset,
+      });
+      hydrateInitialSession(response);
+
+      return response;
+    },
+    [hydrateInitialSession, startSessionMutation],
+  );
+
+  const requestSurveyMessage = useCallback(
+    async (activeSessionId: string, content: string) => {
+      const response = await continueSurveyMutation.mutateAsync({
+        session_id: activeSessionId,
+        user_answer: content,
+      });
+
+      applyChatResponse(response);
+
+      return response;
+    },
+    [applyChatResponse, continueSurveyMutation],
+  );
+
   const bootstrapSurvey = useCallback(
     async (force = false) => {
       if ((hasBootstrapped && !force) || (isSubmitting && !force)) {
@@ -73,10 +99,7 @@ export const useSurveySessionFlow = ({
       setSubmitting(true);
 
       try {
-        const response = await startSessionMutation.mutateAsync({
-          is_reset: false,
-        });
-        hydrateInitialSession(response);
+        await requestSessionStart(false);
       } catch (requestError) {
         setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
@@ -86,13 +109,12 @@ export const useSurveySessionFlow = ({
     [
       clearError,
       hasBootstrapped,
-      hydrateInitialSession,
       isSubmitting,
+      requestSessionStart,
       resetSurveyState,
       setError,
       setHasBootstrapped,
       setSubmitting,
-      startSessionMutation,
     ],
   );
 
@@ -107,13 +129,10 @@ export const useSurveySessionFlow = ({
       return sessionId;
     }
 
-    const sessionResponse = await startSessionMutation.mutateAsync({
-      is_reset: false,
-    });
-    hydrateInitialSession(sessionResponse);
+    const sessionResponse = await requestSessionStart(false);
 
     return sessionResponse.session_id;
-  }, [hydrateInitialSession, sessionId, startSessionMutation]);
+  }, [requestSessionStart, sessionId]);
 
   const applyServerSideChatBlock = useCallback(
     (requestError: unknown) => {
@@ -153,12 +172,7 @@ export const useSurveySessionFlow = ({
           addUserMessage(trimmed);
         }
 
-        const response = await continueSurveyMutation.mutateAsync({
-          session_id: activeSessionId,
-          user_answer: trimmed,
-        });
-
-        applyChatResponse(response);
+        await requestSurveyMessage(activeSessionId, trimmed);
 
         return true;
       } catch (requestError) {
@@ -172,11 +186,10 @@ export const useSurveySessionFlow = ({
     [
       addUserMessage,
       applyServerSideChatBlock,
-      applyChatResponse,
       clearError,
-      continueSurveyMutation,
       ensureSessionId,
       isSubmitting,
+      requestSurveyMessage,
       setError,
       setLastSubmittedMessage,
       setSubmitting,
@@ -192,18 +205,9 @@ export const useSurveySessionFlow = ({
       setSubmitting(true);
 
       try {
-        const sessionResponse = await startSessionMutation.mutateAsync({
-          is_reset: true,
-        });
-        hydrateInitialSession(sessionResponse);
+        const sessionResponse = await requestSessionStart(true);
         addUserMessage(content);
-
-        const response = await continueSurveyMutation.mutateAsync({
-          session_id: sessionResponse.session_id,
-          user_answer: content,
-        });
-
-        applyChatResponse(response);
+        await requestSurveyMessage(sessionResponse.session_id, content);
       } catch (requestError) {
         applyServerSideChatBlock(requestError);
         setError(extractApiErrorMessage(requestError, 'continue'));
@@ -214,16 +218,14 @@ export const useSurveySessionFlow = ({
     [
       addUserMessage,
       applyServerSideChatBlock,
-      applyChatResponse,
       clearError,
-      continueSurveyMutation,
-      hydrateInitialSession,
+      requestSessionStart,
+      requestSurveyMessage,
       resetSurveyState,
       setError,
       setHasBootstrapped,
       setLastSubmittedMessage,
       setSubmitting,
-      startSessionMutation,
     ],
   );
 
