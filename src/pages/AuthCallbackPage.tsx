@@ -1,42 +1,63 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
-import AuthLayout from '../components/layout/AuthLayout';
+import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../constants/routes';
 import { extractAuthApiErrorMessage } from '../features/auth/api/auth';
 import {
   clearPendingSocialAuthProvider,
+  getSocialCallbackAuthorizationCode,
   getSocialCallbackErrorMessage,
+  hasPendingSocialAuthProvider,
 } from '../features/auth/utils/socialAuth';
 import {
   clearAuthSession,
   ensureAuthSessionRestored,
 } from '../features/auth/utils/sessionManager';
 
+const DEFAULT_CALLBACK_ERROR_MESSAGE =
+  '소셜 로그인 정보를 확인하지 못했습니다. 다시 시도해 주세요.';
 const DEFAULT_REFRESH_ERROR_MESSAGE =
   '세션을 확인하지 못했습니다. 다시 로그인해 주세요.';
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [statusMessage, setStatusMessage] = useState(
-    '소셜 로그인 세션을 확인하는 중입니다.',
-  );
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
+    const redirectToLogin = (errorMessage: string) => {
+      clearAuthSession();
+      clearPendingSocialAuthProvider();
+
+      navigate(`/${ROUTES.LOGIN}`, {
+        replace: true,
+        state: { errorMessage },
+      });
+    };
+
     const handleAuthCallback = async () => {
+      setIsLoading(true);
+
       const searchParams = new URLSearchParams(location.search);
+      const authorizationCode =
+        getSocialCallbackAuthorizationCode(searchParams);
       const callbackErrorMessage = getSocialCallbackErrorMessage(searchParams);
+      const hasPendingSocialProvider = hasPendingSocialAuthProvider();
+      const shouldRestoreSession =
+        Boolean(authorizationCode) ||
+        hasPendingSocialProvider ||
+        searchParams.size === 0;
 
       if (callbackErrorMessage) {
-        clearAuthSession();
-        clearPendingSocialAuthProvider();
-        navigate(`/${ROUTES.LOGIN}`, {
-          replace: true,
-          state: { errorMessage: callbackErrorMessage },
-        });
+        redirectToLogin(callbackErrorMessage);
+        return;
+      }
+
+      if (!shouldRestoreSession) {
+        redirectToLogin(DEFAULT_CALLBACK_ERROR_MESSAGE);
         return;
       }
 
@@ -48,29 +69,15 @@ function AuthCallbackPage() {
         }
 
         clearPendingSocialAuthProvider();
-
-        if (typeof window !== 'undefined') {
-          window.location.replace(ROUTES.HOME);
-          return;
-        }
-
         navigate(ROUTES.HOME, { replace: true });
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        clearPendingSocialAuthProvider();
-        setStatusMessage(DEFAULT_REFRESH_ERROR_MESSAGE);
-
-        navigate(`/${ROUTES.LOGIN}`, {
-          replace: true,
-          state: {
-            errorMessage:
-              extractAuthApiErrorMessage(error) ||
-              DEFAULT_REFRESH_ERROR_MESSAGE,
-          },
-        });
+        redirectToLogin(
+          extractAuthApiErrorMessage(error) || DEFAULT_REFRESH_ERROR_MESSAGE,
+        );
       }
     };
 
@@ -81,18 +88,7 @@ function AuthCallbackPage() {
     };
   }, [location.search, navigate]);
 
-  return (
-    <AuthLayout
-      title="로그인 확인"
-      subtitle="소셜 로그인 세션을 확인하고 있습니다."
-      withPanel
-      panelClassName="max-w-[500px]"
-    >
-      <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-sm/6 text-white/75">
-        {statusMessage}
-      </div>
-    </AuthLayout>
-  );
+  return isLoading ? <MainPageLoadingFallback /> : null;
 }
 
 export default AuthCallbackPage;

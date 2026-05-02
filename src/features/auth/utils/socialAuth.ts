@@ -81,6 +81,19 @@ export const getPendingSocialAuthProvider = (): SocialAuthProvider | null => {
 export const hasPendingSocialAuthProvider = () =>
   Boolean(getPendingSocialAuthProvider());
 
+const getNormalizedSocialCallbackParam = (
+  searchParams: URLSearchParams,
+  key: string,
+) => {
+  const value = searchParams.get(key)?.trim();
+
+  return value ? value : null;
+};
+
+export const getSocialCallbackAuthorizationCode = (
+  searchParams: URLSearchParams,
+) => getNormalizedSocialCallbackParam(searchParams, 'code');
+
 const getSocialCallbackErrorMessageFromCode = (errorCode: string | null) => {
   if (!errorCode) {
     return null;
@@ -94,7 +107,9 @@ const getSocialCallbackErrorMessageFromCode = (errorCode: string | null) => {
 };
 
 export const getSocialCallbackErrorMessage = (searchParams: URLSearchParams) =>
-  searchParams.get('error_description') ||
-  searchParams.get('error_detail') ||
-  searchParams.get('detail') ||
-  getSocialCallbackErrorMessageFromCode(searchParams.get('error'));
+  getNormalizedSocialCallbackParam(searchParams, 'error_description') ||
+  getNormalizedSocialCallbackParam(searchParams, 'error_detail') ||
+  getNormalizedSocialCallbackParam(searchParams, 'detail') ||
+  getSocialCallbackErrorMessageFromCode(
+    getNormalizedSocialCallbackParam(searchParams, 'error'),
+  );
