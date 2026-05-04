@@ -21,6 +21,7 @@ type MyPageProfileSectionProps = {
   isLoggingOut: boolean;
   toast?: MyPageToast;
   onToastClose?: () => void;
+  canShowPasswordChange: boolean;
   isPasswordPanelOpen: boolean;
   onPasswordToggle: () => void;
   onLogout: () => void;
@@ -92,6 +93,7 @@ function MyPageProfileSection({
   isLoggingOut,
   toast = null,
   onToastClose,
+  canShowPasswordChange,
   isPasswordPanelOpen,
   onPasswordToggle,
   onLogout,
@@ -261,14 +263,16 @@ function MyPageProfileSection({
             </div>
 
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-              <AuthButton
-                type="button"
-                variant="secondary"
-                className="w-full border-white/10 bg-white/[0.05] shadow-none hover:bg-white/[0.08] sm:min-w-36"
-                onClick={onPasswordToggle}
-              >
-                {isPasswordPanelOpen ? '비밀번호 변경 닫기' : '비밀번호 변경'}
-              </AuthButton>
+              {canShowPasswordChange ? (
+                <AuthButton
+                  type="button"
+                  variant="secondary"
+                  className="w-full border-white/10 bg-white/[0.05] shadow-none hover:bg-white/[0.08] sm:min-w-36"
+                  onClick={onPasswordToggle}
+                >
+                  {isPasswordPanelOpen ? '비밀번호 변경 닫기' : '비밀번호 변경'}
+                </AuthButton>
+              ) : null}
               <AuthButton
                 type="button"
                 variant="secondary"
