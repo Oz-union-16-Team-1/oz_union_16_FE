@@ -46,6 +46,10 @@ export type {
 } from './auth.error.handler';
 export { hasMockRefreshToken } from './auth.session.helper';
 
+type RefreshAccessTokenOptions = {
+  preferDirectBackendOriginInDev?: boolean;
+};
+
 export const login = async (payload: LoginRequest) => {
   const response = await requestLogin(payload);
   const normalizedResponse = normalizeAuthTokenResponse(response, '로그인');
@@ -63,12 +67,15 @@ export const logout = async () => {
   }
 };
 
-export const refreshAccessToken = async () => {
+export const refreshAccessToken = async (
+  options: RefreshAccessTokenOptions = {},
+) => {
   logRefreshRequestStarted();
 
   try {
     const response = await requestRefreshAccessToken(
       createRefreshTokenFallbackRequestBody(),
+      options,
     );
     const normalizedResponse = normalizeAuthTokenResponse(
       response,
