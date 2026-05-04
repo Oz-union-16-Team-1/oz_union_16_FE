@@ -106,8 +106,7 @@ const getQuestionCountFromAnswer = (answer: string) => {
 };
 
 export const surveyHandlers = [
-  http.post('/api/v1/survey/chatbot/sessions/', async ({ request }) => {
-    await request.json().catch(() => ({}));
+  http.post('/api/v1/survey/chatbot/sessions/', async () => {
     const sessionId = createSessionId();
     const totalQuestions = SURVEY_MAX_STEPS;
 

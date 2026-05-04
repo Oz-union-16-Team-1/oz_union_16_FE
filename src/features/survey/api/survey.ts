@@ -19,7 +19,6 @@ import type {
   SurveyResetResponse,
   SurveyResultQuery,
   SurveyResultResponse,
-  SurveySessionStartRequest,
   SurveySessionStartResponse,
   SurveyProgress,
   SurveyResultItem,
@@ -184,27 +183,26 @@ export const normalizeSurveyResultResponse = (
     : [],
 });
 
-export const startSurveySession = async (
-  payload: SurveySessionStartRequest,
-): Promise<SurveySessionStartResponse> => {
-  try {
-    const response = await api.post<SurveyApiSessionResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
-      payload,
-      {
-        timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
-      },
-    );
+export const startSurveySession =
+  async (): Promise<SurveySessionStartResponse> => {
+    try {
+      const response = await api.post<SurveyApiSessionResponse>(
+        `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
+        undefined,
+        {
+          timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
+        },
+      );
 
-    return normalizeSurveySessionResponse(response.data);
-  } catch (error) {
-    if (!isMockServiceWorkerEnabled()) {
-      throw error;
+      return normalizeSurveySessionResponse(response.data);
+    } catch (error) {
+      if (!isMockServiceWorkerEnabled()) {
+        throw error;
+      }
+
+      return normalizeSurveySessionResponse(startMockSurveySession());
     }
-
-    return normalizeSurveySessionResponse(startMockSurveySession());
-  }
-};
+  };
 
 export const continueSurveyChat = async (
   payload: SurveyChatRequest,

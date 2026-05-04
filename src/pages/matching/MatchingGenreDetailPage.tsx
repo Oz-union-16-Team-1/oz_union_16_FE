@@ -12,7 +12,6 @@ import {
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
-import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { likeGame, unlikeGame } from '../../features/games/gameApi';
@@ -128,6 +127,19 @@ function MatchingDetailSkeleton() {
         </div>
       </div>
     </section>
+  );
+}
+
+function MatchingDetailLoadingState() {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
+      <LazyHeader fixed />
+
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
+        <MatchingDetailSkeleton />
+      </main>
+    </div>
   );
 }
 
@@ -273,7 +285,7 @@ function MatchingGenreDetailPage() {
   }
 
   if (authGate.needsAuthCheck) {
-    return <MainPageLoadingFallback />;
+    return <MatchingDetailLoadingState />;
   }
 
   const handleSubmit = async () => {

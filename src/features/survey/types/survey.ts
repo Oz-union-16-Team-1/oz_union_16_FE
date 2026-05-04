@@ -21,10 +21,6 @@ export interface SurveyProgress {
   completion_rate: number;
 }
 
-export interface SurveySessionStartRequest {
-  is_reset?: boolean;
-}
-
 export interface SurveyApiChatRequest {
   message: string;
 }
