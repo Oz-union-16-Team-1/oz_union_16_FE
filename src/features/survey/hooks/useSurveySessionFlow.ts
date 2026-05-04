@@ -62,17 +62,19 @@ export const useSurveySessionFlow = ({
   const continueSurveyMutation = useContinueSurveyMutation();
   const resetSurveyMutation = useResetSurveyMutation();
 
-  const requestSessionStart = useCallback(
-    async (isReset: boolean) => {
-      const response = await startSessionMutation.mutateAsync({
-        is_reset: isReset,
-      });
-      hydrateInitialSession(response);
+  const requestSessionStart = useCallback(async () => {
+    const response = await startSessionMutation.mutateAsync();
+    hydrateInitialSession(response);
 
-      return response;
-    },
-    [hydrateInitialSession, startSessionMutation],
-  );
+    return response;
+  }, [hydrateInitialSession, startSessionMutation]);
+
+  const requestSessionReset = useCallback(async () => {
+    const response = await resetSurveyMutation.mutateAsync();
+    hydrateInitialSession(response);
+
+    return response;
+  }, [hydrateInitialSession, resetSurveyMutation]);
 
   const requestSurveyMessage = useCallback(
     async (activeSessionId: string, content: string) => {
@@ -101,7 +103,7 @@ export const useSurveySessionFlow = ({
       setSubmitting(true);
 
       try {
-        await requestSessionStart(false);
+        await requestSessionStart();
       } catch (requestError) {
         setError(extractApiErrorMessage(requestError, 'start'));
       } finally {
@@ -133,7 +135,7 @@ export const useSurveySessionFlow = ({
       return sessionId;
     }
 
-    const sessionResponse = await requestSessionStart(false);
+    const sessionResponse = await requestSessionStart();
 
     return sessionResponse.session_id;
   }, [requestSessionStart, sessionId]);
@@ -213,7 +215,7 @@ export const useSurveySessionFlow = ({
       setSubmitting(true);
 
       try {
-        const sessionResponse = await requestSessionStart(true);
+        const sessionResponse = await requestSessionReset();
         addUserMessage(content);
         await requestSurveyMessage(sessionResponse.session_id, content);
       } catch (requestError) {
@@ -228,7 +230,7 @@ export const useSurveySessionFlow = ({
       addUserMessage,
       applyServerSideChatBlock,
       clearError,
-      requestSessionStart,
+      requestSessionReset,
       requestSurveyMessage,
       resetSurveyState,
       setError,
@@ -285,10 +287,8 @@ export const useSurveySessionFlow = ({
     setSubmitting(true);
 
     try {
-      const response = await resetSurveyMutation.mutateAsync();
-
       clearModerationState();
-      hydrateInitialSession(response);
+      await requestSessionReset();
     } catch (requestError) {
       const errorMessage = extractApiErrorMessage(requestError, 'reset');
 
@@ -308,10 +308,9 @@ export const useSurveySessionFlow = ({
     bootstrapSurvey,
     clearError,
     clearModerationState,
-    hydrateInitialSession,
     isSubmitting,
     queueFocusRestore,
-    resetSurveyMutation,
+    requestSessionReset,
     resetSurveyState,
     sessionId,
     setError,

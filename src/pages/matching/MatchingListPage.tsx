@@ -5,7 +5,6 @@ import { Link, Navigate, useLocation } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
-import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import { getMatchCandidates } from '../../features/matching/api/matching';
@@ -24,6 +23,32 @@ function MatchingGenreCardSkeleton() {
           <div className="h-4 w-4/5 rounded-full bg-white/7" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function MatchingListLoadingState() {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
+      <LazyHeader fixed />
+
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
+        <section className="mx-auto max-w-240">
+          <div className="mb-7 text-center sm:mb-8">
+            <div className="mx-auto h-4 w-24 animate-pulse rounded-full bg-[#792222]/35" />
+            <div className="mx-auto mt-3 h-11 w-62 animate-pulse rounded-full bg-white/9" />
+            <div className="mx-auto mt-3 h-4 w-full max-w-125 animate-pulse rounded-full bg-white/7" />
+            <div className="mx-auto mt-2 h-4 w-full max-w-98 animate-pulse rounded-full bg-white/7" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {MATCHING_GENRES.map((genre) => (
+              <MatchingGenreCardSkeleton key={genre.slug} />
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
@@ -86,7 +111,7 @@ function MatchingListPage() {
   }
 
   if (authGate.needsAuthCheck) {
-    return <MainPageLoadingFallback />;
+    return <MatchingListLoadingState />;
   }
 
   return (
