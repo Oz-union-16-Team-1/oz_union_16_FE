@@ -10,7 +10,6 @@ import {
   AUTH_SHARED_FORM_CLASS_NAMES,
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
 } from '../components/auth/authSharedStyles';
-import DevApiModeToggle from '../components/common/DevApiModeToggle';
 import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
 import AuthLayout from '../components/layout/AuthLayout';
 import { ROUTES } from '../constants/routes';
@@ -241,8 +240,6 @@ function LoginPage() {
             />
           </button>
         ) : null}
-
-        <DevApiModeToggle variant="fab" className="dev-api-mode-fab" />
       </div>
     </>
   );

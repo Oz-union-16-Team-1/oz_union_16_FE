@@ -4,6 +4,7 @@ import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import type { GameListItem } from '../../features/games/types';
+import MainDevToolDock from './components/MainDevToolDock';
 import MainGamesSection from './components/MainGamesSection';
 import MainRecommendationCta from './components/MainRecommendationCta';
 import { useMainPageGames } from './hooks/useMainPageGames';
@@ -50,6 +51,8 @@ const MainPage = () => {
           onClose={() => setSelectedGame(null)}
         />
       ) : null}
+
+      <MainDevToolDock />
     </div>
   );
 };

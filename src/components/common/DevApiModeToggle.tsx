@@ -8,7 +8,7 @@ import {
 } from '../../lib/env';
 
 type DevApiModeToggleProps = {
-  variant?: 'floating' | 'compact' | 'fab';
+  variant?: 'floating' | 'compact' | 'fab' | 'dock';
   className?: string;
 };
 
@@ -36,19 +36,26 @@ function DevApiModeToggle({
   const isMockMode = currentMode === 'mock';
   const isCompact = variant === 'compact';
   const isFab = variant === 'fab';
+  const isDock = variant === 'dock';
 
-  if (isFab) {
+  if (isFab || isDock) {
     return (
       <div
-        className={`relative flex h-14 w-[12rem] items-center rounded-full border border-[#ff6b63]/36 bg-[#120b0b]/92 p-1 shadow-[0_22px_48px_rgba(0,0,0,0.42),0_0_28px_rgba(223,59,51,0.24)] backdrop-blur-xl ${className}`}
+        className={`relative flex items-center rounded-full border border-[#ff6b63]/36 bg-[#120b0b]/92 p-1 shadow-[0_22px_48px_rgba(0,0,0,0.42),0_0_28px_rgba(223,59,51,0.24)] backdrop-blur-xl ${
+          isDock ? 'h-12 w-[10.75rem]' : 'h-14 w-[12rem]'
+        } ${className}`}
         role="group"
         aria-label="개발 API 모드 전환"
       >
         <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.1),transparent_54%)]" />
         <span
-          className="pointer-events-none absolute top-1 left-1 h-12 w-[4.5rem] rounded-full border border-[#ff8d84]/42 bg-[linear-gradient(180deg,#ff6b5f_0%,#d92b22_100%)] shadow-[0_14px_30px_rgba(217,43,34,0.32),inset_0_1px_0_rgba(255,255,255,0.18)] transition-transform duration-300 ease-out motion-reduce:transition-none"
+          className={`pointer-events-none absolute top-1 left-1 rounded-full border border-[#ff8d84]/42 bg-[linear-gradient(180deg,#ff6b5f_0%,#d92b22_100%)] shadow-[0_14px_30px_rgba(217,43,34,0.32),inset_0_1px_0_rgba(255,255,255,0.18)] transition-transform duration-300 ease-out motion-reduce:transition-none ${
+            isDock ? 'h-10 w-[4rem]' : 'h-12 w-[4.5rem]'
+          }`}
           style={{
-            transform: `translateX(${isMockMode ? 0 : 112}px)`,
+            transform: `translateX(${
+              isDock ? (isMockMode ? 0 : 98) : isMockMode ? 0 : 112
+            }px)`,
           }}
           aria-hidden="true"
         />
@@ -60,9 +67,11 @@ function DevApiModeToggle({
               toggleDevApiMode('mock');
             }
           }}
-          className={`relative z-10 flex h-full w-[4.5rem] cursor-pointer items-center justify-center rounded-full text-sm font-extrabold tracking-[0.04em] transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
-            isMockMode ? 'text-white' : 'text-white/58 hover:text-white/82'
-          }`}
+          className={`relative z-10 flex h-full cursor-pointer items-center justify-center rounded-full font-extrabold transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
+            isDock
+              ? 'w-[4rem] text-[0.72rem] tracking-[0.08em]'
+              : 'w-[4.5rem] text-sm tracking-[0.04em]'
+          } ${isMockMode ? 'text-white' : 'text-white/58 hover:text-white/82'}`}
           aria-pressed={isMockMode}
           aria-label="MSW 모드로 전환"
           title="MSW 모드"
@@ -76,8 +85,12 @@ function DevApiModeToggle({
           </span>
         </button>
 
-        <span className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          <ArrowRightLeft size={15} />
+        <span
+          className={`relative z-10 inline-flex items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${
+            isDock ? 'h-7 w-7' : 'h-8 w-8'
+          }`}
+        >
+          <ArrowRightLeft size={isDock ? 13 : 15} />
         </span>
 
         <button
@@ -87,7 +100,11 @@ function DevApiModeToggle({
               toggleDevApiMode('real');
             }
           }}
-          className={`relative z-10 flex h-full w-[4.5rem] cursor-pointer items-center justify-center rounded-full text-sm font-extrabold tracking-[0.02em] transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
+          className={`relative z-10 flex h-full cursor-pointer items-center justify-center rounded-full font-extrabold transition-colors duration-300 focus-visible:outline-none motion-reduce:transition-none ${
+            isDock
+              ? 'w-[4rem] text-[0.72rem] tracking-[0.04em]'
+              : 'w-[4.5rem] text-sm tracking-[0.02em]'
+          } ${
             !isMockMode ? 'text-white' : 'text-white/58 hover:text-white/82'
           }`}
           aria-pressed={!isMockMode}
