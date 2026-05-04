@@ -94,17 +94,7 @@ export const useSurveyModerationGuard = ({
     if (nonGameStrikeCount !== 0) {
       setNonGameStrikeCount(0);
     }
-
-    if (chatBlockedUntil !== null) {
-      setChatBlockedUntil(null);
-    }
-  }, [
-    chatBlockedUntil,
-    moderationHeuristicEnabled,
-    nonGameStrikeCount,
-    setChatBlockedUntil,
-    setNonGameStrikeCount,
-  ]);
+  }, [moderationHeuristicEnabled, nonGameStrikeCount, setNonGameStrikeCount]);
 
   const remainingBlockTimeMs = chatBlockedUntil
     ? Math.max(chatBlockedUntil - currentTime, 0)
@@ -112,12 +102,12 @@ export const useSurveyModerationGuard = ({
   const hasReachedNonGameChatLimit = moderationHeuristicEnabled
     ? nonGameStrikeCount >= NON_GAME_CHAT_MAX_STRIKES
     : false;
-  const isChatTemporarilyBlocked = moderationHeuristicEnabled
-    ? Boolean(chatBlockedUntil && remainingBlockTimeMs > 0)
-    : false;
-  const hasExpiredChatBlock = moderationHeuristicEnabled
-    ? Boolean(chatBlockedUntil && remainingBlockTimeMs <= 0)
-    : false;
+  const isChatTemporarilyBlocked = Boolean(
+    chatBlockedUntil && remainingBlockTimeMs > 0,
+  );
+  const hasExpiredChatBlock = Boolean(
+    chatBlockedUntil && remainingBlockTimeMs <= 0,
+  );
   const isTextareaDisabled =
     isSubmitting ||
     recommendationReady ||

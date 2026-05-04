@@ -59,6 +59,7 @@ export interface SurveyChatRequest {
 export interface SurveySessionResponse {
   session_id: string;
   assistant_message: string | null;
+  warning_message: string | null;
   progress: SurveyProgress;
   status: SurveySessionStatus;
   recommendation_ready: boolean;

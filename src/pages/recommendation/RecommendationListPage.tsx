@@ -11,7 +11,6 @@ import { Link } from 'react-router';
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import ActionButton from '../../components/common/ActionButton';
 import LazyHeader from '../../components/common/LazyHeader';
-import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
@@ -109,7 +108,7 @@ function RecommendationRow({
           disabled={isLikePending}
           className={`${
             item.is_liked
-              ? 'border-[#6f2525] bg-[#170b0b] text-[#f07373]'
+              ? '!border-[#c12626]/70 !bg-[#220b0b] !text-[#f25a5a] hover:!border-[#d43a3a]/80 hover:!bg-[#2b0d0d] hover:!text-[#ff6666]'
               : 'border-white/10 bg-white/2 text-white/60 hover:border-white/18 hover:text-white/86'
           } ${isLikePending ? 'cursor-not-allowed opacity-55' : ''}`}
           aria-label={item.is_liked ? '좋아요 해제' : '좋아요 추가'}
@@ -236,6 +235,41 @@ function RecommendationPromptCard({
   );
 }
 
+function RecommendationPageLoadingState() {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+      <RecommendationBackdrop items={[]} />
+      <LazyHeader fixed />
+
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-8 sm:px-4 sm:pt-28 sm:pb-10 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
+        <section className="mx-auto flex min-h-0 w-full max-w-245 flex-1 flex-col">
+          <div className="mb-8">
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-end">
+              <div className="hidden md:block" />
+
+              <div className="text-center">
+                <div className="relative">
+                  <h1 className="text-3xl font-semibold tracking-[-0.04em] text-transparent sm:text-4xl md:text-[52px]">
+                    게임 추천 리스트
+                  </h1>
+                  <div className="absolute top-1/2 left-1/2 h-12 w-72 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/10" />
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-2.5 md:justify-end">
+                <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
+                <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
+              </div>
+            </div>
+          </div>
+
+          <RecommendationListSkeleton />
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function RecommendationListPage() {
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const authGate = useAuthGate({ allowMockBypass: true });
@@ -288,7 +322,7 @@ function RecommendationListPage() {
   });
 
   if (authGate.needsAuthCheck) {
-    return <MainPageLoadingFallback />;
+    return <RecommendationPageLoadingState />;
   }
 
   return (

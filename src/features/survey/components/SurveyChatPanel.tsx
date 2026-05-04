@@ -201,6 +201,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
       : moderationHeuristicEnabled
         ? `${nonGameStrikeCount}/${NON_GAME_CHAT_MAX_STRIKES} 누적`
         : '실서버 기준';
+  const isResetTemporarilyDisabled = isSubmitting || isChatTemporarilyBlocked;
   const pendingAssistantMessage =
     pendingAction === 'continue' && !recommendationReady
       ? 'AI가 답변을 정리하고 있습니다.'
@@ -286,7 +287,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
             <button
               type="button"
               onClick={handleResetClick}
-              disabled={isSubmitting}
+              disabled={isResetTemporarilyDisabled}
               className={SURVEY_CONTROL_BUTTON_CLASS}
             >
               <RotateCcw size={16} />
