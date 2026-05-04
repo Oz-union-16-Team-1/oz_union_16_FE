@@ -1,4 +1,8 @@
-import { apiBaseUrl, mockServiceWorkerEnabled } from '@/lib/env';
+import {
+  apiBaseUrl,
+  configuredApiBaseUrl,
+  mockServiceWorkerEnabled,
+} from '@/lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import type { SocialAuthProvider } from '../types/auth';
 
@@ -28,6 +32,8 @@ const isLocalFrontendRuntime = () => {
   return LOCAL_FRONTEND_HOSTNAMES.has(window.location.hostname);
 };
 
+const normalizeBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
+
 export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
   const socialLoginStartPath = isLocalFrontendRuntime()
     ? SOCIAL_AUTH_LOCAL_START_PATHS[provider]
@@ -37,7 +43,14 @@ export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
     return socialLoginStartPath;
   }
 
-  const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/$/, '');
+  const normalizedConfiguredApiBaseUrl = normalizeBaseUrl(configuredApiBaseUrl);
+  const normalizedApiBaseUrl = normalizeBaseUrl(apiBaseUrl);
+
+  // 로컬 소셜 로그인 시작은 backend origin에서 직접 시작해야
+  // OAuth용 state/PKCE 쿠키가 backend 도메인 기준으로 유지된다.
+  if (isLocalFrontendRuntime() && normalizedConfiguredApiBaseUrl) {
+    return `${normalizedConfiguredApiBaseUrl}${socialLoginStartPath}`;
+  }
 
   if (normalizedApiBaseUrl) {
     return `${normalizedApiBaseUrl}${socialLoginStartPath}`;

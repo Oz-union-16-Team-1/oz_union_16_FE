@@ -1,10 +1,11 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
 import { api } from '@/api/axios';
-import { apiBaseUrl } from '@/lib/env';
+import { apiBaseUrl, configuredApiBaseUrl } from '@/lib/env';
 import { normalizeThumbnailUrl } from '@/lib/normalizeThumbnailUrl';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
+import { hasPendingSocialAuthProvider } from '../utils/socialAuth';
 import type {
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
@@ -39,10 +40,33 @@ import type {
 const AUTH_REFRESH_TIMEOUT_MS = 7000;
 
 const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
-const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
-const loginRequestUrl = `${authApiUrl}/login`;
-const logoutRequestUrl = `${authApiUrl}/logout`;
-const refreshRequestUrl = `${authApiUrl}/token/refresh`;
+const normalizedApiBaseUrl = normalizeApiBaseUrl(apiBaseUrl);
+const normalizedConfiguredApiBaseUrl =
+  normalizeApiBaseUrl(configuredApiBaseUrl);
+
+const buildAuthRequestUrl = (
+  path: string,
+  options: {
+    preferConfiguredOrigin?: boolean;
+  } = {},
+) => {
+  const { preferConfiguredOrigin = false } = options;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (preferConfiguredOrigin && normalizedConfiguredApiBaseUrl) {
+    return `${normalizedConfiguredApiBaseUrl}${normalizedPath}`;
+  }
+
+  if (normalizedApiBaseUrl) {
+    return `${normalizedApiBaseUrl}${normalizedPath}`;
+  }
+
+  return normalizedPath;
+};
+
+const loginRequestPath = `${AUTH_BASE_PATH}/login`;
+const logoutRequestPath = `${AUTH_BASE_PATH}/logout`;
+const refreshRequestPath = `${AUTH_BASE_PATH}/token/refresh`;
 
 const createCredentialedAuthRequestConfig = <T = unknown>(
   config: AxiosRequestConfig<T> = {},
@@ -117,6 +141,7 @@ const normalizeLikedGamesResponse = (
 
 export const requestLogin = async (payload: LoginRequest) => {
   const requestConfig = createCredentialedAuthRequestConfig();
+  const loginRequestUrl = buildAuthRequestUrl(loginRequestPath);
 
   logCredentialedAuthRequestDiagnostics({
     label: 'login',
@@ -125,7 +150,7 @@ export const requestLogin = async (payload: LoginRequest) => {
   });
 
   const response = await api.post<LoginResponse>(
-    `${AUTH_BASE_PATH}/login`,
+    loginRequestPath,
     payload,
     requestConfig,
   );
@@ -135,6 +160,7 @@ export const requestLogin = async (payload: LoginRequest) => {
 
 export const requestLogout = async () => {
   const requestConfig = createCredentialedAuthRequestConfig();
+  const logoutRequestUrl = buildAuthRequestUrl(logoutRequestPath);
 
   logCredentialedAuthRequestDiagnostics({
     label: 'logout',
@@ -143,7 +169,7 @@ export const requestLogout = async () => {
   });
 
   const response = await api.post<LogoutResponse>(
-    `${AUTH_BASE_PATH}/logout`,
+    logoutRequestPath,
     undefined,
     requestConfig,
   );
@@ -156,6 +182,13 @@ export const requestRefreshAccessToken = async (
 ) => {
   const requestConfig = createCredentialedAuthRequestConfig();
   const requestBody = payload.refresh_token?.trim() ? payload : undefined;
+  const shouldUseConfiguredOriginForRefresh =
+    import.meta.env.DEV &&
+    hasPendingSocialAuthProvider() &&
+    Boolean(normalizedConfiguredApiBaseUrl);
+  const refreshRequestUrl = buildAuthRequestUrl(refreshRequestPath, {
+    preferConfiguredOrigin: shouldUseConfiguredOriginForRefresh,
+  });
 
   logCredentialedAuthRequestDiagnostics({
     label: 'refresh',
