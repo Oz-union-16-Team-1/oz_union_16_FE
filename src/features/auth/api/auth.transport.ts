@@ -18,6 +18,7 @@ import type {
   CurrentUserSocialResponse,
   DeleteLikedGameResponse,
   DuplicateCheckResponse,
+  LikedGameItemResponse,
   LikedGamesRequest,
   LikedGamesResponse,
   LoginRequest,
@@ -59,25 +60,59 @@ const createCredentialedAuthRequestConfig = <T = unknown>(
   };
 };
 
+const normalizeLikedGameText = (
+  value: string | null | undefined,
+  fallback = 'N/A',
+) => {
+  const trimmedValue = typeof value === 'string' ? value.trim() : '';
+
+  return trimmedValue || fallback;
+};
+
 const normalizeLikedGameGenres = (
-  genres: RawLikedGameItemResponse['genres'],
-) =>
-  Array.isArray(genres)
-    ? genres.map((genre) => genre.trim()).filter((genre) => genre.length > 0)
-    : genres
-        .split(',')
-        .map((genre) => genre.trim())
-        .filter((genre) => genre.length > 0);
+  genres: RawLikedGameItemResponse['genres'] | null | undefined,
+) => {
+  if (Array.isArray(genres)) {
+    return genres
+      .map((genre) => (typeof genre === 'string' ? genre.trim() : ''))
+      .filter((genre) => genre.length > 0);
+  }
+
+  if (typeof genres === 'string') {
+    return genres
+      .split(',')
+      .map((genre) => genre.trim())
+      .filter((genre) => genre.length > 0);
+  }
+
+  return [];
+};
+
+const normalizeLikedGameItem = (
+  item: RawLikedGameItemResponse | null | undefined,
+): LikedGameItemResponse => ({
+  game_id:
+    typeof item?.game_id === 'number' && Number.isInteger(item.game_id)
+      ? item.game_id
+      : 0,
+  game_title: normalizeLikedGameText(item?.game_title),
+  thumbnail_url: normalizeThumbnailUrl(item?.thumbnail_url),
+  genres: normalizeLikedGameGenres(item?.genres),
+  liked_at: typeof item?.liked_at === 'string' ? item.liked_at : '',
+});
 
 const normalizeLikedGamesResponse = (
-  response: RawLikedGamesResponse,
+  response: RawLikedGamesResponse | null | undefined,
 ): LikedGamesResponse => ({
-  count: response.count,
-  results: response.results.map((item) => ({
-    ...item,
-    thumbnail_url: normalizeThumbnailUrl(item.thumbnail_url),
-    genres: normalizeLikedGameGenres(item.genres),
-  })),
+  count:
+    typeof response?.count === 'number'
+      ? response.count
+      : Array.isArray(response?.results)
+        ? response.results.length
+        : 0,
+  results: Array.isArray(response?.results)
+    ? response.results.map(normalizeLikedGameItem)
+    : [],
 });
 
 export const requestLogin = async (payload: LoginRequest) => {

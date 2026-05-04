@@ -38,7 +38,8 @@ function MyPageLikedGamesSection({
     onOpenGameDetail,
     onToast,
   });
-  const hasFavoriteGames = favoriteGames.length > 0;
+  const safeFavoriteGames = Array.isArray(favoriteGames) ? favoriteGames : [];
+  const hasFavoriteGames = safeFavoriteGames.length > 0;
   const listContainerClass = hasFavoriteGames
     ? 'mypage-scrollbar mt-5 max-w-full overflow-x-hidden overflow-y-auto pr-1 max-h-[38rem]'
     : 'mt-5 max-w-full';
@@ -72,7 +73,7 @@ function MyPageLikedGamesSection({
             <FavoriteGameCardSkeleton />
           ) : hasFavoriteGames ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {favoriteGames.map((game) => (
+              {safeFavoriteGames.map((game) => (
                 <FavoriteGameCard
                   key={`${game.gameId}:${game.thumbnailUrl ?? 'none'}:${favoriteListRenderVersion}`}
                   game={game}

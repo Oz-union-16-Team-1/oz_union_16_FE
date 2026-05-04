@@ -14,7 +14,12 @@ import { syncLikedGamesStateInQueryCache } from '../../../features/games/queryCa
 import type { FavoriteGamePreview } from '../../../features/mypage/types';
 import { normalizeThumbnailUrl } from '../../../lib/normalizeThumbnailUrl';
 import type { MyPageToastPayload } from '../types';
-import { toFavoriteGameListItem, toFavoriteGamePreview } from '../utils';
+import {
+  toDisplayText,
+  toFavoriteGameListItem,
+  toFavoriteGamePreview,
+  toStringList,
+} from '../utils';
 
 type UseMyPageLikedGamesOptions = {
   enabled: boolean;
@@ -38,11 +43,20 @@ function useMyPageLikedGames({
     useState<FavoriteGamePreview | null>(null);
   const [favoriteListRenderVersion, setFavoriteListRenderVersion] = useState(0);
   const serverFavoriteGames = useMemo(() => {
-    return (likedGamesData?.results ?? []).map(toFavoriteGamePreview);
-  }, [likedGamesData?.results]);
+    const safeLikedGamesResults = Array.isArray(likedGamesData?.results)
+      ? likedGamesData.results
+      : [];
+
+    return safeLikedGamesResults
+      .map(toFavoriteGamePreview)
+      .filter((game) => game.gameId > 0);
+  }, [likedGamesData]);
 
   const favoriteGames = serverFavoriteGames;
-  const favoriteCount = likedGamesData?.count ?? serverFavoriteGames.length;
+  const favoriteCount =
+    typeof likedGamesData?.count === 'number'
+      ? likedGamesData.count
+      : serverFavoriteGames.length;
 
   const refetchFavoriteGames = likedGamesQuery.refetch;
   const isFavoriteGamesLoading =
@@ -56,42 +70,62 @@ function useMyPageLikedGames({
   const refetchFavoriteGamesWithPreservedThumbnails = async (
     previousLikedGames: LikedGamesResponse['results'],
   ) => {
-    const refetchResult = await refetchFavoriteGames();
-    const nextLikedGames = refetchResult.data;
+    try {
+      const refetchResult = await refetchFavoriteGames();
+      const nextLikedGames = refetchResult.data;
 
-    if (!nextLikedGames) {
-      return;
+      if (!nextLikedGames) {
+        return;
+      }
+
+      const previousLikedGameMap = new Map(
+        previousLikedGames.map((game) => [game.game_id, game]),
+      );
+      const nextLikedGamesResults = Array.isArray(nextLikedGames.results)
+        ? nextLikedGames.results
+        : [];
+      const nextResults = nextLikedGamesResults.map((game) => {
+        const previousGame = previousLikedGameMap.get(game.game_id);
+        const normalizedGenres = toStringList(game.genres);
+        const previousGenres = toStringList(previousGame?.genres);
+
+        return {
+          ...game,
+          game_title: toDisplayText(
+            game.game_title,
+            toDisplayText(previousGame?.game_title),
+          ),
+          thumbnail_url:
+            normalizeThumbnailUrl(game.thumbnail_url) ??
+            normalizeThumbnailUrl(previousGame?.thumbnail_url) ??
+            null,
+          genres:
+            normalizedGenres.length > 0 ? normalizedGenres : previousGenres,
+        };
+      });
+
+      queryClient.setQueryData(
+        authKeys.likedGamesList({
+          page_size: 20,
+          page: 1,
+        }),
+        {
+          ...nextLikedGames,
+          count:
+            typeof nextLikedGames.count === 'number'
+              ? nextLikedGames.count
+              : nextResults.length,
+          results: nextResults,
+        },
+      );
+    } catch {
+      void queryClient.invalidateQueries({
+        queryKey: authKeys.likedGamesList({
+          page_size: 20,
+          page: 1,
+        }),
+      });
     }
-
-    const previousLikedGameMap = new Map(
-      previousLikedGames.map((game) => [game.game_id, game]),
-    );
-    const nextResults = nextLikedGames.results.map((game) => {
-      const previousGame = previousLikedGameMap.get(game.game_id);
-
-      return {
-        ...game,
-        game_title:
-          game.game_title.trim() || previousGame?.game_title?.trim() || 'N/A',
-        thumbnail_url:
-          normalizeThumbnailUrl(game.thumbnail_url) ??
-          normalizeThumbnailUrl(previousGame?.thumbnail_url) ??
-          null,
-        genres:
-          game.genres.length > 0 ? game.genres : (previousGame?.genres ?? []),
-      };
-    });
-
-    queryClient.setQueryData(
-      authKeys.likedGamesList({
-        page_size: 20,
-        page: 1,
-      }),
-      {
-        ...nextLikedGames,
-        results: nextResults,
-      },
-    );
   };
 
   const handleFavoriteGameDeleteConfirm = async () => {
@@ -110,7 +144,9 @@ function useMyPageLikedGames({
       return;
     }
 
-    const previousLikedGames = likedGamesData?.results ?? [];
+    const previousLikedGames = Array.isArray(likedGamesData?.results)
+      ? likedGamesData.results
+      : [];
 
     try {
       await unlikeLikedGameMutation.mutateAsync(targetGameId);
