@@ -38,6 +38,15 @@ const MATCHING_LIKE_ERROR_MESSAGE =
 const MATCHING_CANDIDATES_NETWORK_ERROR_MESSAGE =
   '매칭 후보 서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
+const MATCHING_ICON_ACTION_BUTTON_BASE_CLASS =
+  'mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] disabled:opacity-60';
+
+const MATCHING_SECONDARY_ACTION_BUTTON_CLASS =
+  'inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:border-white/8 disabled:bg-white/2 disabled:text-white/28';
+
+const MATCHING_PRIMARY_ACTION_BUTTON_CLASS =
+  'inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:bg-[#5c1a1a] disabled:text-white/44';
+
 const formatMatchingCandidateRating = (rating: number | null) => {
   if (typeof rating !== 'number') {
     return 'N/A';
@@ -448,7 +457,7 @@ function MatchingGenreDetailPage() {
                             : '좋아요 추가'
                         }
                         disabled={likeMutation.isPending}
-                        className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center self-start rounded-full border transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#d93737] disabled:cursor-not-allowed disabled:opacity-60 ${
+                        className={`${MATCHING_ICON_ACTION_BUTTON_BASE_CLASS} ${
                           currentCandidate.is_liked
                             ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
                             : 'border-white/10 bg-white/3 text-white/54 hover:border-white/20 hover:text-white/80'
@@ -502,7 +511,7 @@ function MatchingGenreDetailPage() {
                             type="button"
                             onClick={goPrevious}
                             disabled={!canGoPrevious}
-                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/2 disabled:text-white/28"
+                            className={MATCHING_SECONDARY_ACTION_BUTTON_CLASS}
                           >
                             <ChevronLeft size={16} />
                             이전
@@ -516,7 +525,7 @@ function MatchingGenreDetailPage() {
                               submitMatchResponsesMutation.isPending ||
                               likeMutation.isPending
                             }
-                            className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:cursor-not-allowed disabled:bg-[#5c1a1a] disabled:text-white/44"
+                            className={MATCHING_PRIMARY_ACTION_BUTTON_CLASS}
                           >
                             {submitMatchResponsesMutation.isPending
                               ? '제출 중...'
@@ -533,7 +542,7 @@ function MatchingGenreDetailPage() {
                           type="button"
                           onClick={goPrevious}
                           disabled={!canGoPrevious}
-                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-5 py-3 text-sm font-medium text-white transition hover:border-[#a31c1c]/60 hover:bg-[#160909] disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/2 disabled:text-white/28"
+                          className={MATCHING_SECONDARY_ACTION_BUTTON_CLASS}
                         >
                           <ChevronLeft size={16} />
                           이전
@@ -543,7 +552,7 @@ function MatchingGenreDetailPage() {
                           type="button"
                           onClick={goNext}
                           disabled={!hasSelectedRating}
-                          className="inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:cursor-not-allowed disabled:bg-[#5c1a1a] disabled:text-white/44"
+                          className={MATCHING_PRIMARY_ACTION_BUTTON_CLASS}
                         >
                           다음
                           <ChevronRight size={16} />
