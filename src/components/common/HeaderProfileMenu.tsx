@@ -22,6 +22,11 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
   const trimmedProfileImageUrl = profileImageUrl?.trim() || null;
   const resolvedProfileImageUrl = trimmedProfileImageUrl || profileImg;
   const isOpen = isHoverOpen || isClickOpen;
+  const profileButtonClass = `h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none ${
+    isOpen
+      ? 'border-[#ff3b30] shadow-[0_0_0_4px_rgba(255,59,48,0.16)]'
+      : 'border-white/14 hover:border-[#ff3b30] hover:shadow-[0_0_0_4px_rgba(255,59,48,0.12)]'
+  }`;
   const closeMenu = () => {
     setIsHoverOpen(false);
     setIsClickOpen(false);
@@ -75,7 +80,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         aria-expanded={isOpen}
         aria-controls={PROFILE_MENU_ID}
         onClick={() => setIsClickOpen((current) => !current)}
-        className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+        className={profileButtonClass}
       >
         <img
           src={resolvedProfileImageUrl}
