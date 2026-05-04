@@ -1,6 +1,7 @@
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 
 import { api } from '@/api/axios';
+import { configuredApiBaseUrl } from '@/lib/env';
 import { normalizeThumbnailUrl } from '@/lib/normalizeThumbnailUrl';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
@@ -40,10 +41,21 @@ const REFRESH_REQUEST_THROTTLE_MS = 1500;
 const REFRESH_RETRY_AFTER_THROTTLED_FAILURE_MS = 900;
 const REFRESH_REQUEST_THROTTLE_STORAGE_KEY =
   'auth-refresh-request-last-started-at';
+const FALLBACK_BACKEND_ORIGIN = 'https://oz-pgti.duckdns.org';
 
 const loginRequestPath = `${AUTH_BASE_PATH}/login`;
 const logoutRequestPath = `${AUTH_BASE_PATH}/logout`;
 const refreshRequestPath = `${AUTH_BASE_PATH}/token/refresh`;
+
+const resolveRefreshRequestUrl = () => {
+  if (import.meta.env.DEV) {
+    return refreshRequestPath;
+  }
+
+  const backendOrigin = configuredApiBaseUrl || FALLBACK_BACKEND_ORIGIN;
+
+  return `${backendOrigin}${refreshRequestPath}`;
+};
 
 const readRefreshThrottleTimestamp = () => {
   if (typeof window === 'undefined') {
@@ -211,19 +223,21 @@ export const requestRefreshAccessToken = async (
   const waitedForPreviousRefresh = await waitForRefreshThrottleWindow();
   const requestConfig = createCredentialedAuthRequestConfig();
   const requestBody = payload.refresh_token?.trim() ? payload : undefined;
+  const refreshRequestUrl = resolveRefreshRequestUrl();
 
   logCredentialedAuthRequestDiagnostics({
     label: 'refresh',
-    requestUrl: refreshRequestPath,
+    requestUrl: refreshRequestUrl,
     withCredentials: true,
   });
 
   const sendRefreshRequest = async () => {
     markRefreshThrottleTimestamp();
 
-    // Use relative path directly with axios to ensure it goes through Vite Proxy
+    // Dev uses the Vite proxy via a relative path, while production must target
+    // the backend origin directly so the backend refresh cookie is included.
     const response = await axios.post<RefreshAccessTokenResponse>(
-      refreshRequestPath,
+      refreshRequestUrl,
       requestBody,
       requestConfig,
     );

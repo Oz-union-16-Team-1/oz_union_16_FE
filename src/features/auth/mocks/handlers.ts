@@ -343,6 +343,35 @@ const loginHandlers = [
     });
   }),
 
+  http.get(
+    `${AUTH_BASE_PATH}/social-login/:provider/local`,
+    async ({ params }) => {
+      const provider =
+        typeof params.provider === 'string' ? params.provider.trim() : '';
+
+      if (!isSocialAuthProvider(provider)) {
+        return HttpResponse.json(
+          {
+            error_detail: '지원하지 않는 소셜 로그인 제공자입니다.',
+          },
+          { status: 404 },
+        );
+      }
+
+      pendingSocialLoginId = getMockSocialLoginId(provider);
+      pendingSocialProvider = provider;
+
+      await delay(120);
+
+      return new HttpResponse(null, {
+        status: 302,
+        headers: {
+          Location: ROUTE_PATHS.HOME,
+        },
+      });
+    },
+  ),
+
   http.post(`${AUTH_BASE_PATH}/login`, async ({ request }) => {
     const body = (await request.json()) as LoginRequest;
     const loginId = body.login_id.trim();

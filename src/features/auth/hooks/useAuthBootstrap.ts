@@ -26,10 +26,7 @@ function useAuthBootstrap() {
   }, []);
 
   useEffect(() => {
-    const currentAuthBootstrapStatus =
-      useAuthStore.getState().authBootstrapStatus;
-
-    if (currentAuthBootstrapStatus !== 'idle') {
+    if (authBootstrapStatus !== 'idle') {
       return;
     }
 
@@ -61,7 +58,7 @@ function useAuthBootstrap() {
           setAuthBootstrapReady();
         }
       });
-  }, [location.pathname]);
+  }, [authBootstrapStatus, location.pathname]);
 
   return {
     authBootstrapStatus,
