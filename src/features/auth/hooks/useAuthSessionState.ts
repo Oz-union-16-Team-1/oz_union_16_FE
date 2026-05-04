@@ -9,7 +9,7 @@ function useAuthSessionState() {
   const authBootstrapStatus = useAuthStore(
     (state) => state.authBootstrapStatus,
   );
-  const isAuthLoading = authBootstrapStatus === 'loading';
+  const isAuthLoading = authBootstrapStatus !== 'ready';
   const isAuthReady = authBootstrapStatus === 'ready';
   const accessStatus: AuthAccessStatus = !isAuthReady
     ? 'loading'

@@ -34,7 +34,10 @@ function useAuthBootstrap() {
   }, []);
 
   useEffect(() => {
-    if (authBootstrapStatus !== 'idle') {
+    const currentAuthBootstrapStatus =
+      useAuthStore.getState().authBootstrapStatus;
+
+    if (currentAuthBootstrapStatus !== 'idle') {
       return;
     }
 
@@ -61,12 +64,11 @@ function useAuthBootstrap() {
       return;
     }
 
-    let isMounted = true;
     setAuthBootstrapLoading();
 
     void ensureAuthSessionRestored()
       .catch((error) => {
-        if (!hasPendingSocialProvider || !isMounted) {
+        if (!hasPendingSocialProvider) {
           return;
         }
 
@@ -80,22 +82,17 @@ function useAuthBootstrap() {
         });
       })
       .finally(() => {
+        // React StrictMode in development replays effects once, so this
+        // completion path must not depend on component-local mount flags.
         if (hasPendingSocialProvider) {
           clearPendingSocialAuthProvider();
         }
 
-        if (
-          isMounted &&
-          useAuthStore.getState().authBootstrapStatus === 'loading'
-        ) {
+        if (useAuthStore.getState().authBootstrapStatus === 'loading') {
           setAuthBootstrapReady();
         }
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authBootstrapStatus, location.pathname, navigate]);
+  }, [location.pathname, navigate]);
 
   return {
     authBootstrapStatus,

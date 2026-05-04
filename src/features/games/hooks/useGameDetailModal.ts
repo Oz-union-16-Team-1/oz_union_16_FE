@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useAuthStore } from '../../../store/useAuthStore';
 import { shouldRetryApiQuery } from '../../../api/queryRetry';
+import useAuthSessionState from '../../auth/hooks/useAuthSessionState';
 import {
   GAME_DETAIL_GC_TIME,
   GAME_DETAIL_STALE_TIME,
@@ -14,6 +15,8 @@ import { gamesKeys, syncLikeMutationStateInQueryCache } from '../queryCache';
 import type { GameDetail, GameListItem } from '../types';
 
 const LOGIN_REQUIRED_MESSAGE = '로그인 후 찜하기를 사용할 수 있어요.';
+const AUTH_CHECK_PENDING_MESSAGE =
+  '로그인 상태를 확인하고 있어요. 잠시만 기다려 주세요.';
 const LIKE_ERROR_MESSAGE =
   '찜하기 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
@@ -54,6 +57,7 @@ const getDetailErrorKind = (error: unknown): DetailErrorKind => {
 
 export const useGameDetailModal = (game: GameListItem) => {
   const accessToken = useAuthStore((state) => state.accessToken);
+  const { isAuthLoading } = useAuthSessionState();
   const queryClient = useQueryClient();
   const [likeState, setLikeState] = useState<{
     gameId: number;
@@ -126,8 +130,17 @@ export const useGameDetailModal = (game: GameListItem) => {
       });
     },
   });
+  const isLikeInteractionDisabled = isAuthLoading || likeMutation.isPending;
 
   const handleToggleLike = () => {
+    if (isAuthLoading) {
+      setToast({
+        message: AUTH_CHECK_PENDING_MESSAGE,
+        tone: 'error',
+      });
+      return;
+    }
+
     if (!accessToken) {
       setToast({
         message: LOGIN_REQUIRED_MESSAGE,
@@ -161,7 +174,7 @@ export const useGameDetailModal = (game: GameListItem) => {
     detailQuery,
     handleToggleLike,
     hasResolvedDetail: Boolean(detail),
-    isLikePending: likeMutation.isPending,
+    isLikeInteractionDisabled,
     isLiked,
     likeCount: Math.max(
       0,
