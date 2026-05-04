@@ -101,8 +101,10 @@ export const toggleDevApiMode = (mode: DevApiMode) => {
     return;
   }
 
+  persistDevApiMode(mode);
+
   const currentUrl = new URL(window.location.href);
   currentUrl.searchParams.delete(DEV_API_MODE_QUERY_PARAM);
-  persistDevApiMode(mode);
-  window.location.replace(currentUrl.toString());
+  window.history.replaceState(window.history.state, '', currentUrl.toString());
+  window.location.reload();
 };
