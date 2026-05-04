@@ -1,5 +1,12 @@
-import { ExternalLink, Heart, PlayCircle, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Heart,
+  PlayCircle,
+  X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import ToastMessage from '../../../components/mypage/ToastMessage';
 import {
   DETAIL_LOADING_TEXT,
@@ -33,8 +40,6 @@ const DETAIL_NOT_FOUND_TITLE = '게임 상세 정보 없음';
 const DETAIL_NOT_FOUND_MESSAGE = '해당 게임 상세 정보를 찾을 수 없습니다.';
 const DETAIL_FETCH_ERROR_MESSAGE =
   '상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
-const DESCRIPTION_TOGGLE_MIN_LENGTH = 140;
-
 const GameDetailModalSkeleton = ({ game }: { game: GameListItem }) => {
   const title = normalizeMeaningfulText(game.name) ?? 'N/A';
   const listGenres = normalizeMeaningfulTextList(game.genres);
@@ -147,6 +152,8 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     Record<number, string[]>
   >({});
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
+  const descriptionRef = useRef<HTMLParagraphElement | null>(null);
   const {
     canRenderFallbackSummary,
     clearToast,
@@ -195,11 +202,15 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
     descriptionField === DETAIL_LOADING_TEXT
       ? '상세 정보를 불러오는 중입니다.'
       : formatNullableText(descriptionField);
-  const canToggleDescription =
-    descriptionField !== DETAIL_LOADING_TEXT &&
-    descriptionText !== 'N/A' &&
-    (descriptionText.length >= DESCRIPTION_TOGGLE_MIN_LENGTH ||
-      descriptionText.includes('\n'));
+  const canMeasureDescription =
+    descriptionField !== DETAIL_LOADING_TEXT && descriptionText !== 'N/A';
+  const shouldMeasureDescription =
+    canMeasureDescription && !isDescriptionExpanded;
+  const shouldShowDescriptionToggle =
+    isDescriptionExpanded || isDescriptionTruncated;
+  const collapsedDescriptionClampClass = shouldShowDescriptionToggle
+    ? 'line-clamp-4 sm:line-clamp-5'
+    : 'line-clamp-5 sm:line-clamp-6';
   const detailRows = [
     {
       label: '게임 출시일',
@@ -263,6 +274,40 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
       window.removeEventListener('keydown', closeOnEscape);
     };
   }, [onClose]);
+
+  useEffect(() => {
+    if (!shouldMeasureDescription) {
+      return;
+    }
+
+    const element = descriptionRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const measure = () => {
+      setIsDescriptionTruncated(
+        element.scrollHeight - element.clientHeight > 1,
+      );
+    };
+
+    const frameId = window.requestAnimationFrame(measure);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }
+
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(element);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+    };
+  }, [descriptionText, shouldMeasureDescription]);
 
   return (
     <div
@@ -392,35 +437,32 @@ const GameDetailModal = ({ game, onClose }: GameDetailModalProps) => {
                     {likeCount.toLocaleString('ko-KR')}
                   </span>
                 </p>
-                <div
-                  className={`mt-5 sm:flex sm:flex-1 sm:flex-col ${canToggleDescription && !isDescriptionExpanded ? 'sm:relative' : ''}`}
-                >
-                  <div
-                    className={`relative ${canToggleDescription && !isDescriptionExpanded ? 'sm:pr-0 sm:pb-7' : ''}`}
-                  >
+                <div className="mt-5 sm:flex sm:flex-1 sm:flex-col">
+                  <div className="sm:flex-1">
                     <p
-                      className={`text-sm leading-6 text-white/60 transition-[max-height] duration-200 ease-out ${isDescriptionExpanded ? '' : 'line-clamp-5 sm:line-clamp-6'}`}
+                      ref={descriptionRef}
+                      className={`text-sm leading-6 text-white/60 transition-[max-height] duration-200 ease-out ${isDescriptionExpanded ? '' : collapsedDescriptionClampClass}`}
                     >
                       {descriptionText}
                     </p>
-                    {canToggleDescription && !isDescriptionExpanded ? (
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-[linear-gradient(180deg,rgba(12,12,14,0),rgba(12,12,14,0.92)_72%,rgba(12,12,14,1))]" />
-                    ) : null}
                   </div>
-                  {canToggleDescription ? (
+                  {shouldShowDescriptionToggle ? (
                     <button
                       type="button"
+                      aria-label={
+                        isDescriptionExpanded ? '줄거리 접기' : '줄거리 펼치기'
+                      }
                       aria-expanded={isDescriptionExpanded}
                       onClick={() =>
                         setIsDescriptionExpanded((current) => !current)
                       }
-                      className={`mt-1 inline-flex cursor-pointer items-center text-sm font-semibold text-white/78 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12] ${
-                        !isDescriptionExpanded
-                          ? 'sm:absolute sm:bottom-0 sm:left-0'
-                          : ''
-                      }`}
+                      className="mt-1 flex h-6 w-full cursor-pointer items-center justify-center text-white/70 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d20b12] sm:mt-auto"
                     >
-                      {isDescriptionExpanded ? '줄거리 접기' : '줄거리 더보기'}
+                      {isDescriptionExpanded ? (
+                        <ChevronUp aria-hidden="true" className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown aria-hidden="true" className="h-5 w-5" />
+                      )}
                     </button>
                   ) : null}
                 </div>
