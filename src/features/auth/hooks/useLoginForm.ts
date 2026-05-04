@@ -117,7 +117,26 @@ function useLoginForm() {
     setFormMessage(
       locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
     );
-  }, [locationState?.errorMessage, locationSearchErrorMessage]);
+
+    // Clear location state to prevent message from persisting on reload
+    if (locationState?.errorMessage || locationState?.noticeMessage) {
+      navigate(location.pathname + location.search, {
+        replace: true,
+        state: {
+          ...locationState,
+          errorMessage: undefined,
+          noticeMessage: undefined,
+        },
+      });
+    }
+  }, [
+    locationState,
+    locationState?.errorMessage,
+    locationSearchErrorMessage,
+    location.pathname,
+    location.search,
+    navigate,
+  ]);
 
   useEffect(() => {
     setNoticeMessage(
