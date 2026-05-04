@@ -6,6 +6,7 @@ import {
   isIgdbImageId,
   normalizeThumbnailUrl,
 } from '../../lib/normalizeThumbnailUrl';
+import { toDisplayText } from '../../pages/mypage/utils';
 import ActionButton from '../common/ActionButton';
 
 type FavoriteGameCardProps = {
@@ -19,6 +20,8 @@ function FavoriteGameCard({
   onClick,
   onFavoriteClick,
 }: FavoriteGameCardProps) {
+  const displayTitle = toDisplayText(game?.title, '알 수 없는 게임');
+  const displaySummary = toDisplayText(game?.summary);
   const [igdbExtension, setIgdbExtension] = useState<'jpg' | 'png'>('jpg');
   const normalizedThumbnailUrl =
     normalizeThumbnailUrl(game.thumbnailUrl, {
@@ -48,7 +51,7 @@ function FavoriteGameCard({
             <img
               key={currentThumbnailKey ?? `thumbnail-fallback-${game.gameId}`}
               src={normalizedThumbnailUrl || undefined}
-              alt={`${game.title} 썸네일`}
+              alt={`${displayTitle} 썸네일`}
               onLoad={() => setFailedThumbnailKey(null)}
               onError={() => {
                 if (canRetryWithPng) {
@@ -72,7 +75,7 @@ function FavoriteGameCard({
           <ActionButton
             type="button"
             variant="icon"
-            aria-label={`${game.title} 찜 해제`}
+            aria-label={`${displayTitle} 찜 해제`}
             onClick={() => onFavoriteClick?.(game)}
             className="border-[#ff7a8c]/28! bg-[linear-gradient(145deg,rgba(169,38,60,0.96)_0%,rgba(112,19,37,0.98)_100%)] text-white! shadow-[0_12px_28px_rgba(53,7,18,0.46),inset_0_1px_0_rgba(255,255,255,0.12)] hover:border-[#ff9baa]/46! hover:bg-[linear-gradient(145deg,rgba(195,57,81,0.98)_0%,rgba(130,26,46,0.99)_100%)] hover:text-white! focus-visible:ring-[#ff96a5]/45"
           >
@@ -87,10 +90,10 @@ function FavoriteGameCard({
         className="flex min-h-[5.75rem] min-w-0 flex-1 cursor-pointer flex-col justify-center gap-1 px-3 pt-3 pb-2.5 text-left sm:min-h-[6.2rem] sm:px-4 sm:pt-3.5 sm:pb-3"
       >
         <h3 className="line-clamp-1 text-sm/5 font-semibold text-white sm:text-base/6 lg:text-lg/7">
-          {game.title}
+          {displayTitle}
         </h3>
         <p className="text-mypage-muted line-clamp-1 text-[11px]/4 sm:text-xs/5">
-          {game.summary}
+          {displaySummary}
         </p>
       </button>
     </article>

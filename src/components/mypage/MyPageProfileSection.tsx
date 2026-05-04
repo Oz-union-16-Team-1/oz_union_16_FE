@@ -1,8 +1,10 @@
 import { Camera, CircleUserRound, LoaderCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
+import defaultProfileImage from '../../assets/프로필 이미지.png';
 import type { CurrentUserSocialResponse } from '../../features/auth/types/auth';
 import type { MyPageToast } from '../../pages/mypage/types';
+import { toDisplayText } from '../../pages/mypage/utils';
 import AuthButton from '../auth/AuthButton';
 import InputControl from '../common/InputControl';
 import ToastMessage from './ToastMessage';
@@ -27,6 +29,57 @@ type MyPageProfileSectionProps = {
   children?: ReactNode;
 };
 
+type ProfileAvatarImageProps = {
+  displayNickname: string;
+  profileImageUrl: string;
+  isProfileImageUploading: boolean;
+};
+
+function ProfileAvatarImage({
+  displayNickname,
+  profileImageUrl,
+  isProfileImageUploading,
+}: ProfileAvatarImageProps) {
+  const [hasCustomProfileImageFailed, setHasCustomProfileImageFailed] =
+    useState(false);
+  const [hasDefaultProfileImageFailed, setHasDefaultProfileImageFailed] =
+    useState(false);
+  const hasCustomProfileImage =
+    Boolean(profileImageUrl) && !hasCustomProfileImageFailed;
+  const resolvedProfileImageUrl = hasCustomProfileImage
+    ? profileImageUrl
+    : defaultProfileImage;
+
+  if (hasDefaultProfileImageFailed) {
+    return (
+      <CircleUserRound
+        size={56}
+        className="text-white transition duration-200 group-hover:opacity-75"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={resolvedProfileImageUrl}
+      alt={`${displayNickname} 프로필 이미지`}
+      onError={() => {
+        if (hasCustomProfileImage) {
+          setHasCustomProfileImageFailed(true);
+          return;
+        }
+
+        setHasDefaultProfileImageFailed(true);
+      }}
+      className={`h-full w-full object-cover transition duration-200 ${
+        isProfileImageUploading
+          ? 'blur-[1.8px] brightness-[0.58]'
+          : 'group-hover:blur-[1.8px] group-hover:brightness-[0.58]'
+      }`}
+    />
+  );
+}
+
 function MyPageProfileSection({
   nickname,
   name,
@@ -46,17 +99,15 @@ function MyPageProfileSection({
   onProfileImageSelect,
   children,
 }: MyPageProfileSectionProps) {
+  const displayNickname = toDisplayText(nickname, '회원');
+  const displayName = toDisplayText(name);
+  const displayGenderLabel = toDisplayText(genderLabel);
   const normalizedProfileImageUrl = profileImageUrl?.trim() ?? '';
-  const [failedProfileImageUrl, setFailedProfileImageUrl] = useState<
-    string | null
-  >(null);
-  const hasProfileImage =
-    Boolean(normalizedProfileImageUrl) &&
-    failedProfileImageUrl !== normalizedProfileImageUrl;
   const [isNicknameEditMode, setIsNicknameEditMode] = useState(false);
-  const [nextNickname, setNextNickname] = useState(nickname);
+  const [nextNickname, setNextNickname] = useState(displayNickname);
   const [nicknameFieldError, setNicknameFieldError] = useState('');
-  const normalizedSocialType = socialAccount?.social_type?.trim().toLowerCase();
+  const normalizedSocialType =
+    socialAccount?.social_type?.trim()?.toLowerCase() ?? '';
   const accountBadge =
     socialAccount?.is_social === true
       ? normalizedSocialType === 'google'
@@ -96,7 +147,7 @@ function MyPageProfileSection({
       return;
     }
 
-    if (trimmedNickname === nickname.trim()) {
+    if (trimmedNickname === displayNickname.trim()) {
       setIsNicknameEditMode(false);
       setNicknameFieldError('');
       return;
@@ -156,25 +207,14 @@ function MyPageProfileSection({
                         : '프로필 변경'}
                     </span>
                     <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-[0.72rem] border-[#111114] bg-[linear-gradient(145deg,#8a4d55_0%,#78424a_100%)] shadow-[0_18px_44px_rgba(0,0,0,0.45)]">
-                      {hasProfileImage ? (
-                        <img
-                          src={normalizedProfileImageUrl}
-                          alt={`${nickname} 프로필 이미지`}
-                          onError={() =>
-                            setFailedProfileImageUrl(normalizedProfileImageUrl)
-                          }
-                          className={`h-full w-full object-cover transition duration-200 ${
-                            isProfileImageUploading
-                              ? 'blur-[1.8px] brightness-[0.58]'
-                              : 'group-hover:blur-[1.8px] group-hover:brightness-[0.58]'
-                          }`}
-                        />
-                      ) : (
-                        <CircleUserRound
-                          size={56}
-                          className="text-white transition duration-200 group-hover:opacity-75"
-                        />
-                      )}
+                      <ProfileAvatarImage
+                        key={
+                          normalizedProfileImageUrl || 'default-profile-image'
+                        }
+                        displayNickname={displayNickname}
+                        profileImageUrl={normalizedProfileImageUrl}
+                        isProfileImageUploading={isProfileImageUploading}
+                      />
                       <span
                         className={`pointer-events-none absolute inset-0 flex items-center justify-center rounded-full transition ${
                           isProfileImageUploading
@@ -208,7 +248,7 @@ function MyPageProfileSection({
                 <div className="min-w-0 pt-2">
                   <div className="flex flex-wrap items-center gap-3">
                     <p className="max-w-full truncate text-[clamp(2rem,3.6vw,2.8rem)] font-semibold tracking-[-0.04em] text-white">
-                      {nickname}
+                      {displayNickname}
                     </p>
                     <span
                       className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[-0.01em] ${accountBadge.className}`}
@@ -249,7 +289,7 @@ function MyPageProfileSection({
                     <p className="text-sm font-semibold text-white/76">별명</p>
                     {!isNicknameEditMode ? (
                       <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
-                        {nickname}
+                        {displayNickname}
                       </p>
                     ) : (
                       <>
@@ -291,7 +331,7 @@ function MyPageProfileSection({
                         className="inline-flex cursor-pointer items-center rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/12 hover:bg-white/[0.08]"
                         onClick={() => {
                           setIsNicknameEditMode(true);
-                          setNextNickname(nickname);
+                          setNextNickname(displayNickname);
                           setNicknameFieldError('');
                         }}
                       >
@@ -304,7 +344,7 @@ function MyPageProfileSection({
                           className="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
                           onClick={() => {
                             setIsNicknameEditMode(false);
-                            setNextNickname(nickname);
+                            setNextNickname(displayNickname);
                             setNicknameFieldError('');
                           }}
                           disabled={isProfileUpdating}
@@ -330,14 +370,14 @@ function MyPageProfileSection({
               <div className="py-5">
                 <p className="text-sm font-semibold text-white/76">사용자명</p>
                 <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
-                  {name}
+                  {displayName}
                 </p>
               </div>
 
               <div className="py-5 pb-1">
                 <p className="text-sm font-semibold text-white/76">성별</p>
                 <p className="mt-2 truncate text-[1.05rem] font-medium text-white">
-                  {genderLabel}
+                  {displayGenderLabel}
                 </p>
               </div>
             </div>

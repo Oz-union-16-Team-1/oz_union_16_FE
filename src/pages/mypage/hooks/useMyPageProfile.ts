@@ -17,7 +17,7 @@ import type { CurrentUserProfileResponse } from '../../../features/auth/types/au
 import { useAuthStore } from '../../../store/useAuthStore';
 import { syncAuthAccount } from '../../../features/auth/utils/sessionManager';
 import type { MyPageToastPayload } from '../types';
-import { toGenderLabel } from '../utils';
+import { toDisplayText, toGenderLabel, toOptionalDisplayText } from '../utils';
 
 type UseMyPageProfileOptions = {
   enabled: boolean;
@@ -74,8 +74,14 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
           file_name: file.name,
           content_type: file.type || 'application/octet-stream',
         });
-      const presignedUrl = presignedResponse.presigned_url.trim();
-      const profileImageUrl = presignedResponse.img_url.trim();
+      const presignedUrl =
+        typeof presignedResponse?.presigned_url === 'string'
+          ? presignedResponse.presigned_url.trim()
+          : '';
+      const profileImageUrl =
+        typeof presignedResponse?.img_url === 'string'
+          ? presignedResponse.img_url.trim()
+          : '';
 
       if (!presignedUrl || !profileImageUrl) {
         throw new Error(
@@ -181,11 +187,11 @@ function useMyPageProfile({ enabled, onToast }: UseMyPageProfileOptions) {
 
   return {
     resolvedProfile,
-    profileName: resolvedProfile?.name || 'N/A',
-    profileEmail: resolvedProfile?.email || null,
+    profileName: toDisplayText(resolvedProfile?.name),
+    profileEmail: toOptionalDisplayText(resolvedProfile?.email),
     profileGenderLabel: toGenderLabel(resolvedProfile?.gender),
-    profileImageUrl: resolvedProfile?.profile_img_url ?? null,
-    profileNickname: resolvedProfile?.nickname ?? '회원',
+    profileImageUrl: toOptionalDisplayText(resolvedProfile?.profile_img_url),
+    profileNickname: toDisplayText(resolvedProfile?.nickname, '회원'),
     isProfileLoading,
     isProfileImageUploading,
     isProfileUpdating: updateUserInfoMutation.isPending,

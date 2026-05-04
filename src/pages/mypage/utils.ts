@@ -5,6 +5,30 @@ import type {
 import type { GameListItem } from '../../features/games/types';
 import type { FavoriteGamePreview } from '../../features/mypage/types';
 
+const DEFAULT_DISPLAY_TEXT = 'N/A';
+
+export const toDisplayText = (
+  value: string | null | undefined,
+  fallback = DEFAULT_DISPLAY_TEXT,
+) => {
+  const trimmedValue = typeof value === 'string' ? value.trim() : '';
+
+  return trimmedValue || fallback;
+};
+
+export const toOptionalDisplayText = (value: string | null | undefined) => {
+  const trimmedValue = typeof value === 'string' ? value.trim() : '';
+
+  return trimmedValue || null;
+};
+
+export const toStringList = (value: string[] | null | undefined) =>
+  Array.isArray(value)
+    ? value
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0)
+    : [];
+
 export const toGenderLabel = (gender?: AuthGender) => {
   if (gender === 'M') {
     return '남성';
@@ -18,26 +42,36 @@ export const toGenderLabel = (gender?: AuthGender) => {
 };
 
 export const toFavoriteGamePreview = (
-  game: LikedGameItemResponse,
+  game: Partial<LikedGameItemResponse> | null | undefined,
 ): FavoriteGamePreview => {
-  const normalizedGenres = game.genres.filter((genre) => genre.trim());
+  const normalizedGenres = toStringList(game?.genres);
 
   return {
-    gameId: game.game_id,
-    title: game.game_title.trim() || 'N/A',
+    gameId:
+      typeof game?.game_id === 'number' && Number.isInteger(game.game_id)
+        ? game.game_id
+        : 0,
+    title: toDisplayText(game?.game_title),
     summary: normalizedGenres.length > 0 ? normalizedGenres.join(', ') : 'N/A',
-    thumbnailUrl: game.thumbnail_url,
+    thumbnailUrl: toOptionalDisplayText(game?.thumbnail_url),
     genres: normalizedGenres,
   };
 };
 
 export const toFavoriteGameListItem = (
-  game: FavoriteGamePreview,
-): GameListItem => ({
-  gameId: game.gameId,
-  name: game.title,
-  genres: game.genres.length > 0 ? game.genres : ['N/A'],
-  thumbnailUrl: game.thumbnailUrl,
-  rating: null,
-  isLiked: true,
-});
+  game: Partial<FavoriteGamePreview> | null | undefined,
+): GameListItem => {
+  const normalizedGenres = toStringList(game?.genres);
+
+  return {
+    gameId:
+      typeof game?.gameId === 'number' && Number.isInteger(game.gameId)
+        ? game.gameId
+        : 0,
+    name: toDisplayText(game?.title),
+    genres: normalizedGenres.length > 0 ? normalizedGenres : ['N/A'],
+    thumbnailUrl: toOptionalDisplayText(game?.thumbnailUrl),
+    rating: null,
+    isLiked: true,
+  };
+};
