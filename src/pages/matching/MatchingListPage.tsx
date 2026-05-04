@@ -41,42 +41,6 @@ function MatchingGenreCardSkeleton() {
   );
 }
 
-function MatchingListLoadingState() {
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(160,25,25,0.18),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_34%)] opacity-90" />
-      <LazyHeader fixed />
-
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
-        <section className="mx-auto max-w-240">
-          <div className="mb-7 text-center sm:mb-8">
-            <div className="mx-auto h-4 w-24 animate-pulse rounded-full bg-[#792222]/35" />
-            <div className="relative mt-3">
-              <h1 className="text-3xl font-semibold tracking-[-0.03em] text-transparent sm:text-4xl md:text-[42px]">
-                장르별 게임 매칭
-              </h1>
-              <div className="absolute top-1/2 left-1/2 h-11 w-62 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/9" />
-            </div>
-            <div className="relative mt-3">
-              <p className="truncate text-sm leading-6 text-transparent sm:text-[15px]">
-                좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
-                맞는 게임을 빠르게 추천해드려요.
-              </p>
-              <div className="absolute top-1/2 left-1/2 h-4 w-full max-w-124 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/7" />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {MATCHING_GENRES.map((genre) => (
-              <MatchingGenreCardSkeleton key={genre.slug} />
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
-}
-
 function MatchingListPage() {
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -134,9 +98,10 @@ function MatchingListPage() {
     );
   }
 
-  if (authGate.needsAuthCheck) {
-    return <MatchingListLoadingState />;
-  }
+  const shouldShowPageSkeleton = authGate.needsAuthCheck;
+  const shouldShowHeaderSkeleton = shouldShowPageSkeleton;
+  const shouldShowCardSkeleton =
+    shouldShowPageSkeleton || shouldShowGenreImageSkeleton;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -144,7 +109,7 @@ function MatchingListPage() {
       <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-280 px-4 pt-22 pb-12 sm:px-6 sm:pt-24 md:px-8 md:pt-25 md:pb-14">
-        {!canAccessPage ? (
+        {!canAccessPage && !shouldShowPageSkeleton ? (
           <AuthGateStatusPanel
             title="로그인 후 매칭을 시작할 수 있어요."
             description="로그인하면 장르를 고르고 트레일러를 보며 별점을 남긴 뒤, 취향에 맞는 추천 결과까지 바로 이어서 확인할 수 있어요."
@@ -153,23 +118,42 @@ function MatchingListPage() {
           />
         ) : (
           <section className="mx-auto max-w-240">
-            <div className="mb-7 text-center sm:mb-8">
-              <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
-                Matching
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[42px]">
-                장르별 게임 매칭
-              </h1>
-              <p
-                className="mt-3 truncate text-sm leading-6 text-white/58 sm:text-[15px]"
-                title="좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에 맞는 게임을 빠르게 추천해드려요."
-              >
-                좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
-                맞는 게임을 빠르게 추천해드려요.
-              </p>
-            </div>
+            {shouldShowHeaderSkeleton ? (
+              <div className="mb-7 text-center sm:mb-8">
+                <div className="mx-auto h-4 w-24 animate-pulse rounded-full bg-[#792222]/35" />
+                <div className="relative mt-3">
+                  <h1 className="text-3xl font-semibold tracking-[-0.03em] text-transparent sm:text-4xl md:text-[42px]">
+                    장르별 게임 매칭
+                  </h1>
+                  <div className="absolute top-1/2 left-1/2 h-11 w-62 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/9" />
+                </div>
+                <div className="relative mt-3">
+                  <p className="truncate text-sm leading-6 text-transparent sm:text-[15px]">
+                    좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
+                    맞는 게임을 빠르게 추천해드려요.
+                  </p>
+                  <div className="absolute top-1/2 left-1/2 h-4 w-full max-w-124 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/7" />
+                </div>
+              </div>
+            ) : (
+              <div className="mb-7 text-center sm:mb-8">
+                <p className="text-sm font-semibold tracking-[0.2em] text-[#d93737] uppercase">
+                  Matching
+                </p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[42px]">
+                  장르별 게임 매칭
+                </h1>
+                <p
+                  className="mt-3 truncate text-sm leading-6 text-white/58 sm:text-[15px]"
+                  title="좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에 맞는 게임을 빠르게 추천해드려요."
+                >
+                  좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
+                  맞는 게임을 빠르게 추천해드려요.
+                </p>
+              </div>
+            )}
 
-            {shouldShowGenreImageSkeleton ? (
+            {shouldShowCardSkeleton ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {MATCHING_GENRES.map((genre) => (
                   <MatchingGenreCardSkeleton key={genre.slug} />

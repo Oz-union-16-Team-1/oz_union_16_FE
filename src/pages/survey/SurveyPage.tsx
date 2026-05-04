@@ -36,20 +36,6 @@ function SurveyBackdrop() {
   );
 }
 
-function SurveyPageLoadingState() {
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      <SurveyBackdrop />
-      <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
-      <LazyHeader fixed />
-
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
-        <SurveyChatLoadingState />
-      </main>
-    </div>
-  );
-}
-
 function SurveyPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -129,10 +115,6 @@ function SurveyPage() {
     );
   }
 
-  if (authGate.needsAuthCheck) {
-    return <SurveyPageLoadingState />;
-  }
-
   if (shouldRedirectCompletedEntry) {
     const recommendationQuery = surveySessionId
       ? `?source=survey&session_id=${encodeURIComponent(surveySessionId)}`
@@ -145,6 +127,19 @@ function SurveyPage() {
     );
   }
 
+  const pageContent = authGate.needsAuthCheck ? (
+    <SurveyChatLoadingState />
+  ) : canAccessSurvey ? (
+    <SurveyChatPanel isHistoryView={isHistoryMode} />
+  ) : (
+    <AuthGateStatusPanel
+      title="로그인 후 설문을 시작할 수 있어요."
+      description="로그인하면 취향을 바탕으로 질문을 이어가고, 설문이 끝난 뒤 바로 추천 결과까지 확인할 수 있어요."
+      align="center"
+      className="mx-auto max-w-190 sm:py-12"
+    />
+  );
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
       <SurveyBackdrop />
@@ -152,16 +147,7 @@ function SurveyPage() {
       <LazyHeader fixed />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
-        {canAccessSurvey ? (
-          <SurveyChatPanel isHistoryView={isHistoryMode} />
-        ) : (
-          <AuthGateStatusPanel
-            title="로그인 후 설문을 시작할 수 있어요."
-            description="로그인하면 취향을 바탕으로 질문을 이어가고, 설문이 끝난 뒤 바로 추천 결과까지 확인할 수 있어요."
-            align="center"
-            className="mx-auto max-w-190 sm:py-12"
-          />
-        )}
+        {pageContent}
       </main>
     </div>
   );

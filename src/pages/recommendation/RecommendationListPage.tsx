@@ -235,41 +235,6 @@ function RecommendationPromptCard({
   );
 }
 
-function RecommendationPageLoadingState() {
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      <RecommendationBackdrop items={[]} />
-      <LazyHeader fixed />
-
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-300 flex-col px-3 pt-24 pb-8 sm:px-4 sm:pt-28 sm:pb-10 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
-        <section className="mx-auto flex min-h-0 w-full max-w-245 flex-1 flex-col">
-          <div className="mb-8">
-            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-end">
-              <div className="hidden md:block" />
-
-              <div className="text-center">
-                <div className="relative">
-                  <h1 className="text-3xl font-semibold tracking-[-0.04em] text-transparent sm:text-4xl md:text-[52px]">
-                    게임 추천 리스트
-                  </h1>
-                  <div className="absolute top-1/2 left-1/2 h-12 w-72 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/10" />
-                </div>
-              </div>
-
-              <div className="flex justify-center gap-2.5 md:justify-end">
-                <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
-                <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
-              </div>
-            </div>
-          </div>
-
-          <RecommendationListSkeleton />
-        </section>
-      </main>
-    </div>
-  );
-}
-
 function RecommendationListPage() {
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const authGate = useAuthGate({ allowMockBypass: true });
@@ -321,9 +286,27 @@ function RecommendationListPage() {
     setFeedbackMessage,
   });
 
-  if (authGate.needsAuthCheck) {
-    return <RecommendationPageLoadingState />;
-  }
+  const shouldShowPageSkeleton = authGate.needsAuthCheck;
+  const promptCardProps =
+    !canAccessPage || shouldShowPageSkeleton
+      ? null
+      : !isMatchSource && !isSurveySource
+        ? {
+            title: '먼저 설문을 완료해 주세요.',
+            description:
+              '설문이 끝나면 추천 결과를 이 페이지에서 바로 확인할 수 있어요.',
+            ctaLabel: '설문 페이지로 이동',
+            to: `/${ROUTES.SURVEY}`,
+          }
+        : shouldShowMatchEntryCta
+          ? {
+              title: '먼저 매칭 평가를 완료해 주세요.',
+              description:
+                '좋아하는 장르를 고르고 최대 5개 게임의 트레일러를 보며 별점을 남기면 추천 결과가 바로 준비돼요.',
+              ctaLabel: '매칭 페이지로 이동',
+              to: `/${ROUTES.MATCHING_LIST}`,
+            }
+          : null;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
@@ -337,12 +320,26 @@ function RecommendationListPage() {
               <div className="hidden md:block" />
 
               <div className="text-center">
-                <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
-                  게임 추천 리스트
-                </h1>
+                {shouldShowPageSkeleton ? (
+                  <div className="relative">
+                    <h1 className="text-3xl font-semibold tracking-[-0.04em] text-transparent sm:text-4xl md:text-[52px]">
+                      게임 추천 리스트
+                    </h1>
+                    <div className="absolute top-1/2 left-1/2 h-12 w-72 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/10" />
+                  </div>
+                ) : (
+                  <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl md:text-[52px]">
+                    게임 추천 리스트
+                  </h1>
+                )}
               </div>
 
-              {shouldShowSurveyActions ? (
+              {shouldShowPageSkeleton ? (
+                <div className="flex justify-center gap-2.5 md:justify-end">
+                  <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
+                  <div className="h-[50px] w-31 animate-pulse rounded-2xl border border-white/10 bg-white/4" />
+                </div>
+              ) : shouldShowSurveyActions ? (
                 <div className="flex flex-wrap items-center justify-center gap-2.5 md:justify-end">
                   <button
                     type="button"
@@ -367,25 +364,15 @@ function RecommendationListPage() {
             </div>
           </div>
 
-          {!canAccessPage ? (
+          {shouldShowPageSkeleton ? (
+            <RecommendationListSkeleton />
+          ) : !canAccessPage ? (
             <AuthGateStatusPanel
               title="로그인 후 추천 결과를 볼 수 있어요."
               description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를 켜두면 추천 결과 흐름을 확인할 수 있습니다."
             />
-          ) : !isMatchSource && !isSurveySource ? (
-            <RecommendationPromptCard
-              title="먼저 설문을 완료해 주세요."
-              description="설문이 끝나면 추천 결과를 이 페이지에서 바로 확인할 수 있어요."
-              ctaLabel="설문 페이지로 이동"
-              to={`/${ROUTES.SURVEY}`}
-            />
-          ) : shouldShowMatchEntryCta ? (
-            <RecommendationPromptCard
-              title="먼저 매칭 평가를 완료해 주세요."
-              description="좋아하는 장르를 고르고 최대 5개 게임의 트레일러를 보며 별점을 남기면 추천 결과가 바로 준비돼요."
-              ctaLabel="매칭 페이지로 이동"
-              to={`/${ROUTES.MATCHING_LIST}`}
-            />
+          ) : promptCardProps ? (
+            <RecommendationPromptCard {...promptCardProps} />
           ) : (
             <section className="flex min-h-0 flex-col overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               {feedbackMessage ? (
