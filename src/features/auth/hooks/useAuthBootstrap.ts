@@ -9,6 +9,7 @@ import {
 } from '../../../store/useAuthStore';
 import {
   clearAuthSession,
+  hydrateAuthSessionFromAccessToken,
   refreshStoredAccessToken,
   setAuthBootstrapLoading,
   setAuthBootstrapReady,
@@ -42,14 +43,15 @@ function useAuthBootstrap() {
       return;
     }
 
-    if (!isAccessTokenExpiringSoon(storedAccessToken)) {
-      setAuthBootstrapReady();
-      return;
-    }
-
     setAuthBootstrapLoading();
 
-    void refreshStoredAccessToken()
+    const restorePromise = isAccessTokenExpiringSoon(storedAccessToken)
+      ? refreshStoredAccessToken().then((refreshedAccessToken) =>
+          hydrateAuthSessionFromAccessToken(refreshedAccessToken),
+        )
+      : hydrateAuthSessionFromAccessToken(storedAccessToken);
+
+    void restorePromise
       .catch(() => {
         clearAuthSession({ setReady: false });
       })

@@ -17,6 +17,7 @@ export type AuthAccessStatus = 'loading' | 'authenticated' | 'unauthenticated';
 export const AUTH_ACCESS_TOKEN_STORAGE_KEY = 'access_token';
 const LEGACY_AUTH_ACCESS_TOKEN_STORAGE_KEY = 'auth-access-token';
 const AUTH_PROFILE_PREVIEW_STORAGE_KEY = 'auth-profile-preview-image-url';
+const AUTH_SOCIAL_ACCOUNT_STORAGE_KEY = 'auth-social-account';
 
 export const readStoredAccessToken = () => {
   if (typeof window === 'undefined') {
@@ -73,6 +74,37 @@ const readPersistedProfilePreviewImageUrl = () => {
   return window.sessionStorage.getItem(AUTH_PROFILE_PREVIEW_STORAGE_KEY);
 };
 
+const readPersistedSocialAccount = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const serializedSocialAccount = window.sessionStorage.getItem(
+    AUTH_SOCIAL_ACCOUNT_STORAGE_KEY,
+  );
+
+  if (!serializedSocialAccount) {
+    return null;
+  }
+
+  try {
+    const parsedSocialAccount = JSON.parse(
+      serializedSocialAccount,
+    ) as CurrentUserSocialResponse;
+
+    if (
+      typeof parsedSocialAccount?.is_social === 'boolean' &&
+      typeof parsedSocialAccount?.social_type === 'string'
+    ) {
+      return parsedSocialAccount;
+    }
+  } catch {
+    window.sessionStorage.removeItem(AUTH_SOCIAL_ACCOUNT_STORAGE_KEY);
+  }
+
+  return null;
+};
+
 const persistProfilePreviewImageUrl = (profileImageUrl?: string | null) => {
   if (typeof window === 'undefined') {
     return;
@@ -88,6 +120,24 @@ const persistProfilePreviewImageUrl = (profileImageUrl?: string | null) => {
   window.sessionStorage.setItem(
     AUTH_PROFILE_PREVIEW_STORAGE_KEY,
     normalizedProfileImageUrl,
+  );
+};
+
+const persistSocialAccount = (
+  socialAccount?: CurrentUserSocialResponse | null,
+) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (!socialAccount) {
+    window.sessionStorage.removeItem(AUTH_SOCIAL_ACCOUNT_STORAGE_KEY);
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    AUTH_SOCIAL_ACCOUNT_STORAGE_KEY,
+    JSON.stringify(socialAccount),
   );
 };
 
@@ -124,7 +174,7 @@ export const useAuthStore = create<AuthState>((set) => {
   return {
     accessToken: persistedAccessToken,
     account: null,
-    socialAccount: null,
+    socialAccount: readPersistedSocialAccount(),
     profilePreviewImageUrl: readPersistedProfilePreviewImageUrl(),
     isAuthenticated: Boolean(persistedAccessToken),
     authBootstrapStatus: 'idle',
@@ -147,6 +197,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     setSocialAccount: (socialAccount) => {
+      persistSocialAccount(socialAccount);
       set({
         socialAccount,
       });
@@ -156,6 +207,7 @@ export const useAuthStore = create<AuthState>((set) => {
       const normalizedToken = token.trim();
       persistAccessToken(normalizedToken);
       persistProfilePreviewImageUrl(account?.profile_img_url);
+      persistSocialAccount(socialAccount);
       set({
         accessToken: normalizedToken,
         account,
@@ -168,6 +220,7 @@ export const useAuthStore = create<AuthState>((set) => {
     clearAuth: () => {
       persistAccessToken(null);
       persistProfilePreviewImageUrl(null);
+      persistSocialAccount(null);
       set({
         accessToken: null,
         account: null,
