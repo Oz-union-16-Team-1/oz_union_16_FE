@@ -45,6 +45,8 @@ const MATCHING_SECONDARY_ACTION_BUTTON_CLASS =
 
 const MATCHING_PRIMARY_ACTION_BUTTON_CLASS =
   'inline-flex items-center gap-2 rounded-full bg-[#c91818] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#b11212] disabled:bg-[#5c1a1a] disabled:text-white/44';
+const MATCHING_TITLE_COLLAPSED_HEIGHT_REM = 4.8;
+const MATCHING_SUMMARY_COLLAPSED_HEIGHT_REM = 6;
 
 const formatMatchingCandidateRating = (rating: number | null) => {
   if (typeof rating !== 'number') {
@@ -87,21 +89,30 @@ function MatchingDetailSkeleton() {
     <section className="mx-auto mt-9 max-w-255 animate-pulse sm:mt-10 md:mt-12">
       <div className="text-center">
         <div className="mx-auto h-4 w-20 rounded-full bg-[#792222]/35" />
-        <div className="mx-auto mt-3 h-10 w-72 rounded-full bg-white/9" />
+        <div className="relative mt-3">
+          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-transparent sm:text-4xl md:text-[40px]">
+            매칭 과정을 따라가세요
+          </h1>
+          <div className="absolute top-1/2 left-1/2 h-10 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/9" />
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.32fr_0.92fr] lg:gap-5 xl:mt-9">
-        <div className="overflow-hidden rounded-[28px] border border-white/8 bg-[#0c0c0d] p-3">
-          <div className="aspect-video rounded-[22px] bg-white/[0.05]" />
-          <div className="mt-4 h-4 w-28 rounded-full bg-white/8" />
-          <div className="mt-3 h-4 w-full rounded-full bg-white/7" />
-          <div className="mt-2 h-4 w-5/6 rounded-full bg-white/7" />
+        <div className="overflow-hidden rounded-[26px] border border-white/8 bg-[#0d0d0f] shadow-[0_24px_48px_rgba(0,0,0,0.28)]">
+          <div className="aspect-video h-full min-h-[360px] rounded-[26px] bg-white/[0.05] sm:min-h-[420px]" />
         </div>
 
         <div className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-6">
-          <div className="h-9 w-2/3 rounded-full bg-white/9" />
+          <div className="relative max-w-[72%]">
+            <h2 className="text-2xl leading-[1.28] font-semibold tracking-[-0.02em] text-transparent sm:text-[30px]">
+              플레이스홀더 제목 제목
+            </h2>
+            <div className="absolute top-1/2 left-0 h-9 w-full -translate-y-1/2 rounded-full bg-white/9" />
+          </div>
           <div className="mt-4 h-4 w-full rounded-full bg-white/7" />
-          <div className="mt-2 h-4 w-4/5 rounded-full bg-white/7" />
+          <div className="mt-2 h-4 w-[88%] rounded-full bg-white/7" />
+          <div className="mt-2 h-4 w-[82%] rounded-full bg-white/7" />
+          <div className="mt-2 h-4 w-[64%] rounded-full bg-white/7" />
 
           <div className="mt-5 grid gap-1.5 sm:grid-cols-2">
             <div className="h-16 rounded-[14px] border border-white/8 bg-white/3" />
@@ -118,10 +129,10 @@ function MatchingDetailSkeleton() {
             ))}
           </div>
 
-          <div className="mt-auto pt-8">
-            <div className="flex gap-3">
-              <div className="h-12 flex-1 rounded-full bg-white/[0.05]" />
-              <div className="h-12 flex-1 rounded-full bg-white/[0.08]" />
+          <div className="mt-auto pt-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="h-[48px] w-[92px] rounded-full bg-white/[0.05]" />
+              <div className="h-[48px] w-[104px] rounded-full bg-white/[0.08]" />
             </div>
           </div>
         </div>
@@ -184,9 +195,19 @@ function MatchingGenreDetailPage() {
   const goPrevious = useMatchingStore((state) => state.goPrevious);
   const resetFlow = useMatchingStore((state) => state.resetFlow);
   const hasInitializedFlowRef = useRef(false);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const summaryRef = useRef<HTMLParagraphElement | null>(null);
   const [likeFeedbackMessage, setLikeFeedbackMessage] = useState<string | null>(
     null,
   );
+  const [previewTitleGameId, setPreviewTitleGameId] = useState<number | null>(
+    null,
+  );
+  const [openSummaryOverlayGameId, setOpenSummaryOverlayGameId] = useState<
+    number | null
+  >(null);
+  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
+  const [isSummaryOverflowing, setIsSummaryOverflowing] = useState(false);
 
   useLayoutEffect(() => {
     resetFlow();
@@ -223,6 +244,12 @@ function MatchingGenreDetailPage() {
         rating: null,
       })
     : null;
+  const isTitlePreviewOpen =
+    currentCandidate !== undefined &&
+    previewTitleGameId === currentCandidate.game_id;
+  const isSummaryOverlayOpen =
+    currentCandidate !== undefined &&
+    openSummaryOverlayGameId === currentCandidate.game_id;
   const isLastCard = totalSteps > 0 && safeIndex === totalSteps - 1;
   const hasSelectedRating = currentEvaluation?.rating !== null;
   const canGoPrevious = safeIndex > 0;
@@ -241,6 +268,37 @@ function MatchingGenreDetailPage() {
         ' · ',
       )} 감각을 대표하는 후보예요. 트레일러를 보고 취향에 얼마나 맞는지 편하게 판단해보세요.`
     : '';
+  useEffect(() => {
+    const measureOverflow = () => {
+      const titleElement = titleRef.current;
+      const summaryElement = summaryRef.current;
+
+      if (titleElement) {
+        setIsTitleOverflowing(
+          titleElement.scrollHeight >
+            MATCHING_TITLE_COLLAPSED_HEIGHT_REM * 16 + 1,
+        );
+      }
+
+      if (summaryElement) {
+        setIsSummaryOverflowing(
+          summaryElement.scrollHeight >
+            MATCHING_SUMMARY_COLLAPSED_HEIGHT_REM * 16 + 1,
+        );
+      }
+    };
+
+    measureOverflow();
+    window.addEventListener('resize', measureOverflow);
+
+    return () => {
+      window.removeEventListener('resize', measureOverflow);
+    };
+  }, [currentCandidate?.game_id, currentCandidateSummary]);
+
+  const shouldShowTitleToggle = Boolean(currentCandidate) && isTitleOverflowing;
+  const shouldShowSummaryToggle = isSummaryOverflowing;
+
   const likeMutation = useMutation({
     mutationFn: ({
       candidate,
@@ -423,22 +481,94 @@ function MatchingGenreDetailPage() {
                 ) : null}
 
                 {currentCandidate && currentEvaluation ? (
-                  <article className="survey-panel flex flex-col px-5 py-5 sm:px-6 sm:py-6">
+                  <article className="survey-panel relative flex flex-col px-5 py-5 sm:px-6 sm:py-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <h2 className="text-2xl font-semibold tracking-[-0.02em] break-keep text-white sm:text-[30px]">
-                          {currentCandidate.title}
-                        </h2>
-                        <p className="mt-3 text-sm leading-6 break-keep text-white/62">
+                        <div
+                          className="relative"
+                          onMouseEnter={() =>
+                            shouldShowTitleToggle
+                              ? setPreviewTitleGameId(currentCandidate.game_id)
+                              : undefined
+                          }
+                          onMouseLeave={() => setPreviewTitleGameId(null)}
+                        >
+                          <h2
+                            ref={titleRef}
+                            tabIndex={shouldShowTitleToggle ? 0 : undefined}
+                            className={`text-2xl leading-[1.28] font-semibold tracking-[-0.02em] break-keep text-white sm:text-[30px] ${
+                              shouldShowTitleToggle ? 'cursor-help' : ''
+                            }`}
+                            title={currentCandidate.title}
+                            style={{
+                              maxHeight: `${MATCHING_TITLE_COLLAPSED_HEIGHT_REM}rem`,
+                              overflow: 'hidden',
+                            }}
+                            onFocus={() =>
+                              shouldShowTitleToggle
+                                ? setPreviewTitleGameId(
+                                    currentCandidate.game_id,
+                                  )
+                                : undefined
+                            }
+                            onBlur={() => setPreviewTitleGameId(null)}
+                          >
+                            {currentCandidate.title}
+                          </h2>
+                          {shouldShowTitleToggle && isTitlePreviewOpen ? (
+                            <div className="pointer-events-none absolute top-full left-0 z-20 mt-3 w-full max-w-[34rem] rounded-2xl border border-white/10 bg-[#0f0f11]/96 px-4 py-3 shadow-[0_20px_48px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+                              <p className="text-[15px] leading-6 break-keep text-white/92">
+                                {currentCandidate.title}
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
+                        <p
+                          ref={summaryRef}
+                          className="mt-3 text-sm leading-6 break-keep text-white/62"
+                          style={
+                            isSummaryOverlayOpen
+                              ? undefined
+                              : {
+                                  maxHeight: `${MATCHING_SUMMARY_COLLAPSED_HEIGHT_REM}rem`,
+                                  overflow: 'hidden',
+                                }
+                          }
+                        >
                           {currentCandidateSummary}
                         </p>
+                        {shouldShowSummaryToggle ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenSummaryOverlayGameId((current) =>
+                                current === currentCandidate.game_id
+                                  ? null
+                                  : currentCandidate.game_id,
+                              )
+                            }
+                            className="mt-2.5 text-sm font-semibold text-[#ff8d8d] transition hover:text-[#ffb1b1]"
+                          >
+                            줄거리 전체 보기
+                          </button>
+                        ) : null}
                         <div className="mt-4 grid gap-1.5 border-t border-white/8 pt-2.5 sm:grid-cols-2">
                           <div className="flex h-full flex-col rounded-[14px] border border-white/8 bg-white/3 px-2.5 py-2">
                             <p className="text-[10px] font-medium text-white/38">
                               장르
                             </p>
-                            <p className="mt-1 text-[13px] leading-5 font-medium break-keep text-white/78">
-                              {currentCandidate.genres.join(' · ') ||
+                            <p
+                              className="mt-1 text-[13px] leading-5 font-medium text-white/78"
+                              style={{
+                                maxHeight: '1.25rem',
+                                overflow: 'hidden',
+                              }}
+                              title={
+                                currentCandidate.genres.join(' / ') ||
+                                genreTitle
+                              }
+                            >
+                              {currentCandidate.genres.join(' / ') ||
                                 genreTitle}
                             </p>
                           </div>
@@ -571,6 +701,33 @@ function MatchingGenreDetailPage() {
                         </button>
                       </div>
                     )}
+                    {isSummaryOverlayOpen ? (
+                      <div className="absolute inset-0 z-10 rounded-[32px] border border-white/10 bg-[#09090b]/96 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.44)] backdrop-blur-xl sm:p-6">
+                        <div className="flex h-full flex-col">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold tracking-[0.18em] text-[#ff8d8d] uppercase">
+                                Summary
+                              </p>
+                              <h3 className="mt-2 text-xl font-semibold break-keep text-white sm:text-2xl">
+                                {currentCandidate.title}
+                              </h3>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setOpenSummaryOverlayGameId(null)}
+                              className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/4 px-3 py-2 text-sm font-medium text-white/86 transition hover:border-white/20 hover:bg-white/7"
+                            >
+                              닫기
+                            </button>
+                          </div>
+
+                          <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1 text-sm leading-7 break-keep text-white/72">
+                            {currentCandidateSummary}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                   </article>
                 ) : null}
               </div>

@@ -3,10 +3,11 @@ import { Navigate, useLocation, useSearchParams } from 'react-router';
 
 import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
-import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
-import SurveyChatPanel from '../../features/survey/components/SurveyChatPanel';
+import SurveyChatPanel, {
+  SurveyChatLoadingState,
+} from '../../features/survey/components/SurveyChatPanel';
 import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
 import { mockTopGames } from '../../features/games/mockGames';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -31,6 +32,20 @@ function SurveyBackdrop() {
         ))}
       </div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(170,25,25,0.16),transparent_24%),linear-gradient(180deg,rgba(5,5,5,0.46),rgba(5,5,5,0.92))]" />
+    </div>
+  );
+}
+
+function SurveyPageLoadingState() {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#050505]">
+      <SurveyBackdrop />
+      <div className="app-aurora pointer-events-none absolute inset-0 opacity-90" />
+      <LazyHeader fixed />
+
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 pt-[4.85rem] pb-6 sm:px-4 sm:pt-[5.15rem] sm:pb-8 md:h-dvh md:max-h-dvh md:overflow-hidden md:px-8 md:pt-[5.45rem] md:pb-6">
+        <SurveyChatLoadingState />
+      </main>
     </div>
   );
 }
@@ -115,7 +130,7 @@ function SurveyPage() {
   }
 
   if (authGate.needsAuthCheck) {
-    return <MainPageLoadingFallback />;
+    return <SurveyPageLoadingState />;
   }
 
   if (shouldRedirectCompletedEntry) {

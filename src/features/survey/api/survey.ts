@@ -145,6 +145,7 @@ export const normalizeSurveySessionResponse = (
       payload.ai_message ??
       payload.chatbot_reply ??
       null,
+    warning_message: payload.warning_message ?? null,
     progress: normalizeSurveyProgress(payload.progress, payload.progress_rate),
     status: normalizeSurveyStatus(payload.status, isCompleted),
     recommendation_ready: recommendationReady,
@@ -154,6 +155,23 @@ export const normalizeSurveySessionResponse = (
 export const normalizeSurveyResetResponse = (
   payload: SurveyApiResetResponse,
 ): SurveyResetResponse => normalizeSurveySessionResponse(payload);
+
+const ensureSurveyPromptResponse = <
+  T extends SurveySessionStartResponse | SurveyResetResponse,
+>(
+  payload: T,
+  context: 'start' | 'reset',
+) => {
+  if (payload.assistant_message || payload.recommendation_ready) {
+    return payload;
+  }
+
+  throw new Error(
+    context === 'start'
+      ? '설문 시작 응답에 첫 질문이 없습니다.'
+      : '설문 초기화 응답에 첫 질문이 없습니다.',
+  );
+};
 
 const normalizeSurveyResultItem = (
   item: SurveyApiResultItem,
@@ -187,20 +205,26 @@ export const startSurveySession =
   async (): Promise<SurveySessionStartResponse> => {
     try {
       const response = await api.post<SurveyApiSessionResponse>(
-        `${SURVEY_CHATBOT_BASE_PATH}/sessions/`,
+        `${SURVEY_CHATBOT_BASE_PATH}/sessions`,
         undefined,
         {
           timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
         },
       );
 
-      return normalizeSurveySessionResponse(response.data);
+      return ensureSurveyPromptResponse(
+        normalizeSurveySessionResponse(response.data),
+        'start',
+      );
     } catch (error) {
       if (!isMockServiceWorkerEnabled()) {
         throw error;
       }
 
-      return normalizeSurveySessionResponse(startMockSurveySession());
+      return ensureSurveyPromptResponse(
+        normalizeSurveySessionResponse(startMockSurveySession()),
+        'start',
+      );
     }
   };
 
@@ -209,7 +233,7 @@ export const continueSurveyChat = async (
 ): Promise<SurveyChatResponse> => {
   try {
     const response = await api.post<SurveyApiSessionResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages/`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${payload.session_id}/messages`,
       {
         message: payload.user_answer,
       } satisfies SurveyApiChatRequest,
@@ -236,27 +260,33 @@ export const continueSurveyChat = async (
 export const resetSurveySession = async () => {
   try {
     const response = await api.post<SurveyApiResetResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions/reset/`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/reset`,
       undefined,
       {
         timeout: SURVEY_CHATBOT_REQUEST_TIMEOUT_MS,
       },
     );
 
-    return normalizeSurveyResetResponse(response.data);
+    return ensureSurveyPromptResponse(
+      normalizeSurveyResetResponse(response.data),
+      'reset',
+    );
   } catch (error) {
     if (!isMockServiceWorkerEnabled()) {
       throw error;
     }
 
-    return normalizeSurveyResetResponse(resetMockSurveySession());
+    return ensureSurveyPromptResponse(
+      normalizeSurveyResetResponse(resetMockSurveySession()),
+      'reset',
+    );
   }
 };
 
 export const getSurveyResults = async (query: SurveyResultQuery) => {
   try {
     const response = await api.get<SurveyApiResultResponse>(
-      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${query.session_id}/recommendations/`,
+      `${SURVEY_CHATBOT_BASE_PATH}/sessions/${query.session_id}/recommendations`,
       {
         params: {
           cursor: query.cursor,

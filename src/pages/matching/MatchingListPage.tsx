@@ -15,12 +15,26 @@ import { useMatchingStore } from '../../features/matching/store/useMatchingStore
 function MatchingGenreCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)]">
-      <div className="animate-pulse overflow-hidden rounded-[18px] border border-white/5 bg-white/[0.02]">
+      <div className="relative animate-pulse overflow-hidden rounded-[18px]">
         <div className="aspect-[16/8.4] w-full bg-[linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.08),rgba(255,255,255,0.03))]" />
-        <div className="space-y-3 px-4 py-4">
-          <div className="h-6 w-36 rounded-full bg-white/10" />
-          <div className="h-4 w-full rounded-full bg-white/7" />
-          <div className="h-4 w-4/5 rounded-full bg-white/7" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,8,0.1),rgba(6,6,8,0.28)_34%,rgba(6,6,8,0.86))]" />
+        <div className="absolute right-3.5 bottom-3.5 left-3.5 flex items-end justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="relative w-fit">
+              <p className="text-[22px] font-semibold tracking-[-0.02em] text-transparent">
+                장르별 게임 매칭
+              </p>
+              <div className="absolute top-1/2 left-0 h-7 w-34 -translate-y-1/2 rounded-full bg-white/11" />
+            </div>
+            <div className="relative mt-1.5 max-w-[24ch]">
+              <p className="text-[13px] leading-5 font-medium text-transparent">
+                좋아하는 장르를 고르고 트레일러를 보며 별점을 남깁니다.
+              </p>
+              <div className="absolute top-0 left-0 h-4 w-full max-w-60 rounded-full bg-white/9" />
+              <div className="absolute top-5 left-0 h-4 w-full max-w-44 rounded-full bg-white/9" />
+            </div>
+          </div>
+          <div className="h-9 w-9 shrink-0 rounded-full border border-white/10 bg-black/28" />
         </div>
       </div>
     </div>
@@ -37,9 +51,19 @@ function MatchingListLoadingState() {
         <section className="mx-auto max-w-240">
           <div className="mb-7 text-center sm:mb-8">
             <div className="mx-auto h-4 w-24 animate-pulse rounded-full bg-[#792222]/35" />
-            <div className="mx-auto mt-3 h-11 w-62 animate-pulse rounded-full bg-white/9" />
-            <div className="mx-auto mt-3 h-4 w-full max-w-125 animate-pulse rounded-full bg-white/7" />
-            <div className="mx-auto mt-2 h-4 w-full max-w-98 animate-pulse rounded-full bg-white/7" />
+            <div className="relative mt-3">
+              <h1 className="text-3xl font-semibold tracking-[-0.03em] text-transparent sm:text-4xl md:text-[42px]">
+                장르별 게임 매칭
+              </h1>
+              <div className="absolute top-1/2 left-1/2 h-11 w-62 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/9" />
+            </div>
+            <div className="relative mt-3">
+              <p className="truncate text-sm leading-6 text-transparent sm:text-[15px]">
+                좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
+                맞는 게임을 빠르게 추천해드려요.
+              </p>
+              <div className="absolute top-1/2 left-1/2 h-4 w-full max-w-124 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-white/7" />
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -136,7 +160,10 @@ function MatchingListPage() {
               <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl md:text-[42px]">
                 장르별 게임 매칭
               </h1>
-              <p className="mt-3 text-sm leading-6 break-keep text-white/58 sm:text-[15px]">
+              <p
+                className="mt-3 truncate text-sm leading-6 text-white/58 sm:text-[15px]"
+                title="좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에 맞는 게임을 빠르게 추천해드려요."
+              >
                 좋아하는 장르를 고르고 트레일러를 보며 별점을 남기면, 취향에
                 맞는 게임을 빠르게 추천해드려요.
               </p>

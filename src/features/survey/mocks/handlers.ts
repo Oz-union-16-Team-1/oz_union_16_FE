@@ -106,7 +106,7 @@ const getQuestionCountFromAnswer = (answer: string) => {
 };
 
 export const surveyHandlers = [
-  http.post('/api/v1/survey/chatbot/sessions/', async () => {
+  http.post('/api/v1/survey/chatbot/sessions', async () => {
     const sessionId = createSessionId();
     const totalQuestions = SURVEY_MAX_STEPS;
 
@@ -127,7 +127,7 @@ export const surveyHandlers = [
   }),
 
   http.post(
-    '/api/v1/survey/chatbot/sessions/:sessionId/messages/',
+    '/api/v1/survey/chatbot/sessions/:sessionId/messages',
     async ({ request, params }) => {
       const body = (await request.json()) as SurveyApiChatRequest;
       const sessionId = String(params.sessionId ?? '');
@@ -181,7 +181,7 @@ export const surveyHandlers = [
   ),
 
   http.get(
-    '/api/v1/survey/chatbot/sessions/:sessionId/recommendations/',
+    '/api/v1/survey/chatbot/sessions/:sessionId/recommendations',
     async ({ request, params }) => {
       const url = new URL(request.url);
       const cursor = Number(url.searchParams.get('cursor') ?? '0');
@@ -217,7 +217,7 @@ export const surveyHandlers = [
     },
   ),
 
-  http.post('/api/v1/survey/chatbot/sessions/reset/', async () => {
+  http.post('/api/v1/survey/chatbot/sessions/reset', async () => {
     surveySessions.clear();
     latestCompletedSurveySessionId = null;
 

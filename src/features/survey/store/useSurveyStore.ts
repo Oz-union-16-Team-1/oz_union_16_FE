@@ -57,16 +57,31 @@ const SURVEY_INTRO_MESSAGE =
 const COMPLETION_GUIDE_MESSAGE =
   "추천 결과가 준비되었어요. 아래의 '추천 결과 바로 보기' 버튼을 눌러 확인해 보세요.";
 
-const getInitialMessages = (payload: SurveySessionStartResponse) => {
+const getInitialAssistantMessages = (payload: SurveySessionStartResponse) => {
+  const messages: SurveyMessage[] = [
+    createMessage('assistant', SURVEY_INTRO_MESSAGE),
+  ];
+
+  if (payload.warning_message) {
+    messages.push(createMessage('assistant', payload.warning_message));
+  }
+
   if (payload.assistant_message) {
-    return [
-      createMessage('assistant', SURVEY_INTRO_MESSAGE),
-      createMessage('assistant', payload.assistant_message),
-    ];
+    messages.push(createMessage('assistant', payload.assistant_message));
+  } else if (payload.recommendation_ready) {
+    messages.push(createMessage('assistant', COMPLETION_GUIDE_MESSAGE));
+  }
+
+  return messages;
+};
+
+const getInitialMessages = (payload: SurveySessionStartResponse) => {
+  if (payload.assistant_message || payload.warning_message) {
+    return getInitialAssistantMessages(payload);
   }
 
   if (payload.recommendation_ready) {
-    return [createMessage('assistant', COMPLETION_GUIDE_MESSAGE)];
+    return getInitialAssistantMessages(payload);
   }
 
   return [];
@@ -89,16 +104,33 @@ const appendAssistantMessageIfNeeded = (
   return [...messages, createMessage('assistant', content)];
 };
 
-const getFollowUpAssistantMessage = (payload: SurveyChatResponse) => {
+const appendAssistantMessagesIfNeeded = (
+  messages: SurveyMessage[],
+  contents: Array<string | null>,
+) =>
+  contents.reduce(
+    (nextMessages, content) =>
+      appendAssistantMessageIfNeeded(nextMessages, content),
+    messages,
+  );
+
+const getFollowUpAssistantMessages = (payload: SurveyChatResponse) => {
+  const messages: Array<string | null> = [];
+
+  if (payload.warning_message) {
+    messages.push(payload.warning_message);
+  }
+
   if (payload.assistant_message) {
-    return payload.assistant_message;
+    messages.push(payload.assistant_message);
+    return messages;
   }
 
   if (payload.recommendation_ready) {
-    return COMPLETION_GUIDE_MESSAGE;
+    messages.push(COMPLETION_GUIDE_MESSAGE);
   }
 
-  return null;
+  return messages;
 };
 
 const getSessionStatePatch = (
@@ -176,9 +208,9 @@ export const useSurveyStore = create<SurveyStoreState>()(
           recommendationReady: payload.recommendation_ready,
           isSubmitting: false,
           error: null,
-          messages: appendAssistantMessageIfNeeded(
+          messages: appendAssistantMessagesIfNeeded(
             state.messages,
-            getFollowUpAssistantMessage(payload),
+            getFollowUpAssistantMessages(payload),
           ),
         })),
       resetSurveyState: () =>
