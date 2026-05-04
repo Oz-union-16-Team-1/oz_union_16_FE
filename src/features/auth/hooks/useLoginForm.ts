@@ -87,12 +87,26 @@ function useLoginForm() {
     locationSearchParams.get('expired') === 'true'
       ? AUTH_SESSION_EXPIRED_NOTICE_MESSAGE
       : '';
-  const [formMessage, setFormMessage] = useState(
-    locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
-  );
-  const [noticeMessage, setNoticeMessage] = useState(
-    locationState?.noticeMessage ?? locationSearchNoticeMessage,
-  );
+  const locationFormMessage =
+    locationState?.errorMessage ?? locationSearchErrorMessage ?? '';
+  const locationNotice =
+    locationState?.noticeMessage ?? locationSearchNoticeMessage;
+  const locationFormMessageKey = `${location.key}:error:${locationFormMessage}`;
+  const locationNoticeKey = `${location.key}:notice:${locationNotice}`;
+  const [formMessage, setFormMessage] = useState('');
+  const [noticeMessage, setNoticeMessage] = useState('');
+  const [dismissedLocationFormMessageKey, setDismissedLocationFormMessageKey] =
+    useState('');
+  const [dismissedLocationNoticeKey, setDismissedLocationNoticeKey] =
+    useState('');
+  const resolvedFormMessage =
+    formMessage ||
+    (dismissedLocationFormMessageKey === locationFormMessageKey
+      ? ''
+      : locationFormMessage);
+  const resolvedNoticeMessage =
+    noticeMessage ||
+    (dismissedLocationNoticeKey === locationNoticeKey ? '' : locationNotice);
   const fieldErrors = getLoginFieldErrors(formValues, touchedState);
   const resolvedFieldErrors: Record<LoginFieldName, string> = {
     login_id: apiFieldErrors.login_id ?? fieldErrors.login_id,
@@ -100,12 +114,12 @@ function useLoginForm() {
   };
   const feedbackVisibility = resolveAuthFeedbackVisibility({
     fieldErrors: resolvedFieldErrors,
-    formMessage,
+    formMessage: resolvedFormMessage,
   });
   const showNoticeMessage =
     !feedbackVisibility.hasFieldError &&
     !feedbackVisibility.showFormMessage &&
-    Boolean(noticeMessage.trim());
+    Boolean(resolvedNoticeMessage.trim());
   const primaryMockAccount =
     mockAccounts.find((account) => account.loginId === 'pgti-demo') ??
     mockAccounts[0];
@@ -114,10 +128,6 @@ function useLoginForm() {
     mockServiceWorkerEnabled && visibleMockAccounts.length > 0;
 
   useEffect(() => {
-    setFormMessage(
-      locationState?.errorMessage ?? locationSearchErrorMessage ?? '',
-    );
-
     // Clear location state to prevent message from persisting on reload
     if (locationState?.errorMessage || locationState?.noticeMessage) {
       navigate(location.pathname + location.search, {
@@ -137,12 +147,6 @@ function useLoginForm() {
     location.search,
     navigate,
   ]);
-
-  useEffect(() => {
-    setNoticeMessage(
-      locationState?.noticeMessage ?? locationSearchNoticeMessage,
-    );
-  }, [locationState?.noticeMessage, locationSearchNoticeMessage]);
 
   useEffect(() => {
     if (!mockServiceWorkerEnabled) {
@@ -184,15 +188,9 @@ function useLoginForm() {
   }, []);
 
   useEffect(() => {
-    if (showMockAccounts) {
-      return;
-    }
+    const isMockPanelVisible = showMockAccounts && isMockPanelOpen;
 
-    setIsMockPanelOpen(false);
-  }, [showMockAccounts]);
-
-  useEffect(() => {
-    if (!isMockPanelOpen) {
+    if (!isMockPanelVisible) {
       return;
     }
 
@@ -219,7 +217,7 @@ function useLoginForm() {
       window.removeEventListener('keydown', handleEscape);
       window.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [isMockPanelOpen]);
+  }, [isMockPanelOpen, showMockAccounts]);
 
   const clearApiFieldError = (fieldName: LoginFieldName) => {
     setApiFieldErrors((previous) => {
@@ -237,6 +235,8 @@ function useLoginForm() {
   const clearMessages = () => {
     setFormMessage('');
     setNoticeMessage('');
+    setDismissedLocationFormMessageKey(locationFormMessageKey);
+    setDismissedLocationNoticeKey(locationNoticeKey);
   };
 
   const handleChange = (fieldName: LoginFieldName, value: string) => {
@@ -330,15 +330,15 @@ function useLoginForm() {
   return {
     formValues,
     resolvedFieldErrors,
-    formMessage,
-    noticeMessage,
+    formMessage: resolvedFormMessage,
+    noticeMessage: resolvedNoticeMessage,
     showNoticeMessage,
     showFormMessage: feedbackVisibility.showFormMessage,
     isLoginFlowLoading,
     isSubmitting: loginMutation.isPending,
     visibleMockAccounts,
     showMockAccounts,
-    isMockPanelOpen,
+    isMockPanelOpen: showMockAccounts && isMockPanelOpen,
     mockPanelRef,
     handleChange,
     handleBlur,

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import MainPageLoadingFallback from './components/common/MainPageLoadingFallback';
 import LegacyRouteRedirect from './components/common/LegacyRouteRedirect';
-import { ROUTES } from './constants/routes';
+import { ROUTE_PATHS, ROUTES } from './constants/routes';
 import { isMockServiceWorkerEnabled } from './lib/env';
 import MatchingListPage from './pages/matching/MatchingListPage';
 import MatchingGenreDetailPage from './pages/matching/MatchingGenreDetailPage';
@@ -14,6 +14,7 @@ import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import RouteErrorPage from './pages/RouteErrorPage';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
   {
     path: ROUTES.HOME,
     element: <App />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,
@@ -65,7 +67,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.LEGACY_AUTH_CALLBACK,
-        element: <LegacyRouteRedirect to={`/${ROUTES.AUTH_CALLBACK}`} />,
+        element: <LegacyRouteRedirect to={ROUTE_PATHS.AUTH_CALLBACK} />,
       },
       {
         path: ROUTES.SIGNUP,
@@ -77,7 +79,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.LEGACY_SIGNUP,
-        element: <LegacyRouteRedirect to={`/${ROUTES.SIGNUP}`} />,
+        element: <LegacyRouteRedirect to={ROUTE_PATHS.SIGNUP} />,
       },
       {
         path: ROUTES.MY_PAGE,

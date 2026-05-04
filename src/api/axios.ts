@@ -147,7 +147,7 @@ api.interceptors.request.use(
     const token = readStoredAccessToken();
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      setAuthorizationHeader(config as RetriableRequestConfig, token);
     }
 
     return config;

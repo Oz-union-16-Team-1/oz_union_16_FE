@@ -31,7 +31,10 @@ const unauthorizedFallback = (
 function MyPage() {
   const authGate = useAuthGate();
   const { logout, isPending: isLogoutPending } = useLogoutAction();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const socialAccount = useAuthStore((state) => state.socialAccount);
+  const isSocialAccount = socialAccount?.is_social === true;
+  const canShowPasswordChange = isAuthenticated && !isSocialAccount;
   const [toast, setToast] = useState<MyPageToast>(null);
   const [selectedDetailGame, setSelectedDetailGame] =
     useState<GameListItem | null>(null);
@@ -84,6 +87,7 @@ function MyPage() {
             }}
             onNicknameSave={myPageProfile.handleNicknameSave}
             onProfileImageSelect={myPageProfile.handleProfileImageSelect}
+            canShowPasswordChange={canShowPasswordChange}
             isPasswordPanelOpen={myPagePasswordChange.isPasswordPanelOpen}
             onPasswordToggle={myPagePasswordChange.togglePasswordPanel}
             passwordValues={myPagePasswordChange.passwordValues}

@@ -21,6 +21,7 @@ type MyPageProfileContainerProps = {
   onLogout: () => void;
   onNicknameSave: (nickname: string) => Promise<boolean>;
   onProfileImageSelect: (file: File | null) => Promise<void>;
+  canShowPasswordChange: boolean;
   isPasswordPanelOpen: boolean;
   onPasswordToggle: () => void;
   passwordValues: PasswordChangeValues;
@@ -52,6 +53,7 @@ function MyPageProfileContainer({
   onLogout,
   onNicknameSave,
   onProfileImageSelect,
+  canShowPasswordChange,
   isPasswordPanelOpen,
   onPasswordToggle,
   passwordValues,
@@ -79,6 +81,7 @@ function MyPageProfileContainer({
       isLoggingOut={isLoggingOut}
       toast={toast}
       onToastClose={onToastClose}
+      canShowPasswordChange={canShowPasswordChange}
       isPasswordPanelOpen={isPasswordPanelOpen}
       onPasswordToggle={onPasswordToggle}
       onLogout={onLogout}
@@ -87,7 +90,7 @@ function MyPageProfileContainer({
         void onProfileImageSelect(file);
       }}
     >
-      {isPasswordPanelOpen ? (
+      {canShowPasswordChange && isPasswordPanelOpen ? (
         <PasswordChangePanel
           values={passwordValues}
           errors={passwordErrors}

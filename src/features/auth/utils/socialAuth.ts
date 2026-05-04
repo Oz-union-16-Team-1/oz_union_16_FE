@@ -1,10 +1,11 @@
-import { mockServiceWorkerEnabled } from '@/lib/env';
+import { configuredApiBaseUrl } from '../../../lib/env';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import type { SocialAuthProvider } from '../types/auth';
 
 export type { SocialAuthProvider } from '../types/auth';
 
 const PENDING_SOCIAL_PROVIDER_STORAGE_KEY = 'pending-social-auth-provider';
+const FALLBACK_BACKEND_ORIGIN = 'https://oz-pgti.duckdns.org';
 
 const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
   google: `${AUTH_BASE_PATH}/social-login/google`,
@@ -12,15 +13,49 @@ const SOCIAL_AUTH_START_PATHS: Record<SocialAuthProvider, string> = {
   naver: `${AUTH_BASE_PATH}/social-login/naver`,
 };
 
-export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
-  const socialLoginStartPath = SOCIAL_AUTH_START_PATHS[provider];
+const SOCIAL_AUTH_LOCAL_START_PATHS: Record<SocialAuthProvider, string> = {
+  google: `${AUTH_BASE_PATH}/social-login/google/local`,
+  kakao: `${AUTH_BASE_PATH}/social-login/kakao/local`,
+  naver: `${AUTH_BASE_PATH}/social-login/naver/local`,
+};
 
-  if (mockServiceWorkerEnabled) {
-    return socialLoginStartPath;
+const resolveConfiguredSocialLoginUrl = (provider: SocialAuthProvider) => {
+  const env = import.meta.env as Record<string, string | undefined>;
+
+  const directUrlKeyByProvider: Record<SocialAuthProvider, string[]> = {
+    google: ['VITE_GOOGLE_LOGIN_URL', 'VITE_SOCIAL_LOGIN_GOOGLE_URL'],
+    kakao: ['VITE_KAKAO_LOGIN_URL', 'VITE_SOCIAL_LOGIN_KAKAO_URL'],
+    naver: ['VITE_NAVER_LOGIN_URL', 'VITE_SOCIAL_LOGIN_NAVER_URL'],
+  };
+
+  const directUrl = directUrlKeyByProvider[provider]
+    .map((key) => env[key]?.trim() ?? '')
+    .find((value) => value.length > 0);
+
+  if (directUrl) {
+    return directUrl.replace(/\/$/, '');
   }
 
-  // Always use relative path to go through Vite Proxy in development
-  return socialLoginStartPath;
+  if (configuredApiBaseUrl) {
+    return configuredApiBaseUrl;
+  }
+
+  return FALLBACK_BACKEND_ORIGIN;
+};
+
+export const getSocialLoginStartUrl = (provider: SocialAuthProvider) => {
+  if (import.meta.env.DEV) {
+    return SOCIAL_AUTH_LOCAL_START_PATHS[provider];
+  }
+
+  const socialLoginStartPath = SOCIAL_AUTH_START_PATHS[provider];
+  const configuredSocialLoginUrl = resolveConfiguredSocialLoginUrl(provider);
+
+  if (configuredSocialLoginUrl.includes('/api/')) {
+    return configuredSocialLoginUrl;
+  }
+
+  return `${configuredSocialLoginUrl}${socialLoginStartPath}`;
 };
 
 export const setPendingSocialAuthProvider = (provider: SocialAuthProvider) => {

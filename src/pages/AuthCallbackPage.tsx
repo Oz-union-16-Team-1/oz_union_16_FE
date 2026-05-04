@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
-import { ROUTES } from '../constants/routes';
+import { ROUTE_PATHS } from '../constants/routes';
 import { extractAuthApiErrorMessage } from '../features/auth/api/auth';
 import {
   clearPendingSocialAuthProvider,
@@ -32,7 +32,7 @@ function AuthCallbackPage() {
       clearAuthSession();
       clearPendingSocialAuthProvider();
 
-      navigate(`/${ROUTES.LOGIN}`, {
+      navigate(ROUTE_PATHS.LOGIN, {
         replace: true,
         state: { errorMessage },
       });
@@ -69,7 +69,7 @@ function AuthCallbackPage() {
         }
 
         clearPendingSocialAuthProvider();
-        navigate(ROUTES.HOME, { replace: true });
+        navigate(ROUTE_PATHS.HOME, { replace: true });
       } catch (error) {
         if (!isMounted) {
           return;
