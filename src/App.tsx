@@ -19,7 +19,7 @@ function App() {
 
   useEffect(() => {
     const handleSessionExpired = (event: Event) => {
-      if (useAuthStore.getState().authBootstrapStatus === 'loading') {
+      if (useAuthStore.getState().authBootstrapStatus !== 'ready') {
         return;
       }
 

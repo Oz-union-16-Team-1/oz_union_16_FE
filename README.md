@@ -24,17 +24,8 @@ npm run dev
 ```
 
 기본 개발 서버는 `https://localhost:5173` 기준으로 실행합니다.
-
-처음 한 번은 로컬 인증서를 생성합니다.
-
-```bash
-brew install mkcert
-mkcert -install
-mkdir -p certs
-mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1
-```
-
-이후 아래 명령으로 개발 서버를 실행합니다.
+아래 명령으로 개발 서버를 실행하면 `vite-plugin-mkcert`가 로컬 HTTPS 인증서를 자동으로 준비합니다.
+처음 한 번은 운영체제에서 로컬 인증서 신뢰 관련 안내가 뜰 수 있습니다.
 
 ```bash
 npm run dev

@@ -1,7 +1,6 @@
-import axios, { type AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 
 import { api } from '@/api/axios';
-import { apiBaseUrl } from '@/lib/env';
 import { normalizeThumbnailUrl } from '@/lib/normalizeThumbnailUrl';
 import { AUTH_BASE_PATH } from '../constants/auth';
 import { logCredentialedAuthRequestDiagnostics } from './auth.diagnostics';
@@ -37,12 +36,67 @@ import type {
 } from '../types/auth';
 
 const AUTH_REFRESH_TIMEOUT_MS = 7000;
+const REFRESH_REQUEST_THROTTLE_MS = 1500;
+const REFRESH_RETRY_AFTER_THROTTLED_FAILURE_MS = 900;
+const REFRESH_REQUEST_THROTTLE_STORAGE_KEY =
+  'auth-refresh-request-last-started-at';
 
-const normalizeApiBaseUrl = (value: string) => value.trim().replace(/\/$/, '');
-const authApiUrl = `${normalizeApiBaseUrl(apiBaseUrl)}${AUTH_BASE_PATH}`;
-const loginRequestUrl = `${authApiUrl}/login`;
-const logoutRequestUrl = `${authApiUrl}/logout`;
-const refreshRequestUrl = `${authApiUrl}/token/refresh`;
+const loginRequestPath = `${AUTH_BASE_PATH}/login`;
+const logoutRequestPath = `${AUTH_BASE_PATH}/logout`;
+const refreshRequestPath = `${AUTH_BASE_PATH}/token/refresh`;
+
+const readRefreshThrottleTimestamp = () => {
+  if (typeof window === 'undefined') {
+    return 0;
+  }
+
+  const rawValue = window.sessionStorage.getItem(
+    REFRESH_REQUEST_THROTTLE_STORAGE_KEY,
+  );
+  const parsedValue = Number(rawValue);
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
+
+const markRefreshThrottleTimestamp = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    REFRESH_REQUEST_THROTTLE_STORAGE_KEY,
+    String(Date.now()),
+  );
+};
+
+const waitForRefreshThrottleWindow = async () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const lastStartedAt = readRefreshThrottleTimestamp();
+
+  if (!lastStartedAt) {
+    return false;
+  }
+
+  const elapsed = Date.now() - lastStartedAt;
+  const remaining = REFRESH_REQUEST_THROTTLE_MS - elapsed;
+
+  if (remaining <= 0) {
+    return false;
+  }
+
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, remaining);
+  });
+
+  return true;
+};
+
+const isRetryableRefreshThrottleFailure = (error: unknown) =>
+  error instanceof AxiosError &&
+  (error.response?.status === 401 || error.response?.status === 403);
 
 const createCredentialedAuthRequestConfig = <T = unknown>(
   config: AxiosRequestConfig<T> = {},
@@ -120,12 +174,12 @@ export const requestLogin = async (payload: LoginRequest) => {
 
   logCredentialedAuthRequestDiagnostics({
     label: 'login',
-    requestUrl: loginRequestUrl,
+    requestUrl: loginRequestPath,
     withCredentials: true,
   });
 
   const response = await api.post<LoginResponse>(
-    `${AUTH_BASE_PATH}/login`,
+    loginRequestPath,
     payload,
     requestConfig,
   );
@@ -138,12 +192,12 @@ export const requestLogout = async () => {
 
   logCredentialedAuthRequestDiagnostics({
     label: 'logout',
-    requestUrl: logoutRequestUrl,
+    requestUrl: logoutRequestPath,
     withCredentials: true,
   });
 
   const response = await api.post<LogoutResponse>(
-    `${AUTH_BASE_PATH}/logout`,
+    logoutRequestPath,
     undefined,
     requestConfig,
   );
@@ -154,22 +208,46 @@ export const requestLogout = async () => {
 export const requestRefreshAccessToken = async (
   payload: { refresh_token?: string } = {},
 ) => {
+  const waitedForPreviousRefresh = await waitForRefreshThrottleWindow();
   const requestConfig = createCredentialedAuthRequestConfig();
   const requestBody = payload.refresh_token?.trim() ? payload : undefined;
 
   logCredentialedAuthRequestDiagnostics({
     label: 'refresh',
-    requestUrl: refreshRequestUrl,
+    requestUrl: refreshRequestPath,
     withCredentials: true,
   });
 
-  const response = await axios.post<RefreshAccessTokenResponse>(
-    refreshRequestUrl,
-    requestBody,
-    requestConfig,
-  );
+  const sendRefreshRequest = async () => {
+    markRefreshThrottleTimestamp();
 
-  return response.data;
+    // Use relative path directly with axios to ensure it goes through Vite Proxy
+    const response = await axios.post<RefreshAccessTokenResponse>(
+      refreshRequestPath,
+      requestBody,
+      requestConfig,
+    );
+
+    return response.data;
+  };
+
+  try {
+    return await sendRefreshRequest();
+  } catch (error) {
+    if (
+      waitedForPreviousRefresh &&
+      isRetryableRefreshThrottleFailure(error) &&
+      typeof window !== 'undefined'
+    ) {
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, REFRESH_RETRY_AFTER_THROTTLED_FAILURE_MS);
+      });
+
+      return sendRefreshRequest();
+    }
+
+    throw error;
+  }
 };
 
 export const getCurrentUserProfile = async () => {

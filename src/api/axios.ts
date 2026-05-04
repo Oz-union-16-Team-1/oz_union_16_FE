@@ -6,7 +6,7 @@ import axios, {
 
 import { logAxiosError } from './logApiError';
 import { apiBaseUrl } from '../lib/env';
-import { useAuthStore } from '../store/useAuthStore';
+import { readStoredAccessToken } from '../store/useAuthStore';
 import {
   expireAuthSession,
   refreshStoredAccessToken,
@@ -26,37 +26,99 @@ const AUTH_EXCLUDED_PATHS = [
   '/api/v1/accounts/token/refresh', // 무한 루프 방지
 ];
 
-const shouldResetAuthSession = (requestUrl?: string) => {
-  if (!requestUrl) return true;
-  return !AUTH_EXCLUDED_PATHS.some((path) => requestUrl.includes(path));
+const resolveRequestPath = (requestUrl?: string, baseURL?: string) => {
+  if (!requestUrl) {
+    return '';
+  }
+
+  try {
+    if (requestUrl.startsWith('http://') || requestUrl.startsWith('https://')) {
+      return new URL(requestUrl).pathname;
+    }
+
+    if (baseURL) {
+      return new URL(requestUrl, baseURL).pathname;
+    }
+  } catch {
+    return requestUrl;
+  }
+
+  return requestUrl;
 };
 
 type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
-let refreshAccessTokenPromise: Promise<string> | null = null;
+type RefreshSubscriber = {
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+};
 
-const getRefreshedAccessToken = async () => {
-  if (!refreshAccessTokenPromise) {
-    refreshAccessTokenPromise = refreshStoredAccessToken()
-      .catch((refreshError) => {
-        expireAuthSession();
+// 같은 런타임에서 동시에 터진 401 응답은 하나의 refresh 호출로 직렬화한다.
+let isRefreshing = false;
+let refreshSubscribers: RefreshSubscriber[] = [];
 
-        if (refreshError instanceof AxiosError) {
-          logAxiosError(refreshError, 'auth-refresh');
-        } else {
-          console.error('[auth-refresh] unexpected error');
-        }
+const shouldResetAuthSession = (requestUrl?: string, baseURL?: string) => {
+  const requestPath = resolveRequestPath(requestUrl, baseURL);
 
-        throw refreshError;
-      })
-      .finally(() => {
-        refreshAccessTokenPromise = null;
-      });
+  if (!requestPath) {
+    return true;
   }
 
-  return refreshAccessTokenPromise;
+  return !AUTH_EXCLUDED_PATHS.some((path) => requestPath.includes(path));
+};
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach(({ resolve }) => resolve(token));
+  refreshSubscribers = [];
+};
+
+const onRefreshFailed = (error: unknown) => {
+  refreshSubscribers.forEach(({ reject }) => reject(error));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (subscriber: RefreshSubscriber) => {
+  refreshSubscribers.push(subscriber);
+};
+
+const isRefreshSessionInvalidationError = (error: unknown) =>
+  error instanceof AxiosError &&
+  (error.response?.status === 401 || error.response?.status === 403);
+
+const getRefreshedAccessToken = async () => {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    try {
+      const accessToken = await refreshStoredAccessToken();
+      onRefreshed(accessToken);
+      return accessToken;
+    } catch (refreshError) {
+      onRefreshFailed(refreshError);
+
+      if (isRefreshSessionInvalidationError(refreshError)) {
+        expireAuthSession();
+      }
+
+      if (refreshError instanceof AxiosError) {
+        logAxiosError(refreshError, 'auth-refresh');
+      } else {
+        console.error('[auth-refresh] unexpected error');
+      }
+
+      throw refreshError;
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    addRefreshSubscriber({
+      resolve,
+      reject,
+    });
+  });
 };
 
 const setAuthorizationHeader = (
@@ -79,10 +141,10 @@ export const api = axios.create({
   },
 });
 
-// 요청 인터셉터: 메모리에 있는 Access Token을 Authorization 헤더에 삽입
+// 요청 인터셉터: 항상 sessionStorage에서 최신 Access Token을 가져온다.
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken;
+    const token = readStoredAccessToken();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -103,19 +165,18 @@ api.interceptors.response.use(
 
     const originalRequest = error.config as RetriableRequestConfig | undefined;
 
-    // 401 에러이고, 재시도한 적이 없으며, 인증 제외 경로가 아닐 때
     if (
       originalRequest &&
       error.response?.status === 401 &&
+      readStoredAccessToken() &&
       !originalRequest._retry &&
-      shouldResetAuthSession(originalRequest.url)
+      shouldResetAuthSession(originalRequest.url, originalRequest.baseURL)
     ) {
       originalRequest._retry = true;
 
       try {
         const accessToken = await getRefreshedAccessToken();
 
-        // 원래 요청 재시도
         setAuthorizationHeader(originalRequest, accessToken);
         return api(originalRequest);
       } catch (refreshError) {

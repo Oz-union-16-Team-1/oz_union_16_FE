@@ -1,3 +1,5 @@
+import { AxiosError } from 'axios';
+
 import { useAuthStore } from '../../../store/useAuthStore';
 import {
   AUTH_SESSION_EXPIRED_NOTICE_MESSAGE,
@@ -18,8 +20,12 @@ import type {
 
 type RestoredAuthSession = {
   accessToken: string;
-  profile: CurrentUserProfileResponse;
-  socialAccount: CurrentUserSocialResponse;
+  profile: CurrentUserProfileResponse | null;
+  socialAccount: CurrentUserSocialResponse | null;
+};
+
+type ClearAuthSessionOptions = {
+  setReady?: boolean;
 };
 
 let restoreAuthSessionPromise: Promise<RestoredAuthSession> | null = null;
@@ -55,9 +61,14 @@ export const applyAuthenticatedSession = (
   setAuthBootstrapReady();
 };
 
-export const clearAuthSession = () => {
+export const clearAuthSession = ({
+  setReady = true,
+}: ClearAuthSessionOptions = {}) => {
   useAuthStore.getState().clearAuth();
-  setAuthBootstrapReady();
+
+  if (setReady) {
+    setAuthBootstrapReady();
+  }
 };
 
 const hasSessionRestoreHint = () => {
@@ -70,16 +81,47 @@ const hasSessionRestoreHint = () => {
   );
 };
 
+const isAuthBootstrapPending = () =>
+  useAuthStore.getState().authBootstrapStatus !== 'ready';
+
+const isAuthSessionInvalidationError = (error: unknown) =>
+  error instanceof AxiosError &&
+  (error.response?.status === 401 || error.response?.status === 403);
+
 export const hydrateAuthSessionFromAccessToken = async (
   accessToken: string,
 ) => {
   applyAccessToken(accessToken);
 
-  try {
-    const [profile, socialAccount] = await Promise.all([
-      getCurrentUserProfile(),
-      getCurrentUserSocialProfile(),
-    ]);
+  const [profileResult, socialAccountResult] = await Promise.allSettled([
+    getCurrentUserProfile(),
+    getCurrentUserSocialProfile(),
+  ]);
+  const failedResults = [profileResult, socialAccountResult].filter(
+    (result): result is PromiseRejectedResult => result.status === 'rejected',
+  );
+  const invalidationError = failedResults.find((result) =>
+    isAuthSessionInvalidationError(result.reason),
+  );
+
+  if (invalidationError) {
+    clearAuthSession({
+      setReady: !isAuthBootstrapPending(),
+    });
+    throw invalidationError.reason;
+  }
+
+  const currentStore = useAuthStore.getState();
+  const profile =
+    profileResult.status === 'fulfilled'
+      ? profileResult.value
+      : currentStore.account;
+  const socialAccount =
+    socialAccountResult.status === 'fulfilled'
+      ? socialAccountResult.value
+      : currentStore.socialAccount;
+
+  if (profile && socialAccount) {
     applyAuthenticatedSession(accessToken, profile, socialAccount);
 
     return {
@@ -87,10 +129,17 @@ export const hydrateAuthSessionFromAccessToken = async (
       profile,
       socialAccount,
     };
-  } catch (error) {
-    clearAuthSession();
-    throw error;
   }
+
+  syncAuthAccount(profile ?? null);
+  syncAuthSocialAccount(socialAccount ?? null);
+  setAuthBootstrapReady();
+
+  return {
+    accessToken,
+    profile: profile ?? null,
+    socialAccount: socialAccount ?? null,
+  };
 };
 
 export const refreshStoredAccessToken = async () => {
@@ -106,10 +155,13 @@ export const restoreAuthSession = async () => {
     return await hydrateAuthSessionFromAccessToken(accessToken);
   } catch (error) {
     const shouldNotifySessionRestoreFailure = hasSessionRestoreHint();
+    const shouldDeferSessionReset = isAuthBootstrapPending();
 
-    clearAuthSession();
+    clearAuthSession({
+      setReady: !shouldDeferSessionReset,
+    });
 
-    if (shouldNotifySessionRestoreFailure) {
+    if (shouldNotifySessionRestoreFailure && !shouldDeferSessionReset) {
       notifyAuthSessionExpired({
         noticeMessage: AUTH_SESSION_RESTORE_FAILED_NOTICE_MESSAGE,
         source: 'refresh',
@@ -149,6 +201,15 @@ export const expireAuthSession = (
     source: 'refresh',
   },
 ) => {
-  clearAuthSession();
+  const shouldDeferSessionExpiration = isAuthBootstrapPending();
+
+  clearAuthSession({
+    setReady: !shouldDeferSessionExpiration,
+  });
+
+  if (shouldDeferSessionExpiration) {
+    return;
+  }
+
   notifyAuthSessionExpired(detail);
 };

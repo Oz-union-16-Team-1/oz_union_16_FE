@@ -77,8 +77,13 @@ export const canToggleDevApiMode = import.meta.env.DEV;
 export const mockServiceWorkerEnabled =
   import.meta.env.DEV && devApiMode === 'mock';
 
-// MSW 모드에서는 절대 API 호스트를 비워, 상대 경로 요청이 핸들러에 안정적으로 매칭되게 한다.
-export const apiBaseUrl = mockServiceWorkerEnabled ? '' : configuredApiBaseUrl;
+const shouldUseRelativeApiBaseUrl = import.meta.env.DEV;
+
+// 개발 환경에서는 항상 상대 경로(`/api/...`)를 사용해 Vite 프록시나
+// MSW가 요청을 동일한 진입점에서 가로챌 수 있게 맞춘다.
+export const apiBaseUrl = shouldUseRelativeApiBaseUrl
+  ? ''
+  : configuredApiBaseUrl;
 
 export const isMockServiceWorkerEnabled = () => mockServiceWorkerEnabled;
 export const getCurrentDevApiMode = () => devApiMode;

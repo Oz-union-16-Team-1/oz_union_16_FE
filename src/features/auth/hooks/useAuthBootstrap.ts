@@ -1,30 +1,22 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 
-import { ROUTES } from '../../../constants/routes';
 import { shouldSkipAuthBootstrapPath } from '../../../constants/routeResolver';
-import { isMockServiceWorkerEnabled } from '../../../lib/env';
 import {
   clearLegacyAuthStorage,
+  syncAccessTokenFromStorage,
   useAuthStore,
 } from '../../../store/useAuthStore';
-import { hasMockRefreshToken } from '../api/auth.session.helper';
-import { extractAuthApiErrorMessage } from '../api/auth';
 import {
-  clearPendingSocialAuthProvider,
-  hasPendingSocialAuthProvider,
-} from '../utils/socialAuth';
-import {
-  ensureAuthSessionRestored,
+  clearAuthSession,
+  refreshStoredAccessToken,
   setAuthBootstrapLoading,
   setAuthBootstrapReady,
 } from '../utils/sessionManager';
-const DEFAULT_SOCIAL_AUTH_ERROR_MESSAGE =
-  '세션을 확인하지 못했습니다. 다시 로그인해 주세요.';
+import { isAccessTokenExpiringSoon } from '../utils/accessToken';
 
 function useAuthBootstrap() {
   const location = useLocation();
-  const navigate = useNavigate();
   const authBootstrapStatus = useAuthStore(
     (state) => state.authBootstrapStatus,
   );
@@ -34,14 +26,10 @@ function useAuthBootstrap() {
   }, []);
 
   useEffect(() => {
-    if (authBootstrapStatus !== 'idle') {
-      return;
-    }
+    const currentAuthBootstrapStatus =
+      useAuthStore.getState().authBootstrapStatus;
 
-    const store = useAuthStore.getState();
-
-    if (store.accessToken) {
-      setAuthBootstrapReady();
+    if (currentAuthBootstrapStatus !== 'idle') {
       return;
     }
 
@@ -50,52 +38,30 @@ function useAuthBootstrap() {
       return;
     }
 
-    const hasPendingSocialProvider = hasPendingSocialAuthProvider();
+    const storedAccessToken = syncAccessTokenFromStorage();
 
-    if (
-      isMockServiceWorkerEnabled() &&
-      !hasMockRefreshToken() &&
-      !hasPendingSocialProvider
-    ) {
+    if (!storedAccessToken) {
       setAuthBootstrapReady();
       return;
     }
 
-    let isMounted = true;
+    if (!isAccessTokenExpiringSoon(storedAccessToken)) {
+      setAuthBootstrapReady();
+      return;
+    }
+
     setAuthBootstrapLoading();
 
-    void ensureAuthSessionRestored()
-      .catch((error) => {
-        if (!hasPendingSocialProvider || !isMounted) {
-          return;
-        }
-
-        navigate(`/${ROUTES.LOGIN}`, {
-          replace: true,
-          state: {
-            errorMessage:
-              extractAuthApiErrorMessage(error) ||
-              DEFAULT_SOCIAL_AUTH_ERROR_MESSAGE,
-          },
-        });
+    void refreshStoredAccessToken()
+      .catch(() => {
+        clearAuthSession({ setReady: false });
       })
       .finally(() => {
-        if (hasPendingSocialProvider) {
-          clearPendingSocialAuthProvider();
-        }
-
-        if (
-          isMounted &&
-          useAuthStore.getState().authBootstrapStatus === 'loading'
-        ) {
+        if (useAuthStore.getState().authBootstrapStatus === 'loading') {
           setAuthBootstrapReady();
         }
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authBootstrapStatus, location.pathname, navigate]);
+  }, [location.pathname]);
 
   return {
     authBootstrapStatus,
