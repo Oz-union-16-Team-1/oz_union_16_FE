@@ -13,6 +13,9 @@ import type {
 
 type SupportChatStoreState = {
   sessionId: string | null;
+  sessionExpiresAt: string | null;
+  sessionExpiresInSeconds: number | null;
+  sessionTtlSeconds: number | null;
   messages: SupportChatMessage[];
   quickActions: SupportChatQuickAction[];
   showQuickActions: boolean;
@@ -33,7 +36,13 @@ type SupportChatStoreState = {
   closeAndResetConversation: (routeContext?: SupportChatRouteContext) => void;
   togglePanel: () => void;
   setRouteContext: (routeContext: SupportChatRouteContext) => void;
-  setSessionId: (sessionId: string | null) => void;
+  setSessionState: (session: {
+    sessionId: string | null;
+    expiresAt?: string | null;
+    expiresInSeconds?: number | null;
+    sessionTtlSeconds?: number | null;
+  }) => void;
+  clearSession: () => void;
   setPinnedToBottom: (isPinnedToBottom: boolean) => void;
   setSubmitting: (isSubmitting: boolean) => void;
   hideQuickActions: () => void;
@@ -71,6 +80,9 @@ const capMessages = (messages: SupportChatMessage[]) =>
 
 const initialState = {
   sessionId: null as string | null,
+  sessionExpiresAt: null as string | null,
+  sessionExpiresInSeconds: null as number | null,
+  sessionTtlSeconds: null as number | null,
   messages: createInitialMessages(),
   quickActions: SUPPORT_CHAT_QUICK_ACTIONS,
   showQuickActions: true,
@@ -118,7 +130,25 @@ export const useSupportChatStore = create<SupportChatStoreState>()(
       }),
     togglePanel: () => set((state) => ({ isOpen: !state.isOpen })),
     setRouteContext: (routeContext) => set({ routeContext }),
-    setSessionId: (sessionId) => set({ sessionId }),
+    setSessionState: ({
+      sessionId,
+      expiresAt = null,
+      expiresInSeconds = null,
+      sessionTtlSeconds = null,
+    }) =>
+      set({
+        sessionId,
+        sessionExpiresAt: expiresAt,
+        sessionExpiresInSeconds: expiresInSeconds,
+        sessionTtlSeconds,
+      }),
+    clearSession: () =>
+      set({
+        sessionId: null,
+        sessionExpiresAt: null,
+        sessionExpiresInSeconds: null,
+        sessionTtlSeconds: null,
+      }),
     setPinnedToBottom: (isPinnedToBottom) => set({ isPinnedToBottom }),
     setSubmitting: (isSubmitting) => set({ isSubmitting }),
     hideQuickActions: () => set({ showQuickActions: false }),

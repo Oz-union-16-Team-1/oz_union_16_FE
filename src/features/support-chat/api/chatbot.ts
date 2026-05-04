@@ -3,6 +3,7 @@ import type {
   ChatbotErrorResponse,
   ChatbotMessageRequest,
   ChatbotMessageResponse,
+  ChatbotSessionMetadata,
   ChatbotStreamEvent,
 } from '../types/supportChat';
 
@@ -11,6 +12,9 @@ import type {
 const CHATBOT_BASE_PATH = '/api/v1/chatbot';
 const EXPIRED_CHATBOT_SESSION_MESSAGE =
   '만료되었거나 유효하지 않은 session_id 입니다.';
+const STREAM_SESSION_NOT_FOUND_MESSAGE =
+  '스트리밍 대상 세션을 찾을 수 없습니다.';
+const INVALID_STREAM_SESSION_MESSAGE = '잘못된 session_id 입니다.';
 
 class ChatbotRequestError extends Error {
   status: number | null;
@@ -61,17 +65,18 @@ const createApiUrl = (
 const getDefaultChatbotErrorMessage = (
   status: number | null,
   fallback = '챗봇 요청을 처리하는 중 오류가 발생했습니다.',
+  context: 'message' | 'stream' = 'message',
 ) => {
-  if (status === 401) {
-    return '세션이 만료되었습니다.';
-  }
-
   if (status === 400) {
-    return '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
+    return context === 'stream'
+      ? INVALID_STREAM_SESSION_MESSAGE
+      : '메시지는 공백일 수 없고 2자 이상이어야 합니다.';
   }
 
   if (status === 404) {
-    return EXPIRED_CHATBOT_SESSION_MESSAGE;
+    return context === 'stream'
+      ? STREAM_SESSION_NOT_FOUND_MESSAGE
+      : EXPIRED_CHATBOT_SESSION_MESSAGE;
   }
 
   if (status === 409) {
@@ -85,17 +90,20 @@ const getDefaultChatbotErrorMessage = (
   return fallback;
 };
 
-const extractChatbotErrorMessage = async (response: Response) => {
+const extractChatbotErrorMessage = async (
+  response: Response,
+  context: 'message' | 'stream' = 'message',
+) => {
   try {
     const data = (await response.json()) as ChatbotErrorResponse;
 
     return (
       data.error_detail ||
       (typeof data.detail === 'string' ? data.detail : null) ||
-      getDefaultChatbotErrorMessage(response.status, data.error_detail)
+      getDefaultChatbotErrorMessage(response.status, data.error_detail, context)
     );
   } catch {
-    return getDefaultChatbotErrorMessage(response.status);
+    return getDefaultChatbotErrorMessage(response.status, undefined, context);
   }
 };
 
@@ -138,6 +146,7 @@ const fetchChatbotApi = async (
   const request = async () =>
     fetch(url, {
       ...init,
+      credentials: 'omit',
       headers: createChatbotHeaders({
         accept: init.accept,
         contentType: init.contentType,
@@ -147,6 +156,14 @@ const fetchChatbotApi = async (
 
   return request();
 };
+
+const toSessionMetadata = (
+  payload: ChatbotSessionMetadata,
+): ChatbotSessionMetadata => ({
+  expires_at: payload.expires_at,
+  expires_in_seconds: payload.expires_in_seconds,
+  session_ttl_seconds: payload.session_ttl_seconds,
+});
 
 export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
   const response = await fetchChatbotApi(
@@ -161,7 +178,7 @@ export const sendChatbotMessage = async (payload: ChatbotMessageRequest) => {
 
   if (!response.ok) {
     throw new ChatbotRequestError(
-      await extractChatbotErrorMessage(response),
+      await extractChatbotErrorMessage(response, 'message'),
       response.status,
     );
   }
@@ -215,9 +232,7 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     return {
       type: 'start',
       sessionId: parsed.session_id,
-      expiresAt: parsed.expires_at,
-      expiresInSeconds: parsed.expires_in_seconds,
-      sessionTtlSeconds: parsed.session_ttl_seconds,
+      ...toSessionMetadata(parsed),
     };
   }
 
@@ -232,6 +247,7 @@ const parseSseEvent = (chunk: string): ChatbotStreamEvent | null => {
     return {
       type: 'complete',
       sessionId: parsed.session_id,
+      ...toSessionMetadata(parsed),
     };
   }
 
@@ -258,7 +274,7 @@ export const streamChatbotResponse = async ({
 
   if (!response.ok) {
     throw new ChatbotRequestError(
-      await extractChatbotErrorMessage(response),
+      await extractChatbotErrorMessage(response, 'stream'),
       response.status,
     );
   }
@@ -334,21 +350,38 @@ export const extractSupportChatErrorMessage = (error: unknown) => {
 
 export const isSupportChatSessionExpiredError = (error: unknown) => {
   if (error instanceof ChatbotRequestError) {
-    if (error.status === 401) {
-      return true;
-    }
-
-    if (error.status === 404) {
-      return error.message.includes('session_id');
-    }
+    return (
+      error.status === 404 &&
+      (error.message.includes('session_id') ||
+        error.message.includes(STREAM_SESSION_NOT_FOUND_MESSAGE) ||
+        error.message.includes(INVALID_STREAM_SESSION_MESSAGE))
+    );
   }
 
   if (error instanceof Error) {
     return (
-      error.message.includes('세션이 만료') ||
-      error.message.includes(EXPIRED_CHATBOT_SESSION_MESSAGE)
+      error.message.includes(EXPIRED_CHATBOT_SESSION_MESSAGE) ||
+      error.message.includes(STREAM_SESSION_NOT_FOUND_MESSAGE) ||
+      error.message.includes(INVALID_STREAM_SESSION_MESSAGE)
     );
   }
 
   return false;
+};
+
+export const getSupportChatSessionRecoveryMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    if (error.message.includes(STREAM_SESSION_NOT_FOUND_MESSAGE)) {
+      return '이전 대화 세션을 찾을 수 없어 새 대화를 시작했어요. 다시 질문해 주세요.';
+    }
+
+    if (
+      error.message.includes(EXPIRED_CHATBOT_SESSION_MESSAGE) ||
+      error.message.includes(INVALID_STREAM_SESSION_MESSAGE)
+    ) {
+      return '이전 대화 세션이 만료되어 새 대화를 시작했어요. 다시 질문해 주세요.';
+    }
+  }
+
+  return '대화 세션을 다시 시작했어요. 질문을 다시 보내 주세요.';
 };

@@ -1,5 +1,8 @@
+import { X } from 'lucide-react';
+
 import type { RefObject } from 'react';
 
+import StatusMessage from '@/components/common/StatusMessage';
 import type {
   SupportChatMessage,
   SupportChatQuickAction,
@@ -19,10 +22,12 @@ export type SupportChatPanelProps = {
   quickActions: SupportChatQuickAction[];
   showQuickActions: boolean;
   isSubmitting: boolean;
+  sessionNotice: string | null;
   isPinnedToBottom: boolean;
   showJumpToLatestButton: boolean;
   liveStatusMessage: string | null;
   inputValue: string;
+  onDismissSessionNotice: () => void;
   onReset: () => void;
   onClose: () => void;
   onJumpToLatest: () => void;
@@ -40,10 +45,12 @@ function SupportChatPanel({
   quickActions,
   showQuickActions,
   isSubmitting,
+  sessionNotice,
   isPinnedToBottom,
   showJumpToLatestButton,
   liveStatusMessage,
   inputValue,
+  onDismissSessionNotice,
   onReset,
   onClose,
   onJumpToLatest,
@@ -68,6 +75,28 @@ function SupportChatPanel({
         onReset={onReset}
         onClose={onClose}
       />
+
+      {sessionNotice ? (
+        <div className="border-b border-[#6d201f] bg-[#2a0f0f]/88 px-4 py-3 sm:px-5">
+          <div className="flex items-start gap-3">
+            <StatusMessage
+              tone="error"
+              variant="surface"
+              className="flex-1 border-[#cf4a44]/35 bg-[#411817]/70 px-3.5 py-2.5 text-[13px]/5 text-white"
+            >
+              {sessionNotice}
+            </StatusMessage>
+            <button
+              type="button"
+              onClick={onDismissSessionNotice}
+              className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/72 transition hover:border-white/18 hover:bg-white/8 hover:text-white"
+              aria-label="세션 만료 안내 닫기"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div
         ref={viewportRef}

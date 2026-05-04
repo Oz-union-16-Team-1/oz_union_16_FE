@@ -30,6 +30,14 @@ const isExpiredSession = (session: MockChatSession) =>
   Number.isFinite(Date.parse(session.expiresAt)) &&
   Date.parse(session.expiresAt) <= Date.now();
 
+const createSessionExpiration = () => ({
+  expiresAt: new Date(
+    Date.now() + CHAT_SESSION_TTL_SECONDS * 1000,
+  ).toISOString(),
+  expiresInSeconds: CHAT_SESSION_TTL_SECONDS,
+  sessionTtlSeconds: CHAT_SESSION_TTL_SECONDS,
+});
+
 const splitMessageIntoChunks = (message: string) => {
   const chunks: string[] = [];
   let cursor = 0;
@@ -71,7 +79,12 @@ const createStreamResponse = (session: MockChatSession) => {
         }
 
         await delay(100);
-        await pushEvent('complete', { session_id: session.id });
+        await pushEvent('complete', {
+          session_id: session.id,
+          expires_at: session.expiresAt,
+          expires_in_seconds: session.expiresInSeconds,
+          session_ttl_seconds: session.sessionTtlSeconds,
+        });
         controller.close();
       })().catch((error) => {
         controller.error(error);
@@ -92,6 +105,7 @@ export const supportChatHandlers = [
   http.post(`${CHATBOT_BASE_PATH}/messages`, async ({ request }) => {
     const body = (await request.json()) as ChatbotMessageRequest;
     const message = body.message.trim();
+    const requestedSessionId = body.session_id?.trim() ?? '';
 
     if (message.length < 2) {
       return mockErrorResponse(
@@ -100,31 +114,55 @@ export const supportChatHandlers = [
       );
     }
 
-    const sessionId = crypto.randomUUID();
-
     const matchedEntry = findSupportFaqEntry(message);
     const reply =
       matchedEntry?.answer ??
       buildSupportChatFallbackMessage(createDefaultRouteContext());
-    const expiresAt = new Date(
-      Date.now() + CHAT_SESSION_TTL_SECONDS * 1000,
-    ).toISOString();
+    const nextExpiration = createSessionExpiration();
+
+    if (requestedSessionId) {
+      const currentSession = chatSessions.get(requestedSessionId);
+
+      if (!currentSession || isExpiredSession(currentSession)) {
+        chatSessions.delete(requestedSessionId);
+        return mockErrorResponse(
+          404,
+          '만료되었거나 유효하지 않은 session_id 입니다.',
+        );
+      }
+
+      currentSession.lastReply = reply;
+      currentSession.expiresAt = nextExpiration.expiresAt;
+      currentSession.expiresInSeconds = nextExpiration.expiresInSeconds;
+      currentSession.sessionTtlSeconds = nextExpiration.sessionTtlSeconds;
+
+      await delay(180);
+
+      return HttpResponse.json({
+        session_id: currentSession.id,
+        expires_at: currentSession.expiresAt,
+        expires_in_seconds: currentSession.expiresInSeconds,
+        session_ttl_seconds: currentSession.sessionTtlSeconds,
+      } satisfies ChatbotMessageResponse);
+    }
+
+    const sessionId = crypto.randomUUID();
 
     chatSessions.set(sessionId, {
       id: sessionId,
       lastReply: reply,
-      expiresAt,
-      expiresInSeconds: CHAT_SESSION_TTL_SECONDS,
-      sessionTtlSeconds: CHAT_SESSION_TTL_SECONDS,
+      expiresAt: nextExpiration.expiresAt,
+      expiresInSeconds: nextExpiration.expiresInSeconds,
+      sessionTtlSeconds: nextExpiration.sessionTtlSeconds,
     });
 
     await delay(180);
 
     return HttpResponse.json({
       session_id: sessionId,
-      expires_at: expiresAt,
-      expires_in_seconds: CHAT_SESSION_TTL_SECONDS,
-      session_ttl_seconds: CHAT_SESSION_TTL_SECONDS,
+      expires_at: nextExpiration.expiresAt,
+      expires_in_seconds: nextExpiration.expiresInSeconds,
+      session_ttl_seconds: nextExpiration.sessionTtlSeconds,
     } satisfies ChatbotMessageResponse);
   }),
 
@@ -139,18 +177,12 @@ export const supportChatHandlers = [
     const session = chatSessions.get(sessionId);
 
     if (!session) {
-      return mockErrorResponse(
-        404,
-        '만료되었거나 유효하지 않은 session_id 입니다.',
-      );
+      return mockErrorResponse(404, '스트리밍 대상 세션을 찾을 수 없습니다.');
     }
 
     if (isExpiredSession(session)) {
       chatSessions.delete(sessionId);
-      return mockErrorResponse(
-        404,
-        '만료되었거나 유효하지 않은 session_id 입니다.',
-      );
+      return mockErrorResponse(404, '스트리밍 대상 세션을 찾을 수 없습니다.');
     }
 
     return createStreamResponse(session);
