@@ -105,7 +105,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
           id={PROFILE_MENU_ID}
           role="menu"
           aria-label="프로필 메뉴"
-          className="bg-mypage-panel border-mypage-panel shadow-mypage-float w-40 overflow-hidden rounded-2xl border p-2 backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out"
+          className="w-40 overflow-hidden rounded-2xl border border-white/10 bg-[#101013]/96 p-2 shadow-[0_24px_48px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.06)] ring-1 ring-white/5 backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out"
         >
           <Link
             to={ROUTE_PATHS.MY_PAGE}
@@ -121,7 +121,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
           >
             마이페이지
           </Link>
-          <div className="border-mypage-divider mx-2 border-t" />
+          <div className="mx-2 border-t border-white/10" />
           <button
             type="button"
             role="menuitem"
