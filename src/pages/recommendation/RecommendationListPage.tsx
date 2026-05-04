@@ -135,6 +135,13 @@ type RecommendationBackdropProps = {
   items: RecommendationDisplayItem[];
 };
 
+type RecommendationPromptCardProps = {
+  title: string;
+  description: string;
+  ctaLabel: string;
+  to: string;
+};
+
 function RecommendationRowSkeleton() {
   return (
     <div className="grid animate-pulse gap-4 px-4 py-5 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-center sm:px-6 sm:py-6 lg:grid-cols-[118px_minmax(0,1fr)_auto] lg:gap-6 lg:px-7">
@@ -207,6 +214,28 @@ function RecommendationBackdrop({ items }: RecommendationBackdropProps) {
   );
 }
 
+function RecommendationPromptCard({
+  title,
+  description,
+  ctaLabel,
+  to,
+}: RecommendationPromptCardProps) {
+  return (
+    <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
+      <h2 className="text-2xl font-bold text-white">{title}</h2>
+      <p className="mt-4 text-base leading-7 break-keep text-white/60">
+        {description}
+      </p>
+      <Link
+        to={to}
+        className="mt-6 inline-flex rounded-2xl bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+      >
+        {ctaLabel}
+      </Link>
+    </section>
+  );
+}
+
 function RecommendationListPage() {
   const [selectedGame, setSelectedGame] = useState<GameListItem | null>(null);
   const authGate = useAuthGate({ allowMockBypass: true });
@@ -217,9 +246,8 @@ function RecommendationListPage() {
     recommendationItems,
     errorMessage,
     emptyStateMessage,
-    isResultNotFound,
+    hasBlockingError,
     shouldShowMatchEntryCta,
-    error,
     isLoading,
     isFetchingNextPage,
     fetchNextPage,
@@ -293,7 +321,7 @@ function RecommendationListPage() {
                     type="button"
                     onClick={() => void handleResetSurvey()}
                     disabled={isResettingSurvey}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:opacity-60"
                   >
                     <RotateCcw size={16} />
                     {isResettingSurvey ? '설문 초기화 중...' : '설문 초기화'}
@@ -311,36 +339,19 @@ function RecommendationListPage() {
               description="실제 API 모드에서는 인증 토큰이 필요합니다. 개발 중에는 MSW를 켜두면 추천 결과 흐름을 확인할 수 있습니다."
             />
           ) : !isMatchSource && !isSurveySource ? (
-            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
-              <h2 className="text-2xl font-bold text-white">
-                먼저 설문을 완료해 주세요.
-              </h2>
-              <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                설문이 끝나면 추천 결과를 이 페이지에서 바로 확인할 수 있어요.
-              </p>
-              <Link
-                to={`/${ROUTES.SURVEY}`}
-                className="mt-6 inline-flex rounded-2xl bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
-              >
-                설문 페이지로 이동
-              </Link>
-            </section>
+            <RecommendationPromptCard
+              title="먼저 설문을 완료해 주세요."
+              description="설문이 끝나면 추천 결과를 이 페이지에서 바로 확인할 수 있어요."
+              ctaLabel="설문 페이지로 이동"
+              to={`/${ROUTES.SURVEY}`}
+            />
           ) : shouldShowMatchEntryCta ? (
-            <section className="survey-panel max-w-2xl px-6 py-8 sm:px-8 sm:py-10">
-              <h2 className="text-2xl font-bold text-white">
-                먼저 매칭 평가를 완료해 주세요.
-              </h2>
-              <p className="mt-4 text-base leading-7 break-keep text-white/60">
-                좋아하는 장르를 고르고 최대 5개 게임의 트레일러를 보며 별점을
-                남기면 추천 결과가 바로 준비돼요.
-              </p>
-              <Link
-                to={`/${ROUTES.MATCHING_LIST}`}
-                className="mt-6 inline-flex rounded-2xl bg-[linear-gradient(135deg,#ff3535,#9f1212)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
-              >
-                매칭 페이지로 이동
-              </Link>
-            </section>
+            <RecommendationPromptCard
+              title="먼저 매칭 평가를 완료해 주세요."
+              description="좋아하는 장르를 고르고 최대 5개 게임의 트레일러를 보며 별점을 남기면 추천 결과가 바로 준비돼요."
+              ctaLabel="매칭 페이지로 이동"
+              to={`/${ROUTES.MATCHING_LIST}`}
+            />
           ) : (
             <section className="flex min-h-0 flex-col overflow-hidden rounded-4xl border border-white/8 bg-[linear-gradient(180deg,rgba(16,16,18,0.92),rgba(9,9,10,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-2xl">
               {feedbackMessage ? (
@@ -353,7 +364,7 @@ function RecommendationListPage() {
 
               {isLoading ? (
                 <RecommendationListSkeleton />
-              ) : error && !isResultNotFound ? (
+              ) : hasBlockingError ? (
                 <div className="px-4 py-12 text-[#ffc2c2] sm:px-6 lg:px-7">
                   {errorMessage}
                 </div>
@@ -385,7 +396,7 @@ function RecommendationListPage() {
                       type="button"
                       onClick={handleLoadMore}
                       disabled={isFetchingNextPage}
-                      className="flex w-full items-center justify-center gap-2 border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.03))] px-4 py-2.5 text-sm font-medium text-white/82 transition hover:bg-white/4 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 lg:px-7"
+                      className="flex w-full items-center justify-center gap-2 border-t border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.03))] px-4 py-2.5 text-sm font-medium text-white/82 transition hover:bg-white/4 hover:text-white disabled:opacity-45 sm:px-6 lg:px-7"
                     >
                       {!isFetchingNextPage ? (
                         <ChevronDown
