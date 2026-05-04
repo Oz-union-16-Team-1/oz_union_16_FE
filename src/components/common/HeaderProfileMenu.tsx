@@ -13,13 +13,24 @@ type HeaderProfileMenuProps = {
 };
 
 function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isHoverOpen, setIsHoverOpen] = useState(false);
+  const [isClickOpen, setIsClickOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { logout, isPending } = useLogoutAction();
   const location = useLocation();
   const isMyPage = isMyPagePath(location.pathname);
   const trimmedProfileImageUrl = profileImageUrl?.trim() || null;
   const resolvedProfileImageUrl = trimmedProfileImageUrl || profileImg;
+  const isOpen = isHoverOpen || isClickOpen;
+  const profileButtonClass = `h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none ${
+    isOpen
+      ? 'border-[#ff3b30] shadow-[0_0_0_4px_rgba(255,59,48,0.16)]'
+      : 'border-white/14 hover:border-[#ff3b30] hover:shadow-[0_0_0_4px_rgba(255,59,48,0.12)]'
+  }`;
+  const closeMenu = () => {
+    setIsHoverOpen(false);
+    setIsClickOpen(false);
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -31,13 +42,13 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
@@ -54,9 +65,11 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
     <div
       ref={containerRef}
       className="relative"
+      onMouseEnter={() => setIsHoverOpen(true)}
+      onMouseLeave={() => setIsHoverOpen(false)}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          setIsOpen(false);
+          closeMenu();
         }
       }}
     >
@@ -66,8 +79,8 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={PROFILE_MENU_ID}
-        onClick={() => setIsOpen((current) => !current)}
-        className="hover:border-header-accent h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 border-transparent transition-all focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none"
+        onClick={() => setIsClickOpen((current) => !current)}
+        className={profileButtonClass}
       >
         <img
           src={resolvedProfileImageUrl}
@@ -80,18 +93,26 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         />
       </button>
 
-      {isOpen ? (
+      <div
+        className={`absolute top-full right-0 z-50 pt-3 transition-all duration-200 ease-out ${
+          isOpen
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : 'pointer-events-none -translate-y-1 opacity-0'
+        }`}
+        aria-hidden={!isOpen}
+      >
         <div
           id={PROFILE_MENU_ID}
           role="menu"
           aria-label="프로필 메뉴"
-          className="bg-mypage-panel border-mypage-panel shadow-mypage-float absolute top-[calc(100%+0.85rem)] right-0 z-50 w-40 overflow-hidden rounded-2xl border p-2 backdrop-blur-xl"
+          className="w-40 overflow-hidden rounded-2xl border border-white/10 bg-[#101013]/96 p-2 shadow-[0_24px_48px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.06)] ring-1 ring-white/5 backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out"
         >
           <Link
             to={ROUTE_PATHS.MY_PAGE}
             role="menuitem"
             aria-current={isMyPage ? 'page' : undefined}
-            onClick={() => setIsOpen(false)}
+            tabIndex={isOpen ? 0 : -1}
+            onClick={closeMenu}
             className={`flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-medium transition focus-visible:outline-none ${
               isMyPage
                 ? 'text-login-primary bg-white/8'
@@ -100,13 +121,14 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
           >
             마이페이지
           </Link>
-          <div className="border-mypage-divider mx-2 border-t" />
+          <div className="mx-2 border-t border-white/10" />
           <button
             type="button"
             role="menuitem"
+            tabIndex={isOpen ? 0 : -1}
             disabled={isPending}
             onClick={() => {
-              setIsOpen(false);
+              closeMenu();
               void logout();
             }}
             className="flex min-h-12 w-full items-center justify-center rounded-xl px-4 text-base font-medium text-white transition hover:bg-white/6 focus-visible:bg-white/6 focus-visible:outline-none disabled:opacity-60"
@@ -114,7 +136,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
             {isPending ? '로그아웃 중...' : '로그아웃'}
           </button>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
