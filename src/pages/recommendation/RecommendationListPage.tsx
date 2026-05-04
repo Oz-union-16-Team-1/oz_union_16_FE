@@ -108,7 +108,7 @@ function RecommendationRow({
           disabled={isLikePending}
           className={`${
             item.is_liked
-              ? 'border-[#c12626]/70 bg-[#220b0b] text-[#f25a5a]'
+              ? '!border-[#c12626]/70 !bg-[#220b0b] !text-[#f25a5a] hover:!border-[#d43a3a]/80 hover:!bg-[#2b0d0d] hover:!text-[#ff6666]'
               : 'border-white/10 bg-white/2 text-white/60 hover:border-white/18 hover:text-white/86'
           } ${isLikePending ? 'cursor-not-allowed opacity-55' : ''}`}
           aria-label={item.is_liked ? '좋아요 해제' : '좋아요 추가'}
