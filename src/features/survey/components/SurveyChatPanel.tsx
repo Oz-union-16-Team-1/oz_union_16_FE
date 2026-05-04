@@ -31,6 +31,15 @@ type SurveyChatPanelProps = {
   isHistoryView?: boolean;
 };
 
+const SURVEY_CONTROL_BUTTON_CLASS =
+  'inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:opacity-60';
+
+const SURVEY_RETRY_BUTTON_CLASS =
+  'mt-4 inline-flex items-center gap-2 rounded-xl border border-[#944141] px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/5 disabled:opacity-60';
+
+const SURVEY_SEND_BUTTON_CLASS =
+  'inline-flex h-11.5 w-11.5 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] text-white shadow-[0_14px_30px_rgba(139,0,0,0.28)] transition hover:brightness-105 disabled:opacity-45';
+
 export function SurveyChatLoadingState() {
   return (
     <section className="survey-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -278,7 +287,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
               type="button"
               onClick={handleResetClick}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/3 px-4 py-3 text-sm font-semibold text-white/88 transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-60"
+              className={SURVEY_CONTROL_BUTTON_CLASS}
             >
               <RotateCcw size={16} />
               설문 초기화
@@ -319,7 +328,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
                       type="button"
                       onClick={handleRetry}
                       disabled={!lastSubmittedMessage || isSubmitting}
-                      className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#944141] px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={SURVEY_RETRY_BUTTON_CLASS}
                     >
                       다시 시도
                     </button>
@@ -380,7 +389,7 @@ function SurveyChatPanel({ isHistoryView = false }: SurveyChatPanelProps) {
                             ? '응답 생성 중'
                             : '메시지 보내기'
                       }
-                      className="inline-flex h-11.5 w-11.5 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff3535,#9f1212)] text-white shadow-[0_14px_30px_rgba(139,0,0,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+                      className={SURVEY_SEND_BUTTON_CLASS}
                     >
                       <SendHorizontal size={16} />
                     </button>
