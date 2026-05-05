@@ -50,6 +50,9 @@ function AuthCallbackPage() {
         Boolean(authorizationCode) ||
         hasPendingSocialProvider ||
         searchParams.size === 0;
+      const shouldPreferDirectBackendRefreshInDev =
+        import.meta.env.DEV &&
+        (Boolean(authorizationCode) || hasPendingSocialProvider);
 
       if (callbackErrorMessage) {
         redirectToLogin(callbackErrorMessage);
@@ -62,7 +65,9 @@ function AuthCallbackPage() {
       }
 
       try {
-        await ensureAuthSessionRestored();
+        await ensureAuthSessionRestored({
+          preferDirectBackendOriginInDev: shouldPreferDirectBackendRefreshInDev,
+        });
 
         if (!isMounted) {
           return;

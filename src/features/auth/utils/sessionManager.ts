@@ -28,6 +28,10 @@ type ClearAuthSessionOptions = {
   setReady?: boolean;
 };
 
+type RestoreAuthSessionOptions = {
+  preferDirectBackendOriginInDev?: boolean;
+};
+
 let restoreAuthSessionPromise: Promise<RestoredAuthSession> | null = null;
 
 export const setAuthBootstrapLoading = () => {
@@ -142,16 +146,20 @@ export const hydrateAuthSessionFromAccessToken = async (
   };
 };
 
-export const refreshStoredAccessToken = async () => {
-  const { access_token: accessToken } = await refreshAccessToken();
+export const refreshStoredAccessToken = async (
+  options: RestoreAuthSessionOptions = {},
+) => {
+  const { access_token: accessToken } = await refreshAccessToken(options);
   applyAccessToken(accessToken);
   logRefreshStoreSync(accessToken);
   return accessToken;
 };
 
-export const restoreAuthSession = async () => {
+export const restoreAuthSession = async (
+  options: RestoreAuthSessionOptions = {},
+) => {
   try {
-    const accessToken = await refreshStoredAccessToken();
+    const accessToken = await refreshStoredAccessToken(options);
     return await hydrateAuthSessionFromAccessToken(accessToken);
   } catch (error) {
     const shouldNotifySessionRestoreFailure = hasSessionRestoreHint();
@@ -172,9 +180,11 @@ export const restoreAuthSession = async () => {
   }
 };
 
-export const ensureAuthSessionRestored = () => {
+export const ensureAuthSessionRestored = (
+  options: RestoreAuthSessionOptions = {},
+) => {
   if (!restoreAuthSessionPromise) {
-    restoreAuthSessionPromise = restoreAuthSession().finally(() => {
+    restoreAuthSessionPromise = restoreAuthSession(options).finally(() => {
       restoreAuthSessionPromise = null;
     });
   }

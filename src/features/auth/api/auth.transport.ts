@@ -47,8 +47,14 @@ const loginRequestPath = `${AUTH_BASE_PATH}/login`;
 const logoutRequestPath = `${AUTH_BASE_PATH}/logout`;
 const refreshRequestPath = `${AUTH_BASE_PATH}/token/refresh`;
 
-const resolveRefreshRequestUrl = () => {
-  if (import.meta.env.DEV) {
+type RefreshAccessTokenRequestOptions = {
+  preferDirectBackendOriginInDev?: boolean;
+};
+
+const resolveRefreshRequestUrl = (
+  options: RefreshAccessTokenRequestOptions = {},
+) => {
+  if (import.meta.env.DEV && !options.preferDirectBackendOriginInDev) {
     return refreshRequestPath;
   }
 
@@ -219,11 +225,12 @@ export const requestLogout = async () => {
 
 export const requestRefreshAccessToken = async (
   payload: { refresh_token?: string } = {},
+  options: RefreshAccessTokenRequestOptions = {},
 ) => {
   const waitedForPreviousRefresh = await waitForRefreshThrottleWindow();
   const requestConfig = createCredentialedAuthRequestConfig();
   const requestBody = payload.refresh_token?.trim() ? payload : undefined;
-  const refreshRequestUrl = resolveRefreshRequestUrl();
+  const refreshRequestUrl = resolveRefreshRequestUrl(options);
 
   logCredentialedAuthRequestDiagnostics({
     label: 'refresh',
@@ -234,8 +241,9 @@ export const requestRefreshAccessToken = async (
   const sendRefreshRequest = async () => {
     markRefreshThrottleTimestamp();
 
-    // Dev uses the Vite proxy via a relative path, while production must target
-    // the backend origin directly so the backend refresh cookie is included.
+    // Development usually uses the Vite proxy via a relative path, but the
+    // local social-login callback may need one direct backend refresh so the
+    // backend-domain cookie can be consumed before proxy-based API calls resume.
     const response = await axios.post<RefreshAccessTokenResponse>(
       refreshRequestUrl,
       requestBody,
