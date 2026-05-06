@@ -7,7 +7,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import ToastMessage from '../../../components/mypage/ToastMessage';
+import ToastMessage from '../../../components/common/ToastMessage';
 import {
   DETAIL_LOADING_TEXT,
   normalizeMeaningfulText,
