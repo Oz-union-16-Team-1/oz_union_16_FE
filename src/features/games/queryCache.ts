@@ -93,6 +93,9 @@ const updateGameListItem = (
 const primaryLikedGamesQueryKey = authKeys.likedGamesList({
   page_size: PRIMARY_LIKED_GAMES_PAGE_SIZE,
 });
+const primaryInfiniteLikedGamesQueryKey = authKeys.likedGamesInfiniteList({
+  page_size: PRIMARY_LIKED_GAMES_PAGE_SIZE,
+});
 
 export const syncGameLikeStateInQueryCache = (
   queryClient: QueryClient,
@@ -184,6 +187,10 @@ export const syncLikedGamesStateInQueryCache = (
   queryClient: QueryClient,
   update: LikeMutationCacheUpdate,
 ) => {
+  const likedGameSeed = update.likedGame ?? {
+    gameId: update.gameId,
+  };
+
   queryClient.setQueryData<LikedGamesResponse>(
     primaryLikedGamesQueryKey,
     (currentLikedGames) => {
@@ -193,10 +200,57 @@ export const syncLikedGamesStateInQueryCache = (
 
       return applyLikeStateToLikedGamesResponse(currentLikedGames, {
         isLiked: update.isLiked,
-        seed: update.likedGame ?? {
-          gameId: update.gameId,
-        },
+        seed: likedGameSeed,
       });
+    },
+  );
+
+  queryClient.setQueryData<InfiniteData<LikedGamesResponse>>(
+    primaryInfiniteLikedGamesQueryKey,
+    (currentLikedGames) => {
+      if (!currentLikedGames || !Array.isArray(currentLikedGames.pages)) {
+        return currentLikedGames;
+      }
+
+      const hasLoadedGame = currentLikedGames.pages.some((page) =>
+        page.results.some((likedGame) => likedGame.game_id === update.gameId),
+      );
+
+      return {
+        ...currentLikedGames,
+        pages: currentLikedGames.pages.map((page, pageIndex) => {
+          if (!isLikedGamesResponse(page)) {
+            return page;
+          }
+
+          if (update.isLiked) {
+            const nextCount = hasLoadedGame ? page.count : page.count + 1;
+
+            if (pageIndex > 0 || hasLoadedGame) {
+              return {
+                ...page,
+                count: nextCount,
+              };
+            }
+
+            return {
+              ...applyLikeStateToLikedGamesResponse(page, {
+                isLiked: true,
+                seed: likedGameSeed,
+              }),
+              count: nextCount,
+            };
+          }
+
+          return {
+            ...page,
+            count: Math.max(0, page.count - 1),
+            results: page.results.filter(
+              (likedGame) => likedGame.game_id !== update.gameId,
+            ),
+          };
+        }),
+      };
     },
   );
 };
