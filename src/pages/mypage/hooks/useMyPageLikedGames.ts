@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { extractAuthApiErrorMessage } from '../../../features/auth/api/auth';
 import { authKeys } from '../../../features/auth/api/queryKeys';
 import {
-  useLikedGamesQuery,
+  useInfiniteLikedGamesQuery,
   useUnlikeLikedGameMutation,
 } from '../../../features/auth/api/useAuthApi';
 import type { LikedGamesResponse } from '../../../features/auth/types/auth';
@@ -21,6 +21,8 @@ import {
   toStringList,
 } from '../utils';
 
+const LIKED_GAMES_PAGE_SIZE = 20;
+
 type UseMyPageLikedGamesOptions = {
   enabled: boolean;
   onOpenGameDetail: (game: GameListItem) => void;
@@ -33,8 +35,8 @@ function useMyPageLikedGames({
   onToast,
 }: UseMyPageLikedGamesOptions) {
   const queryClient = useQueryClient();
-  const likedGamesQuery = useLikedGamesQuery(enabled, {
-    page_size: 20,
+  const likedGamesQuery = useInfiniteLikedGamesQuery(enabled, {
+    page_size: LIKED_GAMES_PAGE_SIZE,
     page: 1,
   });
   const likedGamesData = likedGamesQuery.data;
@@ -42,21 +44,26 @@ function useMyPageLikedGames({
   const [selectedFavoriteGame, setSelectedFavoriteGame] =
     useState<FavoriteGamePreview | null>(null);
   const [favoriteListRenderVersion, setFavoriteListRenderVersion] = useState(0);
+  const likedGamesResults = useMemo(
+    () =>
+      likedGamesData?.pages.flatMap((page) =>
+        Array.isArray(page.results) ? page.results : [],
+      ) ?? [],
+    [likedGamesData],
+  );
   const serverFavoriteGames = useMemo(() => {
-    const safeLikedGamesResults = Array.isArray(likedGamesData?.results)
-      ? likedGamesData.results
-      : [];
-
-    return safeLikedGamesResults
+    return likedGamesResults
       .map(toFavoriteGamePreview)
       .filter((game) => game.gameId > 0);
-  }, [likedGamesData]);
+  }, [likedGamesResults]);
 
   const favoriteGames = serverFavoriteGames;
   const favoriteCount =
-    typeof likedGamesData?.count === 'number'
-      ? likedGamesData.count
-      : serverFavoriteGames.length;
+    likedGamesData?.pages.reduce(
+      (currentCount, page) =>
+        typeof page.count === 'number' ? page.count : currentCount,
+      serverFavoriteGames.length,
+    ) ?? serverFavoriteGames.length;
 
   const refetchFavoriteGames = likedGamesQuery.refetch;
   const isFavoriteGamesLoading =
@@ -81,48 +88,54 @@ function useMyPageLikedGames({
       const previousLikedGameMap = new Map(
         previousLikedGames.map((game) => [game.game_id, game]),
       );
-      const nextLikedGamesResults = Array.isArray(nextLikedGames.results)
-        ? nextLikedGames.results
-        : [];
-      const nextResults = nextLikedGamesResults.map((game) => {
-        const previousGame = previousLikedGameMap.get(game.game_id);
-        const normalizedGenres = toStringList(game.genres);
-        const previousGenres = toStringList(previousGame?.genres);
-
-        return {
-          ...game,
-          game_title: toDisplayText(
-            game.game_title,
-            toDisplayText(previousGame?.game_title),
-          ),
-          thumbnail_url:
-            normalizeThumbnailUrl(game.thumbnail_url) ??
-            normalizeThumbnailUrl(previousGame?.thumbnail_url) ??
-            null,
-          genres:
-            normalizedGenres.length > 0 ? normalizedGenres : previousGenres,
-        };
-      });
 
       queryClient.setQueryData(
-        authKeys.likedGamesList({
-          page_size: 20,
-          page: 1,
+        authKeys.likedGamesInfiniteList({
+          page_size: LIKED_GAMES_PAGE_SIZE,
         }),
         {
           ...nextLikedGames,
-          count:
-            typeof nextLikedGames.count === 'number'
-              ? nextLikedGames.count
-              : nextResults.length,
-          results: nextResults,
+          pages: nextLikedGames.pages.map((page) => {
+            const nextLikedGamesResults = Array.isArray(page.results)
+              ? page.results
+              : [];
+            const nextResults = nextLikedGamesResults.map((game) => {
+              const previousGame = previousLikedGameMap.get(game.game_id);
+              const normalizedGenres = toStringList(game.genres);
+              const previousGenres = toStringList(previousGame?.genres);
+
+              return {
+                ...game,
+                game_title: toDisplayText(
+                  game.game_title,
+                  toDisplayText(previousGame?.game_title),
+                ),
+                thumbnail_url:
+                  normalizeThumbnailUrl(game.thumbnail_url) ??
+                  normalizeThumbnailUrl(previousGame?.thumbnail_url) ??
+                  null,
+                genres:
+                  normalizedGenres.length > 0
+                    ? normalizedGenres
+                    : previousGenres,
+              };
+            });
+
+            return {
+              ...page,
+              count:
+                typeof page.count === 'number'
+                  ? page.count
+                  : nextResults.length,
+              results: nextResults,
+            };
+          }),
         },
       );
     } catch {
       void queryClient.invalidateQueries({
-        queryKey: authKeys.likedGamesList({
-          page_size: 20,
-          page: 1,
+        queryKey: authKeys.likedGamesInfiniteList({
+          page_size: LIKED_GAMES_PAGE_SIZE,
         }),
       });
     }
@@ -144,9 +157,7 @@ function useMyPageLikedGames({
       return;
     }
 
-    const previousLikedGames = Array.isArray(likedGamesData?.results)
-      ? likedGamesData.results
-      : [];
+    const previousLikedGames = likedGamesResults;
 
     try {
       await unlikeLikedGameMutation.mutateAsync(targetGameId);
@@ -187,11 +198,15 @@ function useMyPageLikedGames({
     isFavoriteGamesLoading,
     isFavoriteGamesError,
     isFetchingFavoriteGames: likedGamesQuery.isFetching,
+    isFetchingMoreFavoriteGames: likedGamesQuery.isFetchingNextPage,
+    hasMoreFavoriteGames: Boolean(likedGamesQuery.hasNextPage),
+    loadedFavoriteGamesCount: favoriteGames.length,
     selectedFavoriteGame,
     isUnlikePending: unlikeLikedGameMutation.isPending,
     setSelectedFavoriteGame,
     handleFavoriteGameCardClick,
     handleFavoriteGameDeleteConfirm,
+    loadMoreFavoriteGames: likedGamesQuery.fetchNextPage,
     refetchFavoriteGames,
   };
 }
