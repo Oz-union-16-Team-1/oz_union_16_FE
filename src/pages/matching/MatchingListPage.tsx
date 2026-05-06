@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { ChevronRight } from 'lucide-react';
 import { useLayoutEffect, useMemo } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
@@ -7,7 +6,6 @@ import AuthGateStatusPanel from '../../components/auth/AuthGateStatusPanel';
 import LazyHeader from '../../components/common/LazyHeader';
 import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
-import { getMatchCandidates } from '../../features/matching/api/matching';
 import { useMatchingGenreImageQueries } from '../../features/matching/api/useMatchingApi';
 import { MATCHING_GENRES } from '../../features/matching/genres';
 import { useMatchingStore } from '../../features/matching/store/useMatchingStore';
@@ -79,7 +77,6 @@ function MatchingListLoadingState() {
 
 function MatchingListPage() {
   const location = useLocation();
-  const queryClient = useQueryClient();
   const authGate = useAuthGate();
   const canAccessPage = authGate.accessStatus === 'authorized';
   const canFetchGenreImages = canAccessPage;
@@ -104,18 +101,6 @@ function MatchingListPage() {
     MATCHING_GENRES.every((genre) => genreImageMap.has(genre.genreId));
   const shouldShowGenreImageSkeleton =
     canAccessPage && !hasGenreImageError && !areGenreImagesReady;
-
-  const prefetchMatchCandidates = (genreId: number) => {
-    if (!canAccessPage) {
-      return;
-    }
-
-    void queryClient.prefetchQuery({
-      queryKey: ['match-candidates', genreId, 'server'],
-      queryFn: () => getMatchCandidates(genreId),
-      staleTime: 60_000,
-    });
-  };
 
   useLayoutEffect(() => {
     resetFlow();
@@ -181,8 +166,6 @@ function MatchingListPage() {
                   <Link
                     key={genre.slug}
                     to={`/${ROUTES.MATCHING_LIST}/${genre.slug}`}
-                    onMouseEnter={() => prefetchMatchCandidates(genre.genreId)}
-                    onFocus={() => prefetchMatchCandidates(genre.genreId)}
                     className="group overflow-hidden rounded-3xl border border-white/8 bg-[#0c0c0d] p-2.5 shadow-[0_18px_36px_rgba(0,0,0,0.26)] transition hover:border-[#a31c1c]/65 hover:bg-[#111112]"
                   >
                     <div className="relative overflow-hidden rounded-[18px]">

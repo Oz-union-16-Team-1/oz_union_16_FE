@@ -22,7 +22,7 @@ export const useMatchCandidatesQuery = (
   useQuery({
     queryKey: ['match-candidates', genreId, retryNo ?? 'server'],
     enabled: genreId !== null && enabled,
-    queryFn: () => getMatchCandidates(genreId!, retryNo),
+    queryFn: ({ signal }) => getMatchCandidates(genreId!, retryNo, signal),
     staleTime: 60_000,
     retry: shouldRetryApiQuery,
   });
