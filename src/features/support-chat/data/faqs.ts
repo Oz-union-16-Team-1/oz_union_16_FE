@@ -22,7 +22,6 @@ export const SUPPORT_CHAT_QUICK_ACTIONS: SupportChatQuickAction[] = [
     label: '계정 삭제 하고 싶은데 어떻게 하나요?',
   },
   { id: 'find-id-help', label: '아이디를 찾고 싶어요' },
-  { id: 'forgot-password-help', label: '비밀번호가 기억이 안나요.' },
   { id: 'google-login-help', label: '구글 로그인은 어떻게 하나요?' },
 ];
 
@@ -57,7 +56,7 @@ const SUPPORT_FAQ_ENTRIES: SupportFaqEntry[] = [
   },
   {
     id: 'forgot-password',
-    label: '비밀번호가 기억이 안나요.',
+    label: '비밀번호 찾기 안내',
     keywords: [
       '비밀번호',
       '기억이 안나',
