@@ -146,7 +146,7 @@ export const hydrateAuthSessionFromAccessToken = async (
   };
 };
 
-export const refreshMemoryAccessToken = async (
+export const refreshStoredAccessToken = async (
   options: RestoreAuthSessionOptions = {},
 ) => {
   const { access_token: accessToken } = await refreshAccessToken(options);
@@ -159,7 +159,7 @@ export const restoreAuthSession = async (
   options: RestoreAuthSessionOptions = {},
 ) => {
   try {
-    const accessToken = await refreshMemoryAccessToken(options);
+    const accessToken = await refreshStoredAccessToken(options);
     return await hydrateAuthSessionFromAccessToken(accessToken);
   } catch (error) {
     const shouldNotifySessionRestoreFailure = hasSessionRestoreHint();

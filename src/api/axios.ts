@@ -6,10 +6,10 @@ import axios, {
 
 import { logAxiosError } from './logApiError';
 import { apiBaseUrl } from '../lib/env';
-import { readMemoryAccessToken } from '../store/useAuthStore';
+import { readStoredAccessToken } from '../store/useAuthStore';
 import {
   expireAuthSession,
-  refreshMemoryAccessToken,
+  refreshStoredAccessToken,
 } from '../features/auth/utils/sessionManager';
 
 /**
@@ -91,7 +91,7 @@ const getRefreshedAccessToken = async () => {
   if (!isRefreshing) {
     isRefreshing = true;
     try {
-      const accessToken = await refreshMemoryAccessToken();
+      const accessToken = await refreshStoredAccessToken();
       onRefreshed(accessToken);
       return accessToken;
     } catch (refreshError) {
@@ -141,10 +141,10 @@ export const api = axios.create({
   },
 });
 
-// 요청 인터셉터: 메모리 상태의 최신 Access Token을 Authorization 헤더에 싣는다.
+// 요청 인터셉터: 항상 sessionStorage에서 최신 Access Token을 가져온다.
 api.interceptors.request.use(
   (config) => {
-    const token = readMemoryAccessToken();
+    const token = readStoredAccessToken();
 
     if (token) {
       setAuthorizationHeader(config as RetriableRequestConfig, token);
@@ -168,6 +168,7 @@ api.interceptors.response.use(
     if (
       originalRequest &&
       error.response?.status === 401 &&
+      readStoredAccessToken() &&
       !originalRequest._retry &&
       shouldResetAuthSession(originalRequest.url, originalRequest.baseURL)
     ) {
