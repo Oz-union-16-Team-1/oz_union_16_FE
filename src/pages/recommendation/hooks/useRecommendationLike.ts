@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import { likeGame, unlikeGame } from '../../games/gameApi';
-import { getToggleLikeErrorMessage } from '../../games/likeError';
-import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
-import type { RecommendationDisplayItem } from '../types';
+import { likeGame, unlikeGame } from '../../../features/games/gameApi';
+import { getToggleLikeErrorMessage } from '../../../features/games/likeError';
+import { syncLikeMutationStateInQueryCache } from '../../../features/games/queryCache';
+import type { RecommendationDisplayItem } from '../../../features/recommendation/types';
 
 const LIKE_ERROR_MESSAGE =
   '좋아요 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.';

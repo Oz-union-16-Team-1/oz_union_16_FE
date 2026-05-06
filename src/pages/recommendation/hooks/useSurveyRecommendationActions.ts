@@ -2,9 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
-import { useResetSurveyMutation } from '../../survey/api/useSurveyApi';
-import { extractApiErrorMessage } from '../../survey/api/survey';
-import { useSurveyStore } from '../../survey/store/useSurveyStore';
+import { useResetSurveyMutation } from '../../../features/survey/api/useSurveyApi';
+import { extractApiErrorMessage } from '../../../features/survey/api/survey';
+import { useSurveyStore } from '../../../features/survey/store/useSurveyStore';
 
 type UseSurveyRecommendationActionsParams = {
   canAccessPage: boolean;

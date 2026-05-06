@@ -3,12 +3,12 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { getPaginatedResults } from '../../../utils/paginatedResults';
-import { useMatchResultsInfinite } from '../../matching/api/useMatchingApi';
-import { useMatchingStore } from '../../matching/store/useMatchingStore';
-import { useSurveyResultsInfinite } from '../../survey/api/useSurveyApi';
-import { extractApiErrorMessage } from '../../survey/api/survey';
-import { useSurveyStore } from '../../survey/store/useSurveyStore';
-import type { RecommendationDisplayItem } from '../types';
+import { useMatchResultsInfinite } from '../../../features/matching/api/useMatchingApi';
+import { useMatchingStore } from '../../../features/matching/store/useMatchingStore';
+import { useSurveyResultsInfinite } from '../../../features/survey/api/useSurveyApi';
+import { extractApiErrorMessage } from '../../../features/survey/api/survey';
+import { useSurveyStore } from '../../../features/survey/store/useSurveyStore';
+import type { RecommendationDisplayItem } from '../../../features/recommendation/types';
 
 type UseRecommendationResultsSourceParams = {
   canAccessPage: boolean;

@@ -15,10 +15,10 @@ import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import type { GameListItem } from '../../features/games/types';
-import { useRecommendationLike } from '../../features/recommendation/hooks/useRecommendationLike';
-import { useRecommendationResultsSource } from '../../features/recommendation/hooks/useRecommendationResultsSource';
-import { useRecommendationScrollRestoration } from '../../features/recommendation/hooks/useRecommendationScrollRestoration';
-import { useSurveyRecommendationActions } from '../../features/recommendation/hooks/useSurveyRecommendationActions';
+import { useRecommendationLike } from './hooks/useRecommendationLike';
+import { useRecommendationResultsSource } from './hooks/useRecommendationResultsSource';
+import { useRecommendationScrollRestoration } from './hooks/useRecommendationScrollRestoration';
+import { useSurveyRecommendationActions } from './hooks/useSurveyRecommendationActions';
 import type { RecommendationDisplayItem } from '../../features/recommendation/types';
 import { formatRecommendationRating } from '../../features/recommendation/utils/normalizeRecommendationItem';
 

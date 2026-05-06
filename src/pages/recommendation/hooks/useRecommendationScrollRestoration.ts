@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { GameListItem } from '../../games/types';
-import type { RecommendationDisplayItem } from '../types';
-import { toGameListItem } from '../utils/normalizeRecommendationItem';
+import type { GameListItem } from '../../../features/games/types';
+import type { RecommendationDisplayItem } from '../../../features/recommendation/types';
+import { toGameListItem } from '../../../features/recommendation/utils/normalizeRecommendationItem';
 
 const LOAD_MORE_SCROLL_STEP_FALLBACK = 124;
 
