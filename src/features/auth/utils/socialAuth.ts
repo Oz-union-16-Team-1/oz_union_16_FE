@@ -106,6 +106,11 @@ export const getSocialCallbackAuthorizationCode = (
   searchParams: URLSearchParams,
 ) => getNormalizedSocialCallbackParam(searchParams, 'code');
 
+export const getSocialCallbackAccessToken = (searchParams: URLSearchParams) =>
+  getNormalizedSocialCallbackParam(searchParams, 'access_token') ||
+  getNormalizedSocialCallbackParam(searchParams, 'accessToken') ||
+  getNormalizedSocialCallbackParam(searchParams, 'token');
+
 const getSocialCallbackErrorMessageFromCode = (errorCode: string | null) => {
   if (!errorCode) {
     return null;

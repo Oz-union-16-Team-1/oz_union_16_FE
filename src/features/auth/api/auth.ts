@@ -1,4 +1,5 @@
 import type { LoginRequest } from '../types/auth';
+import { useAuthStore } from '../../../store/useAuthStore';
 import {
   clearMockRefreshToken,
   createRefreshTokenFallbackRequestBody,
@@ -15,6 +16,7 @@ import {
   requestLogout,
   requestRefreshAccessToken,
 } from './auth.transport';
+import { isSocialLoginAccount } from '../utils/socialAccount';
 
 export {
   checkIdDuplicate,
@@ -60,8 +62,14 @@ export const login = async (payload: LoginRequest) => {
 };
 
 export const logout = async () => {
+  const shouldPreferDirectBackendLogoutInDev =
+    import.meta.env.DEV &&
+    isSocialLoginAccount(useAuthStore.getState().socialAccount);
+
   try {
-    return await requestLogout();
+    return await requestLogout({
+      preferDirectBackendOriginInDev: shouldPreferDirectBackendLogoutInDev,
+    });
   } finally {
     clearMockRefreshToken();
   }
