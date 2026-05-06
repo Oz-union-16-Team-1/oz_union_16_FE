@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 
 import { likeGame, unlikeGame } from '../../games/gameApi';
+import { getToggleLikeErrorMessage } from '../../games/likeError';
 import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
 import type { RecommendationDisplayItem } from '../types';
 
@@ -69,12 +69,12 @@ export const useRecommendationLike = ({
       onSelectedGameLikeChange?.(response.gameId, response.isLiked);
     },
     onError: (error) => {
-      if (error instanceof AxiosError && error.response?.status === 401) {
-        setFeedbackMessage(LIKE_LOGIN_REQUIRED_MESSAGE);
-        return;
-      }
-
-      setFeedbackMessage(LIKE_ERROR_MESSAGE);
+      setFeedbackMessage(
+        getToggleLikeErrorMessage(error, {
+          loginRequired: LIKE_LOGIN_REQUIRED_MESSAGE,
+          defaultError: LIKE_ERROR_MESSAGE,
+        }),
+      );
     },
     onSettled: () => {
       setPendingLikeGameId(null);
