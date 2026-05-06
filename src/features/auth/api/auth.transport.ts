@@ -51,17 +51,29 @@ type RefreshAccessTokenRequestOptions = {
   preferDirectBackendOriginInDev?: boolean;
 };
 
-const resolveRefreshRequestUrl = (
-  options: RefreshAccessTokenRequestOptions = {},
+type LogoutRequestOptions = {
+  preferDirectBackendOriginInDev?: boolean;
+};
+
+const resolveCredentialedRequestUrl = (
+  requestPath: string,
+  options: { preferDirectBackendOriginInDev?: boolean } = {},
 ) => {
   if (import.meta.env.DEV && !options.preferDirectBackendOriginInDev) {
-    return refreshRequestPath;
+    return requestPath;
   }
 
   const backendOrigin = configuredApiBaseUrl || FALLBACK_BACKEND_ORIGIN;
 
-  return `${backendOrigin}${refreshRequestPath}`;
+  return `${backendOrigin}${requestPath}`;
 };
+
+const resolveRefreshRequestUrl = (
+  options: RefreshAccessTokenRequestOptions = {},
+) => resolveCredentialedRequestUrl(refreshRequestPath, options);
+
+const resolveLogoutRequestUrl = (options: LogoutRequestOptions = {}) =>
+  resolveCredentialedRequestUrl(logoutRequestPath, options);
 
 const readRefreshThrottleTimestamp = () => {
   if (typeof window === 'undefined') {
@@ -205,17 +217,18 @@ export const requestLogin = async (payload: LoginRequest) => {
   return response.data;
 };
 
-export const requestLogout = async () => {
+export const requestLogout = async (options: LogoutRequestOptions = {}) => {
   const requestConfig = createCredentialedAuthRequestConfig();
+  const logoutRequestUrl = resolveLogoutRequestUrl(options);
 
   logCredentialedAuthRequestDiagnostics({
     label: 'logout',
-    requestUrl: logoutRequestPath,
+    requestUrl: logoutRequestUrl,
     withCredentials: true,
   });
 
   const response = await api.post<LogoutResponse>(
-    logoutRequestPath,
+    logoutRequestUrl,
     undefined,
     requestConfig,
   );
