@@ -8,6 +8,8 @@ const resolveLikedGamesPage = (payload: LikedGamesRequest = {}) =>
   payload.page ?? 1;
 const resolveLikedGamesPageSize = (payload: LikedGamesRequest = {}) =>
   payload.page_size;
+const resolveLikedGamesInfinitePageSize = (payload: LikedGamesRequest = {}) =>
+  payload.page_size ?? 20;
 
 export const authKeys = {
   all: authRootKey,
@@ -22,6 +24,12 @@ export const authKeys = {
       ...authLikedGamesKey,
       resolveLikedGamesPage(payload),
       resolveLikedGamesPageSize(payload),
+    ] as const,
+  likedGamesInfiniteList: (payload: LikedGamesRequest = {}) =>
+    [
+      ...authLikedGamesKey,
+      'infinite',
+      resolveLikedGamesInfinitePageSize(payload),
     ] as const,
   unlikeLikedGame: () => [...authLikedGamesKey, 'unlike'] as const,
   profileImagePresignedUrl: () =>
