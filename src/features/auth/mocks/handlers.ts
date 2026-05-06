@@ -10,7 +10,6 @@ import type {
   AuthGender,
   CheckIdDuplicateRequest,
   CheckNicknameDuplicateRequest,
-  CheckPasswordResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
   ConfirmProfileImageRequest,
@@ -1046,9 +1045,7 @@ const accountHandlers = [
 
     await delay(160);
 
-    return HttpResponse.json({
-      detail: '비밀번호 확인에 성공했습니다.',
-    } satisfies CheckPasswordResponse);
+    return new HttpResponse(null, { status: 200 });
   }),
 
   http.delete(`${AUTH_BASE_PATH}/me`, async ({ request }) => {

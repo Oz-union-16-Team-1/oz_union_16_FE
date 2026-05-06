@@ -403,13 +403,11 @@ export const changePassword = async (payload: ChangePasswordRequest) => {
 };
 
 export const checkPassword = async (payload: CheckPasswordRequest) => {
-  const response = await api.post<CheckPasswordResponse>(
+  await api.post<CheckPasswordResponse>(
     `${AUTH_BASE_PATH}/me/check-password`,
     payload,
     createCredentialedAuthRequestConfig(),
   );
-
-  return response.data;
 };
 
 export const deleteAccount = async () => {

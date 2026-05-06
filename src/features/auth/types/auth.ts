@@ -29,9 +29,7 @@ export interface CheckPasswordRequest {
   password: string;
 }
 
-export interface CheckPasswordResponse {
-  detail: string;
-}
+export type CheckPasswordResponse = void;
 
 export interface ChangePasswordRequest {
   old_password: string;
