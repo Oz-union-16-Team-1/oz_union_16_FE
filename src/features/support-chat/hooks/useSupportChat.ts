@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router';
 
@@ -12,6 +13,7 @@ type UseSupportChatResult = {
   panelProps: SupportChatPanelProps;
   launcherProps: {
     isOpen: boolean;
+    buttonRef: RefObject<HTMLButtonElement | null>;
     onClick: () => void;
   };
 };
@@ -54,6 +56,7 @@ export const useSupportChat = (): UseSupportChatResult => {
     isOpen,
     isPinnedToBottom,
     panelRef,
+    launcherRef,
     viewportRef,
     handleClosePanel,
     handleTogglePanel,
@@ -141,6 +144,7 @@ export const useSupportChat = (): UseSupportChatResult => {
     },
     launcherProps: {
       isOpen,
+      buttonRef: launcherRef,
       onClick: handleTogglePanel,
     },
   };

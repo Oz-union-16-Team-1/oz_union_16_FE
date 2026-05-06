@@ -1,17 +1,21 @@
 import { Bot } from 'lucide-react';
+import type { RefObject } from 'react';
 
 type SupportChatLauncherButtonProps = {
   isOpen: boolean;
+  buttonRef: RefObject<HTMLButtonElement | null>;
   onClick: () => void;
 };
 
 function SupportChatLauncherButton({
   isOpen,
+  buttonRef,
   onClick,
 }: SupportChatLauncherButtonProps) {
   return (
     <button
       type="button"
+      ref={buttonRef}
       onClick={onClick}
       aria-label={isOpen ? '고객센터 챗봇 닫기' : '고객센터 챗봇 열기'}
       aria-controls={isOpen ? 'support-chat-panel' : undefined}
