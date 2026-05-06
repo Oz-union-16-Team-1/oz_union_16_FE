@@ -13,116 +13,34 @@ import {
   useLoginMutation,
   useSignupMutation,
 } from '../api/useAuthApi';
-import type { AuthGender, SignupRequest } from '../types/auth';
+import type { SignupRequest } from '../types/auth';
 import { resolveAuthFeedbackVisibility } from '../utils/feedbackPriority';
 import { focusFieldByName, getFirstErrorFieldName } from '../utils/focusField';
 import { hydrateAuthSessionFromAccessToken } from '../utils/sessionManager';
+import {
+  initialDuplicateCheckState,
+  initialSignupFormValues,
+  initialSignupTouchedState,
+  NICKNAME_WHITESPACE_MESSAGE,
+  SIGNUP_FIELD_ORDER,
+  SIGNUP_FORM_FIELD_IDS,
+  SIGNUP_FORM_FIELD_MAX_LENGTHS,
+  touchedAllSignupFields,
+  getSignupFieldErrors,
+  type DuplicateCheckState,
+  type DuplicateCheckToastState,
+  type SignupFieldErrors,
+  type SignupFieldName,
+  type SignupFormValues,
+  type SignupTouchedState,
+} from '../utils/signupForm';
 
-type SignupFormValues = Omit<SignupRequest, 'gender'> & {
-  gender: AuthGender | '';
-};
-
-type SignupFieldName = keyof SignupFormValues;
-type SignupFieldErrors = Partial<Record<SignupFieldName, string>>;
-type SignupTouchedState = Record<SignupFieldName, boolean>;
-
-type DuplicateCheckState = {
-  verifiedValue: string | null;
-  message: string;
-  tone: 'success' | 'error' | null;
-};
-
-type DuplicateCheckToastState = {
-  message: string;
-  tone: 'success' | 'error';
-  anchor: 'login_id' | 'nickname';
-} | null;
-
-export const SIGNUP_FORM_GENDER_OPTIONS = [
-  { label: '남성', value: 'M' },
-  { label: '여성', value: 'W' },
-] as const;
-
-export const SIGNUP_FORM_FIELD_MAX_LENGTHS = {
-  name: 30,
-  login_id: 15,
-  nickname: 10,
-} as const;
-
-export const SIGNUP_FORM_GENDER_ID_PREFIX = 'signup-gender';
-
-export const SIGNUP_FORM_FIELD_IDS: Record<SignupFieldName, string> = {
-  name: 'signup-name',
-  login_id: 'signup-id',
-  nickname: 'signup-nickname',
-  password: 'signup-password',
-  password_check: 'signup-password-confirm',
-  gender: `${SIGNUP_FORM_GENDER_ID_PREFIX}-M`,
-};
-
-const NICKNAME_WHITESPACE_MESSAGE = '닉네임에는 띄어쓰기를 사용할 수 없습니다.';
-
-const initialDuplicateCheckState: DuplicateCheckState = {
-  verifiedValue: null,
-  message: '',
-  tone: null,
-};
-
-const SIGNUP_FIELD_ORDER = [
-  'name',
-  'login_id',
-  'nickname',
-  'password',
-  'password_check',
-  'gender',
-] as const satisfies readonly SignupFieldName[];
-
-const getSignupFieldErrors = (
-  values: SignupFormValues,
-  touchedState: SignupTouchedState,
-  loginIdVerified: boolean,
-  nicknameVerified: boolean,
-) => {
-  const trimmedName = values.name.trim();
-  const trimmedLoginId = values.login_id.trim();
-  const trimmedNickname = values.nickname.trim();
-  const trimmedPassword = values.password.trim();
-  const trimmedPasswordCheck = values.password_check.trim();
-
-  return {
-    name: touchedState.name && !trimmedName ? '이름을 입력해주세요.' : '',
-    login_id:
-      touchedState.login_id && !trimmedLoginId
-        ? '아이디를 입력해주세요.'
-        : touchedState.login_id && trimmedLoginId && !loginIdVerified
-          ? '아이디 중복확인을 해주세요.'
-          : '',
-    nickname:
-      touchedState.nickname && !trimmedNickname
-        ? '닉네임을 입력해주세요.'
-        : touchedState.nickname && trimmedNickname && !nicknameVerified
-          ? '닉네임 중복확인을 해주세요.'
-          : '',
-    password:
-      touchedState.password && !trimmedPassword
-        ? '비밀번호를 입력해주세요.'
-        : touchedState.password &&
-            trimmedPassword.length > 0 &&
-            trimmedPassword.length < 8
-          ? '비밀번호는 8자 이상이어야 합니다.'
-          : '',
-    password_check:
-      touchedState.password_check && !trimmedPasswordCheck
-        ? '비밀번호를 한번 더 입력해주세요.'
-        : touchedState.password_check &&
-            trimmedPassword.length > 0 &&
-            trimmedPasswordCheck.length > 0 &&
-            trimmedPassword !== trimmedPasswordCheck
-          ? '비밀번호와 일치하지 않습니다.'
-          : '',
-    gender: touchedState.gender && !values.gender ? '성별을 선택해주세요.' : '',
-  } satisfies Record<SignupFieldName, string>;
-};
+export {
+  SIGNUP_FORM_FIELD_IDS,
+  SIGNUP_FORM_FIELD_MAX_LENGTHS,
+  SIGNUP_FORM_GENDER_ID_PREFIX,
+  SIGNUP_FORM_GENDER_OPTIONS,
+} from '../utils/signupForm';
 
 function useSignupForm() {
   const navigate = useNavigate();
@@ -130,22 +48,12 @@ function useSignupForm() {
   const loginMutation = useLoginMutation();
   const checkIdDuplicateMutation = useCheckIdDuplicateMutation();
   const checkNicknameDuplicateMutation = useCheckNicknameDuplicateMutation();
-  const [formValues, setFormValues] = useState<SignupFormValues>({
-    name: '',
-    login_id: '',
-    nickname: '',
-    password: '',
-    password_check: '',
-    gender: '',
-  });
-  const [touchedState, setTouchedState] = useState<SignupTouchedState>({
-    name: false,
-    login_id: false,
-    nickname: false,
-    password: false,
-    password_check: false,
-    gender: false,
-  });
+  const [formValues, setFormValues] = useState<SignupFormValues>(
+    initialSignupFormValues,
+  );
+  const [touchedState, setTouchedState] = useState<SignupTouchedState>(
+    initialSignupTouchedState,
+  );
   const [apiFieldErrors, setApiFieldErrors] = useState<SignupFieldErrors>({});
   const [formMessage, setFormMessage] = useState('');
   const [nicknameWhitespaceMessage, setNicknameWhitespaceMessage] =
@@ -389,22 +297,13 @@ function useSignupForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const nextTouchedState = {
-      name: true,
-      login_id: true,
-      nickname: true,
-      password: true,
-      password_check: true,
-      gender: true,
-    } satisfies SignupTouchedState;
-
-    setTouchedState(nextTouchedState);
+    setTouchedState(touchedAllSignupFields);
     setApiFieldErrors({});
     setFormMessage('');
 
     const nextFieldErrors = getSignupFieldErrors(
       formValues,
-      nextTouchedState,
+      touchedAllSignupFields,
       isLoginIdVerified,
       isNicknameVerified,
     );

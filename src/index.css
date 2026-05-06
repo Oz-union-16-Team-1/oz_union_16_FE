@@ -358,7 +358,8 @@
     border-radius: 28px;
   }
 
-  .support-chat-fab {
+  .support-chat-fab,
+  .dev-floating-fab {
     background:
       radial-gradient(
         circle at 30% 20%,
@@ -371,7 +372,8 @@
       0 0 28px rgba(223, 59, 51, 0.4);
   }
 
-  .support-chat-fab-glow {
+  .support-chat-fab-glow,
+  .dev-floating-fab-glow {
     position: absolute;
     inset: 0;
     border-radius: inherit;
@@ -586,7 +588,9 @@
   @media (prefers-reduced-motion: reduce) {
     .support-chat-panel,
     .support-chat-fab,
+    .dev-floating-fab,
     .support-chat-fab *,
+    .dev-floating-fab *,
     .support-chat-icon-btn,
     .support-chat-quick-action,
     .support-chat-input,

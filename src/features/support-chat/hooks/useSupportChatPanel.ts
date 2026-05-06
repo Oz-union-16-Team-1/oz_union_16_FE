@@ -22,6 +22,7 @@ const toMessageUpdateCursor = (
 function useSupportChatPanel({ onRequestClose }: UseSupportChatPanelParams) {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const lastHandledMessageCursorRef = useRef<string | null>(null);
 
@@ -98,7 +99,7 @@ function useSupportChatPanel({ onRequestClose }: UseSupportChatPanelParams) {
       if (
         panelRef.current &&
         !panelRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement)?.closest('.support-chat-fab')
+        !launcherRef.current?.contains(event.target as Node)
       ) {
         handleClosePanel();
       }
@@ -210,6 +211,7 @@ function useSupportChatPanel({ onRequestClose }: UseSupportChatPanelParams) {
     isOpen,
     isPinnedToBottom,
     panelRef,
+    launcherRef,
     viewportRef,
     handleClosePanel,
     handleTogglePanel,

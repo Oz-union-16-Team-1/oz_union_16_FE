@@ -69,6 +69,7 @@ function useLoginForm() {
   const [isMockPanelOpen, setIsMockPanelOpen] = useState(false);
   const [isLoginFlowLoading, setIsLoginFlowLoading] = useState(false);
   const mockPanelRef = useRef<HTMLDivElement | null>(null);
+  const mockFabRef = useRef<HTMLButtonElement | null>(null);
 
   const [formValues, setFormValues] = useState<LoginRequest>({
     login_id: '',
@@ -204,7 +205,7 @@ function useLoginForm() {
       if (
         mockPanelRef.current &&
         !mockPanelRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement)?.closest('.dev-login-fab')
+        !mockFabRef.current?.contains(event.target as Node)
       ) {
         setIsMockPanelOpen(false);
       }
@@ -340,6 +341,7 @@ function useLoginForm() {
     showMockAccounts,
     isMockPanelOpen: showMockAccounts && isMockPanelOpen,
     mockPanelRef,
+    mockFabRef,
     handleChange,
     handleBlur,
     handleSubmit,
