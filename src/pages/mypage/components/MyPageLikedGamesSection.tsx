@@ -1,4 +1,5 @@
 import { Heart } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import AuthButton from '../../../components/auth/AuthButton';
 import ConfirmModal from '../../../components/mypage/ConfirmModal';
@@ -27,11 +28,15 @@ function MyPageLikedGamesSection({
     isFavoriteGamesLoading,
     isFavoriteGamesError,
     isFetchingFavoriteGames,
+    isFetchingMoreFavoriteGames,
+    hasMoreFavoriteGames,
+    loadedFavoriteGamesCount,
     selectedFavoriteGame,
     isUnlikePending,
     setSelectedFavoriteGame,
     handleFavoriteGameCardClick,
     handleFavoriteGameDeleteConfirm,
+    loadMoreFavoriteGames,
     refetchFavoriteGames,
   } = useMyPageLikedGames({
     enabled,
@@ -40,9 +45,52 @@ function MyPageLikedGamesSection({
   });
   const safeFavoriteGames = Array.isArray(favoriteGames) ? favoriteGames : [];
   const hasFavoriteGames = safeFavoriteGames.length > 0;
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
   const listContainerClass = hasFavoriteGames
     ? 'mypage-scrollbar mt-5 max-w-full overflow-x-hidden overflow-y-auto pr-1 max-h-[38rem]'
     : 'mt-5 max-w-full';
+
+  useEffect(() => {
+    const triggerElement = loadMoreTriggerRef.current;
+
+    if (
+      !enabled ||
+      !hasFavoriteGames ||
+      !hasMoreFavoriteGames ||
+      isFavoriteGamesLoading ||
+      isFetchingMoreFavoriteGames ||
+      !triggerElement
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void loadMoreFavoriteGames();
+        }
+      },
+      {
+        root: listContainerRef.current,
+        rootMargin: '160px 0px',
+        threshold: 0.1,
+      },
+    );
+
+    observer.observe(triggerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    enabled,
+    hasFavoriteGames,
+    hasMoreFavoriteGames,
+    isFavoriteGamesLoading,
+    isFetchingMoreFavoriteGames,
+    loadMoreFavoriteGames,
+  ]);
 
   return (
     <>
@@ -68,20 +116,45 @@ function MyPageLikedGamesSection({
           ) : null}
         </div>
 
-        <div className={listContainerClass}>
+        <div ref={listContainerRef} className={listContainerClass}>
           {isFavoriteGamesLoading ? (
             <FavoriteGameCardSkeleton />
           ) : hasFavoriteGames ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {safeFavoriteGames.map((game) => (
-                <FavoriteGameCard
-                  key={`${game.gameId}:${game.thumbnailUrl ?? 'none'}:${favoriteListRenderVersion}`}
-                  game={game}
-                  onClick={handleFavoriteGameCardClick}
-                  onFavoriteClick={setSelectedFavoriteGame}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {safeFavoriteGames.map((game) => (
+                  <FavoriteGameCard
+                    key={`${game.gameId}:${game.thumbnailUrl ?? 'none'}:${favoriteListRenderVersion}`}
+                    game={game}
+                    onClick={handleFavoriteGameCardClick}
+                    onFavoriteClick={setSelectedFavoriteGame}
+                  />
+                ))}
+              </div>
+
+              {hasMoreFavoriteGames ? (
+                <div className="mt-5 flex flex-col items-center gap-2">
+                  <div
+                    ref={loadMoreTriggerRef}
+                    className="flex min-h-12 items-center justify-center"
+                    aria-live="polite"
+                  >
+                    {isFetchingMoreFavoriteGames ? (
+                      <p className="text-mypage-muted text-sm">
+                        다음 찜 목록을 불러오는 중입니다.
+                      </p>
+                    ) : (
+                      <span className="sr-only">
+                        아래로 스크롤하면 다음 찜 목록을 불러옵니다.
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-mypage-muted text-xs">
+                    {loadedFavoriteGamesCount} / {favoriteCount}개 표시 중
+                  </p>
+                </div>
+              ) : null}
+            </>
           ) : isFavoriteGamesError ? (
             <div
               role="status"
