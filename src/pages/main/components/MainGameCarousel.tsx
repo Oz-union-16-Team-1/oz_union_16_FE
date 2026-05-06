@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperInstance } from 'swiper';
 
+import ScrollResetButton from '../../../components/common/ScrollResetButton';
 import GameCard from '../../../features/games/components/GameCard';
 import {
   GAME_CARD_BODY_CLASS,
@@ -41,6 +42,8 @@ const GAME_CARD_SWIPER_BREAKPOINTS = {
 } as const;
 const GAME_CARD_SKELETON_COUNT = 6;
 const SEARCH_RESULT_PREFETCH_GROUP_COUNT = 2;
+const SCROLL_RESET_VISIBILITY_THRESHOLD_PX = 300;
+const SCROLL_RESET_VISIBILITY_THROTTLE_MS = 120;
 
 type MainGameCarouselProps = {
   games: GameListItem[];
@@ -144,36 +147,106 @@ const GameCardSwiperFrame = ({
   onNext,
   onSlideChange,
   onSwiper,
-}: GameCardSwiperFrameProps) => (
-  <div className="group/carousel relative left-1/2 w-screen -translate-x-1/2">
-    {showNavigation && onPrevious ? (
-      <SlideButton direction="previous" onClick={onPrevious} />
-    ) : null}
+}: GameCardSwiperFrameProps) => {
+  const swiperRef = useRef<SwiperInstance | null>(null);
+  const throttledSwiperRef = useRef<SwiperInstance | null>(null);
+  const throttleTimeoutRef = useRef<number | null>(null);
+  const [shouldShowScrollReset, setShouldShowScrollReset] = useState(false);
 
-    <div className="px-[clamp(1rem,5vw,20rem)] py-2">
-      <div className="relative">
-        <Swiper
-          onSwiper={onSwiper}
-          onSlideChange={onSlideChange}
-          slidesPerView={1}
-          slidesPerGroup={1}
-          spaceBetween={20}
-          speed={450}
-          watchOverflow
-          breakpoints={GAME_CARD_SWIPER_BREAKPOINTS}
-          className="overflow-visible!"
-        >
-          {children}
-        </Swiper>
-        {showUpdatingOverlay ? <GameListUpdatingOverlay /> : null}
+  useEffect(
+    () => () => {
+      if (throttleTimeoutRef.current !== null) {
+        window.clearTimeout(throttleTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const syncScrollResetVisibility = (swiper: SwiperInstance) => {
+    const scrolledDistance = Math.abs(swiper.translate ?? 0);
+    const nextVisibility =
+      scrolledDistance >= SCROLL_RESET_VISIBILITY_THRESHOLD_PX &&
+      !swiper.isBeginning;
+
+    setShouldShowScrollReset((currentVisibility) =>
+      currentVisibility === nextVisibility ? currentVisibility : nextVisibility,
+    );
+  };
+
+  const scheduleScrollResetVisibilitySync = (swiper: SwiperInstance) => {
+    throttledSwiperRef.current = swiper;
+
+    if (throttleTimeoutRef.current !== null) {
+      return;
+    }
+
+    throttleTimeoutRef.current = window.setTimeout(() => {
+      throttleTimeoutRef.current = null;
+
+      if (throttledSwiperRef.current) {
+        syncScrollResetVisibility(throttledSwiperRef.current);
+      }
+    }, SCROLL_RESET_VISIBILITY_THROTTLE_MS);
+  };
+
+  const handleSwiper = (swiper: SwiperInstance) => {
+    swiperRef.current = swiper;
+    syncScrollResetVisibility(swiper);
+    onSwiper?.(swiper);
+  };
+
+  const handleSlideChange = (swiper: SwiperInstance) => {
+    scheduleScrollResetVisibilitySync(swiper);
+    onSlideChange?.(swiper);
+  };
+
+  const handleResetScroll = () => {
+    const swiper = swiperRef.current;
+
+    if (!swiper) {
+      return;
+    }
+
+    setShouldShowScrollReset(false);
+    swiper.slideTo(0, 450);
+  };
+
+  return (
+    <div className="group/carousel relative left-1/2 w-screen -translate-x-1/2">
+      {showNavigation && onPrevious ? (
+        <SlideButton direction="previous" onClick={onPrevious} />
+      ) : null}
+
+      <div className="px-[clamp(1rem,5vw,20rem)] py-2">
+        <div className="relative">
+          <Swiper
+            onSwiper={handleSwiper}
+            onSlideChange={handleSlideChange}
+            onSetTranslate={handleSlideChange}
+            slidesPerView={1}
+            slidesPerGroup={1}
+            spaceBetween={20}
+            speed={450}
+            watchOverflow
+            breakpoints={GAME_CARD_SWIPER_BREAKPOINTS}
+            className="overflow-visible!"
+          >
+            {children}
+          </Swiper>
+          <ScrollResetButton
+            isVisible={shouldShowScrollReset}
+            onClick={handleResetScroll}
+          />
+          {showUpdatingOverlay ? <GameListUpdatingOverlay /> : null}
+        </div>
       </div>
-    </div>
 
-    {showNavigation && onNext ? (
-      <SlideButton direction="next" onClick={onNext} />
-    ) : null}
-  </div>
-);
+      {showNavigation && onNext ? (
+        <SlideButton direction="next" onClick={onNext} />
+      ) : null}
+    </div>
+  );
+};
 
 type SlideButtonProps = {
   direction: 'previous' | 'next';
