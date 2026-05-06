@@ -21,7 +21,7 @@
 - **Access Token**: 클라이언트 메모리(Zustand State) 내에서 관리하여 XSS 공격 방어.
 - **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화. 쿠키는 프론트 도메인이 아니라 **백엔드 API 도메인** 아래 저장되는 것을 기준으로 확인합니다.
 - **Startup Bootstrap**: 앱 최초 진입 시 `POST /api/v1/accounts/token/refresh`로 세션 복구를 시도하고, 성공 시 `/me` 조회로 사용자 정보를 hydrate함.
-- **Legacy Cleanup**: 기존 `localStorage` 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리함.
+- **Legacy Cleanup**: 기존 브라우저 저장소 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리함.
 
 ### 운영 Origin 기준
 
@@ -39,10 +39,17 @@
 - **주의**: API 명세서 표에 `refresh_token` body 예시가 있어도, 실서버 동작 기준은 HttpOnly 쿠키 인증이며 프론트는 `withCredentials` 요청으로 맞춥니다.
 - **로그아웃**: `POST /api/v1/accounts/logout` (액세스 토큰 무효화 및 서버측 쿠키 삭제 요청)
 - **비밀번호 변경**: `POST /api/v1/accounts/me/change-password`
-- **회원 탈퇴**: `DELETE /api/v1/accounts/me` (request body에 `password` 포함)
+- **회원 탈퇴**: `DELETE /api/v1/accounts/me` (Authorization header만 사용, request body 없음, 성공 시 `204 No Content`)
 - **마이페이지 찜 목록 조회**: `GET /api/v1/accounts/me/game-like`
-- **마이페이지 찜 해제**: `DELETE /api/v1/accounts/me/game-like/{game_id}`
+- **마이페이지 찜 해제**: `DELETE /api/v1/games/{game_id}/like` (게임 공통 좋아요 취소 API 사용)
 - **게임 좋아요 등록/해제**: `POST/DELETE /api/v1/games/{game_id}/like`
+
+### 회원 탈퇴 Contract
+
+- 요구사항 정의서상 일반 로그인 회원은 회원탈퇴 UX에서 비밀번호 확인을 거치고, 소셜 로그인 회원은 탈퇴 동의 후 진행합니다.
+- 공식 API 명세서 기준 실제 탈퇴 요청은 `DELETE /api/v1/accounts/me`이며, request body 없이 `Authorization` header만 전송합니다.
+- 성공 응답은 `204 No Content`, 인증 실패 응답은 `401 Unauthorized`를 기준으로 처리합니다.
+- 프론트에서 비밀번호 확인 UI를 유지하더라도 API adapter 경계에서 탈퇴 요청 body에 `password`를 포함하지 않습니다.
 
 ### 비밀번호 변경 필드 계약
 
@@ -80,7 +87,7 @@
 ## 3. 로그아웃 및 세션 초기화 규정
 
 - **상태 초기화**: 로그아웃 실행 시 `useAuthStore`의 토큰 및 사용자 프로필 정보를 즉시 `null`로 초기화.
-- **데이터 정리**: `localStorage`에 남아 있는 모든 인증 관련 레거시 데이터를 명시적으로 삭제.
+- **데이터 정리**: 브라우저 저장소에 남아 있는 모든 인증 관련 레거시 데이터를 명시적으로 삭제.
 - **UI/UX**: 로그아웃 후 즉시 메인 페이지(`/`)로 리다이렉트하며, 헤더를 비로그인 상태로 갱신.
 
 ## 4. 인증 에러(401) 처리 로직
