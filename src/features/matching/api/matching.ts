@@ -13,6 +13,7 @@ import type {
 } from '../types';
 
 const MATCHING_BASE_PATH = '/api/v1/match';
+const MATCHING_CANDIDATES_REQUEST_TIMEOUT_MS = 15_000;
 
 const normalizeMatchCandidate = (item: MatchingApiCandidateItem) => ({
   game_id: item.game_id,
@@ -26,7 +27,11 @@ const normalizeMatchCandidate = (item: MatchingApiCandidateItem) => ({
   is_liked: Boolean(item.is_liked),
 });
 
-export const getMatchCandidates = async (genreId: number, retryNo?: number) => {
+export const getMatchCandidates = async (
+  genreId: number,
+  retryNo?: number,
+  signal?: AbortSignal,
+) => {
   const getMockFallback = () =>
     getMatchingMockCandidatesSnapshot(genreId, retryNo ?? 0);
 
@@ -38,6 +43,8 @@ export const getMatchCandidates = async (genreId: number, retryNo?: number) => {
           genre_id: genreId,
           ...(typeof retryNo === 'number' ? { retry_no: retryNo } : {}),
         },
+        signal,
+        timeout: MATCHING_CANDIDATES_REQUEST_TIMEOUT_MS,
       },
     );
 
