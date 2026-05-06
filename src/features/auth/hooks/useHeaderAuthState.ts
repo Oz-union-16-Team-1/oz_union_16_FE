@@ -7,6 +7,51 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { syncAuthAccount } from '../utils/sessionManager';
 import useAuthSessionState from './useAuthSessionState';
 
+export type HeaderAuthPresentation =
+  | { kind: 'hidden' }
+  | { kind: 'guestActions' }
+  | { kind: 'guestProfilePreview' }
+  | { kind: 'guestPlaceholder' }
+  | { kind: 'profileMenu' }
+  | { kind: 'profilePreview' }
+  | { kind: 'profilePlaceholder' };
+
+type ResolveHeaderAuthPresentationParams = {
+  accessStatus: 'loading' | 'authenticated' | 'unauthenticated';
+  shouldHideGuestActions: boolean;
+  isProfileHydrating: boolean;
+  hasProfileImage: boolean;
+};
+
+const resolveHeaderAuthPresentation = ({
+  accessStatus,
+  shouldHideGuestActions,
+  isProfileHydrating,
+  hasProfileImage,
+}: ResolveHeaderAuthPresentationParams): HeaderAuthPresentation => {
+  if (shouldHideGuestActions) {
+    return { kind: 'hidden' };
+  }
+
+  if (accessStatus === 'unauthenticated') {
+    return { kind: 'guestActions' };
+  }
+
+  if (accessStatus === 'loading') {
+    return hasProfileImage
+      ? { kind: 'guestProfilePreview' }
+      : { kind: 'guestPlaceholder' };
+  }
+
+  if (!isProfileHydrating) {
+    return { kind: 'profileMenu' };
+  }
+
+  return hasProfileImage
+    ? { kind: 'profilePreview' }
+    : { kind: 'profilePlaceholder' };
+};
+
 function useHeaderAuthState() {
   const location = useLocation();
   const { accessStatus } = useAuthSessionState();
@@ -35,30 +80,16 @@ function useHeaderAuthState() {
     }
   }, [profileHydrationQuery.data]);
 
-  return {
+  const authPresentation = resolveHeaderAuthPresentation({
     accessStatus,
-    resolvedProfileImageUrl,
     shouldHideGuestActions,
-    shouldShowGuestActions:
-      accessStatus === 'unauthenticated' && !shouldHideGuestActions,
-    shouldShowDeferredGuestPreview:
-      accessStatus === 'loading' &&
-      !shouldHideGuestActions &&
-      Boolean(resolvedProfileImageUrl),
-    shouldShowGuestPlaceholder:
-      accessStatus === 'loading' &&
-      !shouldHideGuestActions &&
-      !resolvedProfileImageUrl,
-    shouldShowProfileMenu:
-      accessStatus === 'authenticated' && !isProfileHydrating,
-    shouldShowProfilePreview:
-      accessStatus === 'authenticated' &&
-      isProfileHydrating &&
-      Boolean(resolvedProfileImageUrl),
-    shouldShowProfilePlaceholder:
-      accessStatus === 'authenticated' &&
-      isProfileHydrating &&
-      !resolvedProfileImageUrl,
+    isProfileHydrating,
+    hasProfileImage: Boolean(resolvedProfileImageUrl),
+  });
+
+  return {
+    resolvedProfileImageUrl,
+    authPresentation,
   };
 }
 

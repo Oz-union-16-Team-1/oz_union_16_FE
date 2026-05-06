@@ -12,24 +12,34 @@ type HeaderProfileMenuProps = {
   profileImageUrl?: string | null;
 };
 
+type ProfileMenuOpenState = {
+  hover: boolean;
+  click: boolean;
+};
+
+const closedProfileMenuState: ProfileMenuOpenState = {
+  hover: false,
+  click: false,
+};
+
 function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
-  const [isHoverOpen, setIsHoverOpen] = useState(false);
-  const [isClickOpen, setIsClickOpen] = useState(false);
+  const [openState, setOpenState] = useState<ProfileMenuOpenState>(
+    closedProfileMenuState,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const { logout, isPending } = useLogoutAction();
   const location = useLocation();
   const isMyPage = isMyPagePath(location.pathname);
   const trimmedProfileImageUrl = profileImageUrl?.trim() || null;
   const resolvedProfileImageUrl = trimmedProfileImageUrl || profileImg;
-  const isOpen = isHoverOpen || isClickOpen;
+  const isOpen = openState.hover || openState.click;
   const profileButtonClass = `h-10 w-10 cursor-pointer overflow-hidden rounded-full border-2 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-black focus-visible:outline-none ${
     isOpen
       ? 'border-[#ff3b30] shadow-[0_0_0_4px_rgba(255,59,48,0.16)]'
       : 'border-white/14 hover:border-[#ff3b30] hover:shadow-[0_0_0_4px_rgba(255,59,48,0.12)]'
   }`;
   const closeMenu = () => {
-    setIsHoverOpen(false);
-    setIsClickOpen(false);
+    setOpenState(closedProfileMenuState);
   };
 
   useEffect(() => {
@@ -65,8 +75,12 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
     <div
       ref={containerRef}
       className="relative"
-      onMouseEnter={() => setIsHoverOpen(true)}
-      onMouseLeave={() => setIsHoverOpen(false)}
+      onMouseEnter={() =>
+        setOpenState((current) => ({ ...current, hover: true }))
+      }
+      onMouseLeave={() =>
+        setOpenState((current) => ({ ...current, hover: false }))
+      }
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           closeMenu();
@@ -79,7 +93,9 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={PROFILE_MENU_ID}
-        onClick={() => setIsClickOpen((current) => !current)}
+        onClick={() =>
+          setOpenState((current) => ({ ...current, click: !current.click }))
+        }
         className={profileButtonClass}
       >
         <img
