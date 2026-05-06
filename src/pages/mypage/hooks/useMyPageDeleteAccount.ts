@@ -11,6 +11,7 @@ import {
   useDeleteAccountMutation,
 } from '../../../features/auth/api/useAuthApi';
 import { clearAuthSession } from '../../../features/auth/utils/sessionManager';
+import { isSocialLoginAccount } from '../../../features/auth/utils/socialAccount';
 import { useAuthStore } from '../../../store/useAuthStore';
 import type { MyPageToastPayload } from '../types';
 
@@ -26,7 +27,7 @@ function useMyPageDeleteAccount({ onToast }: UseMyPageDeleteAccountOptions) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deletePasswordError, setDeletePasswordError] = useState('');
-  const isSocialAccount = socialAccount?.is_social === true;
+  const isSocialAccount = isSocialLoginAccount(socialAccount);
 
   const openDeleteModal = () => {
     setDeletePassword('');

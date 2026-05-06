@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import App from './App';
+import GuestOnlyRoute from './components/auth/GuestOnlyRoute';
 import MainPageLoadingFallback from './components/common/MainPageLoadingFallback';
 import LegacyRouteRedirect from './components/common/LegacyRouteRedirect';
 import { ROUTE_PATHS, ROUTES } from './constants/routes';
@@ -72,9 +73,11 @@ const router = createBrowserRouter([
       {
         path: ROUTES.SIGNUP,
         element: (
-          <Suspense fallback={authPageFallback}>
-            <LazySignupPage />
-          </Suspense>
+          <GuestOnlyRoute loadingFallback={authPageFallback}>
+            <Suspense fallback={authPageFallback}>
+              <LazySignupPage />
+            </Suspense>
+          </GuestOnlyRoute>
         ),
       },
       {

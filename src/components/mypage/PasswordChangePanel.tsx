@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, RefObject } from 'react';
 
 import AuthButton from '../auth/AuthButton';
 import AuthFormMessage from '../auth/AuthFormMessage';
@@ -15,6 +15,10 @@ export type PasswordChangeFieldName = keyof PasswordChangeValues;
 type PasswordChangePanelProps = {
   values: PasswordChangeValues;
   errors: Partial<Record<PasswordChangeFieldName, string>>;
+  fieldRefs: Record<
+    PasswordChangeFieldName,
+    RefObject<HTMLInputElement | null>
+  >;
   message?: string;
   messageTone?: 'success' | 'error';
   isPending: boolean;
@@ -27,6 +31,7 @@ type PasswordChangePanelProps = {
 function PasswordChangePanel({
   values,
   errors,
+  fieldRefs,
   message,
   messageTone = 'error',
   isPending,
@@ -55,6 +60,7 @@ function PasswordChangePanel({
           label="현재 비밀번호"
           placeholder="현재 비밀번호를 입력하세요"
           value={values.currentPassword}
+          inputRef={fieldRefs.currentPassword}
           onChange={(event) =>
             onValueChange('currentPassword', event.target.value)
           }
@@ -72,6 +78,7 @@ function PasswordChangePanel({
           label="새 비밀번호"
           placeholder="새 비밀번호를 입력하세요"
           value={values.newPassword}
+          inputRef={fieldRefs.newPassword}
           onChange={(event) => onValueChange('newPassword', event.target.value)}
           onBlur={() => onFieldBlur('newPassword')}
           errorMessage={errors.newPassword}
@@ -87,6 +94,7 @@ function PasswordChangePanel({
           label="새 비밀번호 확인"
           placeholder="새 비밀번호를 한번 더 입력하세요"
           value={values.newPasswordConfirm}
+          inputRef={fieldRefs.newPasswordConfirm}
           onChange={(event) =>
             onValueChange('newPasswordConfirm', event.target.value)
           }
