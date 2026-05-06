@@ -1,4 +1,4 @@
-import type { MatchingCandidateItem } from '../types';
+import type { MatchingCandidateItem } from '../../../features/matching/types';
 
 type MatchingMediaPanelProps = {
   candidate: MatchingCandidateItem;

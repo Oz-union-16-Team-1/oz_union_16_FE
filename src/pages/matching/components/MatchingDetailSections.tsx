@@ -2,7 +2,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
-import type { MatchingCandidateItem } from '../types';
+import type { MatchingCandidateItem } from '../../../features/matching/types';
 import MatchingCandidatePanel, {
   type MatchingCandidatePanelProps,
 } from './MatchingCandidatePanel';

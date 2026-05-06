@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
-import { getToggleLikeErrorMessage } from '../../games/likeError';
-import { extractApiErrorMessage } from '../../survey/api/survey';
+import { getToggleLikeErrorMessage } from '../../../features/games/likeError';
+import { extractApiErrorMessage } from '../../../features/survey/api/survey';
 
 const MATCHING_LIKE_LOGIN_REQUIRED_MESSAGE =
   '로그인 후 좋아요를 사용할 수 있어요.';

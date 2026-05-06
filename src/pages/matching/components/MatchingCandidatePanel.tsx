@@ -5,7 +5,7 @@ import type {
   MatchingEvaluationValue,
   MatchingCandidateItem,
   MatchingRatingValue,
-} from '../types';
+} from '../../../features/matching/types';
 import MatchingRatingStars from './MatchingRatingStars';
 import type { MatchingCandidateOverlayViewModel } from '../hooks/useMatchingCandidateOverlay';
 

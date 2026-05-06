@@ -2,27 +2,30 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
-import useAuthGate from '../../auth/hooks/useAuthGate';
-import { likeGame, unlikeGame } from '../../games/gameApi';
-import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
+import { ROUTES } from '../../../constants/routes';
+import useAuthGate from '../../../features/auth/hooks/useAuthGate';
+import { likeGame, unlikeGame } from '../../../features/games/gameApi';
+import { syncLikeMutationStateInQueryCache } from '../../../features/games/queryCache';
 import {
   useMatchCandidatesQuery,
   useSubmitMatchResponsesMutation,
-} from '../api/useMatchingApi';
-import { getMatchingGenreBySlug, isMatchingGenreSlug } from '../genres';
-import { useMatchingStore } from '../store/useMatchingStore';
+} from '../../../features/matching/api/useMatchingApi';
+import {
+  getMatchingGenreBySlug,
+  isMatchingGenreSlug,
+} from '../../../features/matching/genres';
+import { useMatchingStore } from '../../../features/matching/store/useMatchingStore';
 import type {
   MatchingCandidateItem,
   MatchingEvaluationValue,
   MatchingRatingValue,
-} from '../types';
+} from '../../../features/matching/types';
 import {
   getMatchCandidatesErrorMessage,
   getMatchingLikeErrorMessage,
   isCanceledMatchCandidatesError,
 } from '../utils/matchingDetail';
-import { ROUTES } from '../../../constants/routes';
-import { extractApiErrorMessage } from '../../survey/api/survey';
+import { extractApiErrorMessage } from '../../../features/survey/api/survey';
 
 export type MatchingGenreDetailViewState =
   | 'loading'

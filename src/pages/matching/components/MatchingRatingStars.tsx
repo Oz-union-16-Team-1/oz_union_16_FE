@@ -1,6 +1,6 @@
 import { Star } from 'lucide-react';
 
-import type { MatchingRatingValue } from '../types';
+import type { MatchingRatingValue } from '../../../features/matching/types';
 
 type MatchingRatingStarsProps = {
   value: MatchingRatingValue | null;

@@ -1,15 +1,15 @@
 import { Navigate } from 'react-router';
 
 import LazyHeader from '../../components/common/LazyHeader';
-import { useMatchingCandidateOverlay } from '../../features/matching/hooks/useMatchingCandidateOverlay';
-import { useMatchingGenreDetailPage } from '../../features/matching/hooks/useMatchingGenreDetailPage';
 import {
   MatchingDetailEmptySection,
   MatchingDetailErrorSection,
   MatchingDetailInvalidSection,
   MatchingDetailReadySection,
   MatchingDetailSkeleton,
-} from '../../features/matching/components/MatchingDetailSections';
+} from './components/MatchingDetailSections';
+import { useMatchingCandidateOverlay } from './hooks/useMatchingCandidateOverlay';
+import { useMatchingGenreDetailPage } from './hooks/useMatchingGenreDetailPage';
 
 function MatchingGenreDetailPage() {
   const detailPage = useMatchingGenreDetailPage();
