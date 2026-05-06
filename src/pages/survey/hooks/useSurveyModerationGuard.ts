@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isMockServiceWorkerEnabled } from '../../../lib/env';
-import { useSurveyStore } from '../store/useSurveyStore';
+import { useSurveyStore } from '../../../features/survey/store/useSurveyStore';
 
 export const NON_GAME_CHAT_MAX_STRIKES = 3;
 const NON_GAME_CHAT_BLOCK_DURATION_MS = 5 * 60 * 1000;

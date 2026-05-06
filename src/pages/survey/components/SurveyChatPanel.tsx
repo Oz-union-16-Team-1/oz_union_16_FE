@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import { ROUTES } from '../../../constants/routes';
-import { useSurveyStore } from '../store/useSurveyStore';
+import { useSurveyStore } from '../../../features/survey/store/useSurveyStore';
 import {
   formatRemainingBlockTime,
   GAME_RELATED_KEYWORDS,

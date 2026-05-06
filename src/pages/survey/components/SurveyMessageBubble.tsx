@@ -2,7 +2,7 @@ import { Bot, UserRound } from 'lucide-react';
 
 import defaultProfileImage from '../../../assets/프로필 이미지.png';
 import { useAuthStore } from '../../../store/useAuthStore';
-import type { SurveyMessage } from '../types/survey';
+import type { SurveyMessage } from '../../../features/survey/types/survey';
 
 interface SurveyMessageBubbleProps {
   message: SurveyMessage;

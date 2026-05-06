@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 
-import type { SurveyProgress as SurveyProgressType } from '../types/survey';
+import type { SurveyProgress as SurveyProgressType } from '../../../features/survey/types/survey';
 
 interface SurveyProgressProps {
   progress: SurveyProgressType;

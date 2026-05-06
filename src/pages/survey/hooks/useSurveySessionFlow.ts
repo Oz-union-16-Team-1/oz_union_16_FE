@@ -5,12 +5,12 @@ import {
   useContinueSurveyMutation,
   useResetSurveyMutation,
   useStartSurveySessionMutation,
-} from '../api/useSurveyApi';
+} from '../../../features/survey/api/useSurveyApi';
 import {
   extractApiErrorMessage,
   extractApiRetryAfterSeconds,
-} from '../api/survey';
-import { useSurveyStore } from '../store/useSurveyStore';
+} from '../../../features/survey/api/survey';
+import { useSurveyStore } from '../../../features/survey/store/useSurveyStore';
 
 const isRecoverableMockSessionError = (message: string | null) =>
   isMockServiceWorkerEnabled() &&
