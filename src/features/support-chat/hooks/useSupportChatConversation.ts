@@ -250,9 +250,11 @@ function useSupportChatConversation({
       setSubmitting(true);
 
       try {
+        const activeSessionId = useSupportChatStore.getState().sessionId;
+
         const response = await sendMessageMutation.mutateAsync({
           message: trimmedMessage,
-          session_id: sessionId ?? undefined,
+          session_id: activeSessionId ?? undefined,
         });
 
         if (requestGeneration !== requestGenerationRef.current) {
@@ -350,7 +352,6 @@ function useSupportChatConversation({
       finalizeAssistantMessage,
       hideQuickActions,
       isSubmitting,
-      sessionId,
       removeMessage,
       sendMessageMutation,
       setSubmitting,
