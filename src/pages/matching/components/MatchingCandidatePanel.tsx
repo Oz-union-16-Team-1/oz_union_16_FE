@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, X } from 'lucide-react';
 
 import { formatMatchingCandidateRating } from '../utils/matchingDetail';
 import type {
@@ -75,6 +75,10 @@ function MatchingCandidatePanel({
   } = overlay;
   const shouldShowTitleToggle = isTitleOverflowing;
   const shouldShowSummaryToggle = isSummaryOverflowing;
+  const summaryCollapsedLineCount = Math.max(
+    1,
+    Math.round(summaryCollapsedHeightRem / 1.5),
+  );
 
   return (
     <article className="survey-panel relative flex flex-col px-5 py-5 sm:px-6 sm:py-6">
@@ -113,20 +117,24 @@ function MatchingCandidatePanel({
               </div>
             ) : null}
           </div>
-          <p
-            ref={summaryRef}
-            className="mt-3 text-sm leading-6 break-keep text-white/62"
-            style={
-              isSummaryOverlayOpen
-                ? undefined
-                : {
-                    maxHeight: `${summaryCollapsedHeightRem}rem`,
-                    overflow: 'hidden',
-                  }
-            }
-          >
-            {candidateSummary}
-          </p>
+          <div className="mt-3">
+            <p
+              ref={summaryRef}
+              className="text-sm leading-6 break-keep text-white/62"
+              style={
+                isSummaryOverlayOpen
+                  ? undefined
+                  : {
+                      display: '-webkit-box',
+                      WebkitBoxOrient: 'vertical',
+                      WebkitLineClamp: summaryCollapsedLineCount,
+                      overflow: 'hidden',
+                    }
+              }
+            >
+              {candidateSummary}
+            </p>
+          </div>
           {shouldShowSummaryToggle ? (
             <button
               type="button"
@@ -260,8 +268,8 @@ function MatchingCandidatePanel({
           <div className="flex h-full flex-col">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-xs font-semibold tracking-[0.18em] text-[#ff8d8d] uppercase">
-                  Summary
+                <p className="text-xs font-semibold tracking-[0.18em] text-[#ff8d8d]">
+                  게임소개
                 </p>
                 <h3 className="mt-2 text-xl font-semibold break-keep text-white sm:text-2xl">
                   {candidate.title}
@@ -270,9 +278,10 @@ function MatchingCandidatePanel({
               <button
                 type="button"
                 onClick={closeSummaryOverlay}
-                className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/4 px-3 py-2 text-sm font-medium text-white/86 transition hover:border-white/20 hover:bg-white/7"
+                aria-label="게임소개 닫기"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-full border border-white/10 bg-white/4 text-white/86 transition hover:border-white/20 hover:bg-white/7"
               >
-                닫기
+                <X size={16} />
               </button>
             </div>
 
