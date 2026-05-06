@@ -18,10 +18,11 @@
 
 ## 1. 토큰 저장 및 관리 전략
 
-- **Access Token**: 클라이언트 메모리(Zustand State) 내에서 관리하여 XSS 공격 방어.
+- **Access Token**: 새로고침 안정성을 위해 `sessionStorage`와 클라이언트 메모리(Zustand State)에 함께 유지합니다. `localStorage`에는 저장하지 않습니다.
 - **Refresh Token**: 브라우저 **HttpOnly, Secure 쿠키** 기반으로 관리하여 보안 강화. 쿠키는 프론트 도메인이 아니라 **백엔드 API 도메인** 아래 저장되는 것을 기준으로 확인합니다.
-- **Startup Bootstrap**: 앱 최초 진입 시 `POST /api/v1/accounts/token/refresh`로 세션 복구를 시도하고, 성공 시 `/me` 조회로 사용자 정보를 hydrate함.
-- **Legacy Cleanup**: 기존 브라우저 저장소 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리함.
+- **Startup Bootstrap**: 앱 최초 진입 시 `sessionStorage`의 Access Token을 먼저 복구합니다. 저장된 Access Token이 없으면 바로 ready 처리하고, 저장된 토큰이 만료 임박한 경우에만 `POST /api/v1/accounts/token/refresh`를 호출합니다.
+- **Refresh 호출 조건**: 일반 새로고침(F5)에서는 불필요한 refresh를 피하고, Access Token 만료 임박 또는 API `401 Unauthorized` 응답 시에만 refresh를 시도합니다.
+- **Legacy Cleanup**: 기존 `localStorage` 인증 키(`auth-storage`, `access_token`, `refresh_token` 등)는 앱 시작 시 1회 정리합니다. 현재 세션의 `sessionStorage.access_token`은 유지합니다.
 
 ### 운영 Origin 기준
 
@@ -92,7 +93,8 @@
 
 ## 4. 인증 에러(401) 처리 로직
 
-- **Axios Interceptor**: 모든 API 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
+- **Axios Interceptor**: 저장된 Access Token이 있는 요청에서 `401 Unauthorized` 발생 시 `/token/refresh`를 자동 호출하여 세션 연장 시도.
+- **Refresh 동시성 제어**: 여러 API가 동시에 401을 받아도 하나의 refresh만 실행하고, 나머지는 subscriber queue에서 대기합니다.
 - **세션 만료 처리**: 리프레시 토큰 만료로 갱신 실패 시, '세션 만료' 안내 후 강제 로그아웃 및 로그인 페이지로 유도.
 - **초기 진입 예외 처리**: 콜백 라우트(`/callback`, `/auth/callback`)에서는 중복 refresh를 피하기 위해 앱 시작 bootstrap을 건너뜀.
 
