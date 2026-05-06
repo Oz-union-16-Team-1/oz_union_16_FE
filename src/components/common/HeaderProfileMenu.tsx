@@ -92,7 +92,7 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         aria-label={isOpen ? '프로필 메뉴 닫기' : '프로필 메뉴 열기'}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        aria-controls={PROFILE_MENU_ID}
+        aria-controls={isOpen ? PROFILE_MENU_ID : undefined}
         onClick={() =>
           setOpenState((current) => ({ ...current, click: !current.click }))
         }
@@ -109,50 +109,43 @@ function HeaderProfileMenu({ profileImageUrl = null }: HeaderProfileMenuProps) {
         />
       </button>
 
-      <div
-        className={`absolute top-full right-0 z-50 pt-3 transition-all duration-200 ease-out ${
-          isOpen
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : 'pointer-events-none -translate-y-1 opacity-0'
-        }`}
-        aria-hidden={!isOpen}
-      >
-        <div
-          id={PROFILE_MENU_ID}
-          role="menu"
-          aria-label="프로필 메뉴"
-          className="w-40 overflow-hidden rounded-2xl border border-white/10 bg-[#101013]/96 p-2 shadow-[0_24px_48px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.06)] ring-1 ring-white/5 backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out"
-        >
-          <Link
-            to={ROUTE_PATHS.MY_PAGE}
-            role="menuitem"
-            aria-current={isMyPage ? 'page' : undefined}
-            tabIndex={isOpen ? 0 : -1}
-            onClick={closeMenu}
-            className={`flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-medium transition focus-visible:outline-none ${
-              isMyPage
-                ? 'text-login-primary bg-white/8'
-                : 'text-white hover:bg-white/6 focus-visible:bg-white/6'
-            }`}
+      {isOpen ? (
+        <div className="pointer-events-auto absolute top-full right-0 z-50 translate-y-0 pt-3 opacity-100 transition-all duration-200 ease-out">
+          <div
+            id={PROFILE_MENU_ID}
+            role="menu"
+            aria-label="프로필 메뉴"
+            className="w-40 overflow-hidden rounded-2xl border border-white/10 bg-[#101013]/96 p-2 shadow-[0_24px_48px_rgba(0,0,0,0.42),0_0_0_1px_rgba(255,255,255,0.06)] ring-1 ring-white/5 backdrop-blur-xl transition-[opacity,transform] duration-200 ease-out"
           >
-            마이페이지
-          </Link>
-          <div className="mx-2 border-t border-white/10" />
-          <button
-            type="button"
-            role="menuitem"
-            tabIndex={isOpen ? 0 : -1}
-            disabled={isPending}
-            onClick={() => {
-              closeMenu();
-              void logout();
-            }}
-            className="flex min-h-12 w-full items-center justify-center rounded-xl px-4 text-base font-medium text-white transition hover:bg-white/6 focus-visible:bg-white/6 focus-visible:outline-none disabled:opacity-60"
-          >
-            {isPending ? '로그아웃 중...' : '로그아웃'}
-          </button>
+            <Link
+              to={ROUTE_PATHS.MY_PAGE}
+              role="menuitem"
+              aria-current={isMyPage ? 'page' : undefined}
+              onClick={closeMenu}
+              className={`flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-medium transition focus-visible:outline-none ${
+                isMyPage
+                  ? 'text-login-primary bg-white/8'
+                  : 'text-white hover:bg-white/6 focus-visible:bg-white/6'
+              }`}
+            >
+              마이페이지
+            </Link>
+            <div className="mx-2 border-t border-white/10" />
+            <button
+              type="button"
+              role="menuitem"
+              disabled={isPending}
+              onClick={() => {
+                closeMenu();
+                void logout();
+              }}
+              className="flex min-h-12 w-full items-center justify-center rounded-xl px-4 text-base font-medium text-white transition hover:bg-white/6 focus-visible:bg-white/6 focus-visible:outline-none disabled:opacity-60"
+            >
+              {isPending ? '로그아웃 중...' : '로그아웃'}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
