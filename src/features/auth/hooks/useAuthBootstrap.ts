@@ -4,17 +4,14 @@ import { useLocation } from 'react-router';
 import { shouldSkipAuthBootstrapPath } from '../../../constants/routeResolver';
 import {
   clearLegacyAuthStorage,
-  syncAccessTokenFromStorage,
   useAuthStore,
 } from '../../../store/useAuthStore';
 import {
   clearAuthSession,
-  hydrateAuthSessionFromAccessToken,
-  refreshStoredAccessToken,
+  ensureAuthSessionRestored,
   setAuthBootstrapLoading,
   setAuthBootstrapReady,
 } from '../utils/sessionManager';
-import { isAccessTokenExpiringSoon } from '../utils/accessToken';
 
 function useAuthBootstrap() {
   const location = useLocation();
@@ -36,22 +33,9 @@ function useAuthBootstrap() {
       return;
     }
 
-    const storedAccessToken = syncAccessTokenFromStorage();
-
-    if (!storedAccessToken) {
-      setAuthBootstrapReady();
-      return;
-    }
-
     setAuthBootstrapLoading();
 
-    const restorePromise = isAccessTokenExpiringSoon(storedAccessToken)
-      ? refreshStoredAccessToken().then((refreshedAccessToken) =>
-          hydrateAuthSessionFromAccessToken(refreshedAccessToken),
-        )
-      : hydrateAuthSessionFromAccessToken(storedAccessToken);
-
-    void restorePromise
+    void ensureAuthSessionRestored()
       .catch(() => {
         clearAuthSession({ setReady: false });
       })
