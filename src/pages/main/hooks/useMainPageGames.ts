@@ -1,27 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { AxiosError } from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 
-import { shouldRetryApiQuery } from '../../../api/queryRetry';
 import { primeGameDetailCacheFromList } from '../../../features/games/detailCachePriming';
-import { getTopGames, searchGames } from '../../../features/games/gameApi';
 import type { GameGenreFilter } from '../../../features/games/genres';
 import { useDebouncedValue } from '../../../features/games/hooks/useDebouncedValue';
-import { gamesKeys } from '../../../features/games/queryCache';
 import { normalizeSearchText } from '../../../features/games/search';
 import type { GameListItem } from '../../../features/games/types';
+import { getPaginatedResults } from '../../../utils/paginatedResults';
 import {
-  getPaginatedCount,
-  getPaginatedLoadedCount,
-  getPaginatedResults,
-} from '../../../utils/paginatedResults';
-
-const SEARCH_DEBOUNCE_MS = 300;
-const SEARCH_RESULT_PAGE_SIZE = 20;
+  getMainGamesErrorMessage,
+  SEARCH_DEBOUNCE_MS,
+} from './mainPageGames.utils';
+import { useMainPageGameQueries } from './useMainPageGameQueries';
 
 export type MainPageGamesState = {
   searchText: string;
@@ -42,30 +32,6 @@ export type MainPageGamesState = {
   retryGames: () => void;
 };
 
-const getMainGamesErrorMessage = (error: unknown, isSearchMode: boolean) => {
-  const subject = isSearchMode ? '검색 결과' : '인기 게임 목록';
-
-  if (error instanceof AxiosError) {
-    if (!error.response) {
-      return `${subject} 서버와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.`;
-    }
-
-    const data = error.response.data as
-      | { detail?: string; error_detail?: string }
-      | undefined;
-
-    if (typeof data?.detail === 'string') {
-      return data.detail;
-    }
-
-    if (typeof data?.error_detail === 'string') {
-      return data.error_detail;
-    }
-  }
-
-  return `${subject}을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.`;
-};
-
 export const useMainPageGames = (): MainPageGamesState => {
   const queryClient = useQueryClient();
   const [searchText, setSearchText] = useState('');
@@ -76,45 +42,10 @@ export const useMainPageGames = (): MainPageGamesState => {
   );
   const isSearchMode = debouncedSearchText.length > 0;
 
-  const topGamesQuery = useQuery({
-    queryKey: gamesKeys.top100(selectedGenre),
-    enabled: !isSearchMode,
-    queryFn: () => getTopGames({ genre: selectedGenre }),
-    staleTime: 60_000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    retry: shouldRetryApiQuery,
-  });
-
-  const searchGamesQuery = useInfiniteQuery({
-    queryKey: gamesKeys.search(debouncedSearchText, selectedGenre),
-    enabled: isSearchMode,
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
-      searchGames({
-        search: debouncedSearchText,
-        genre: selectedGenre,
-        page: pageParam,
-        pageSize: SEARCH_RESULT_PAGE_SIZE,
-      }),
-    getNextPageParam: (lastPage, allPages) => {
-      if (typeof lastPage.next === 'number') {
-        return lastPage.next;
-      }
-
-      const loadedCount = getPaginatedLoadedCount(allPages);
-      const totalCount = getPaginatedCount(lastPage, loadedCount);
-
-      if (loadedCount >= totalCount) {
-        return undefined;
-      }
-
-      return allPages.length + 1;
-    },
-    staleTime: 60_000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    retry: shouldRetryApiQuery,
+  const { topGamesQuery, searchGamesQuery } = useMainPageGameQueries({
+    selectedGenre,
+    debouncedSearchText,
+    isSearchMode,
   });
 
   const games = useMemo(
