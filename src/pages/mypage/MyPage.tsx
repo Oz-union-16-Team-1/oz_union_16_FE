@@ -74,43 +74,44 @@ function MyPage() {
 
         <main className="relative z-10 mx-auto flex min-h-[calc(100dvh-6rem)] w-full max-w-[1280px] flex-col px-4 pt-24 pb-10 sm:min-h-[calc(100dvh-7rem)] sm:px-6 sm:pt-28 sm:pb-12 lg:min-h-[calc(100dvh-8rem)] lg:px-10 lg:pt-32 xl:px-14">
           <MyPageProfileContainer
-            nickname={myPageProfile.profileNickname}
-            name={myPageProfile.profileName}
-            genderLabel={myPageProfile.profileGenderLabel}
-            socialAccount={socialAccount}
-            profileImageUrl={myPageProfile.profileImageUrl}
-            isProfileLoading={myPageProfile.isProfileLoading}
-            isProfileImageUploading={myPageProfile.isProfileImageUploading}
-            isProfileUpdating={myPageProfile.isProfileUpdating}
-            isLoggingOut={isLogoutPending}
-            onLogout={() => {
-              void logout();
+            profile={{
+              nickname: myPageProfile.profileNickname,
+              name: myPageProfile.profileName,
+              genderLabel: myPageProfile.profileGenderLabel,
+              socialAccount,
+              profileImageUrl: myPageProfile.profileImageUrl,
+              isLoading: myPageProfile.isProfileLoading,
+              isImageUploading: myPageProfile.isProfileImageUploading,
+              isUpdating: myPageProfile.isProfileUpdating,
+              isLoggingOut: isLogoutPending,
+              canShowPasswordChange,
+              isPasswordPanelOpen: myPagePasswordChange.isPasswordPanelOpen,
+              toast,
             }}
-            onNicknameSave={myPageProfile.handleNicknameSave}
-            onProfileImageSelect={myPageProfile.handleProfileImageSelect}
-            canShowPasswordChange={canShowPasswordChange}
-            isPasswordPanelOpen={myPagePasswordChange.isPasswordPanelOpen}
-            onPasswordToggle={myPagePasswordChange.togglePasswordPanel}
-            passwordValues={myPagePasswordChange.passwordValues}
-            passwordFieldRefs={myPagePasswordChange.passwordFieldRefs}
-            passwordErrors={myPagePasswordChange.resolvedPasswordErrors}
-            passwordPanelMessage={
-              myPagePasswordChange.passwordPanelMessage?.message
-            }
-            passwordPanelMessageTone={
-              myPagePasswordChange.passwordPanelMessage?.tone ?? 'error'
-            }
-            isPasswordChangePending={
-              myPagePasswordChange.isChangePasswordPending
-            }
-            toast={toast}
-            onToastClose={() => setToast(null)}
-            onPasswordValueChange={
-              myPagePasswordChange.handlePasswordValueChange
-            }
-            onPasswordBlur={myPagePasswordChange.handlePasswordBlur}
-            onPasswordCancel={myPagePasswordChange.closePasswordPanel}
-            onPasswordSubmit={myPagePasswordChange.handlePasswordSubmit}
+            profileActions={{
+              onLogout: () => {
+                void logout();
+              },
+              onNicknameSave: myPageProfile.handleNicknameSave,
+              onProfileImageSelect: myPageProfile.handleProfileImageSelect,
+              onPasswordToggle: myPagePasswordChange.togglePasswordPanel,
+              onToastClose: () => setToast(null),
+            }}
+            passwordChange={{
+              values: myPagePasswordChange.passwordValues,
+              fieldRefs: myPagePasswordChange.passwordFieldRefs,
+              errors: myPagePasswordChange.resolvedPasswordErrors,
+              message: myPagePasswordChange.passwordPanelMessage?.message,
+              messageTone:
+                myPagePasswordChange.passwordPanelMessage?.tone ?? 'error',
+              isPending: myPagePasswordChange.isChangePasswordPending,
+            }}
+            passwordChangeActions={{
+              onValueChange: myPagePasswordChange.handlePasswordValueChange,
+              onFieldBlur: myPagePasswordChange.handlePasswordBlur,
+              onCancel: myPagePasswordChange.closePasswordPanel,
+              onSubmit: myPagePasswordChange.handlePasswordSubmit,
+            }}
           />
 
           <MyPageLikedGamesSection
