@@ -11,9 +11,8 @@ import {
 import type { LikedGamesResponse } from '../../../features/auth/types/auth';
 import type { GameListItem } from '../../../features/games/types';
 import { syncLikedGamesStateInQueryCache } from '../../../features/games/queryCache';
-import type { FavoriteGamePreview } from '../../../features/mypage/types';
 import { normalizeThumbnailUrl } from '../../../lib/normalizeThumbnailUrl';
-import type { MyPageToastPayload } from '../types';
+import type { FavoriteGamePreview, MyPageToastPayload } from '../types';
 import {
   toDisplayText,
   toFavoriteGameListItem,

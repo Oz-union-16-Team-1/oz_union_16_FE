@@ -3,7 +3,7 @@ import type {
   LikedGameItemResponse,
 } from '../../features/auth/types/auth';
 import type { GameListItem } from '../../features/games/types';
-import type { FavoriteGamePreview } from '../../features/mypage/types';
+import type { FavoriteGamePreview } from './types';
 
 const DEFAULT_DISPLAY_TEXT = 'N/A';
 
