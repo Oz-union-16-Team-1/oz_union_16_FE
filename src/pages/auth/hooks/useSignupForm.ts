@@ -6,17 +6,20 @@ import { ROUTES } from '../../../constants/routes';
 import {
   extractAuthApiErrorMessage,
   extractAuthApiFieldErrors,
-} from '../api/auth.error.handler';
+} from '../../../features/auth/api/auth.error.handler';
 import {
   useCheckIdDuplicateMutation,
   useCheckNicknameDuplicateMutation,
   useLoginMutation,
   useSignupMutation,
-} from '../api/useAuthApi';
-import type { SignupRequest } from '../types/auth';
-import { resolveAuthFeedbackVisibility } from '../utils/feedbackPriority';
-import { focusFieldByName, getFirstErrorFieldName } from '../utils/focusField';
-import { hydrateAuthSessionFromAccessToken } from '../utils/sessionManager';
+} from '../../../features/auth/api/useAuthApi';
+import type { SignupRequest } from '../../../features/auth/types/auth';
+import { resolveAuthFeedbackVisibility } from '../../../features/auth/utils/feedbackPriority';
+import {
+  focusFieldByName,
+  getFirstErrorFieldName,
+} from '../../../features/auth/utils/focusField';
+import { hydrateAuthSessionFromAccessToken } from '../../../features/auth/utils/sessionManager';
 import {
   initialDuplicateCheckState,
   initialSignupFormValues,

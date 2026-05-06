@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-import AuthButton from './AuthButton';
+import AuthButton from '../../../components/auth/AuthButton';
 
 type AuthInputActionButtonProps = {
   children: ReactNode;

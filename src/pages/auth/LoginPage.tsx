@@ -1,21 +1,19 @@
 import { KeyRound, X } from 'lucide-react';
 
-import AuthButton from '../components/auth/AuthButton';
-import AuthDivider from '../components/auth/AuthDivider';
-import AuthFormMessage from '../components/auth/AuthFormMessage';
-import AuthInputField from '../components/auth/AuthInputField';
-import AuthLinkButton from '../components/auth/AuthLinkButton';
-import AuthSocialLoginGroup from '../components/auth/AuthSocialLoginGroup';
+import AuthButton from '../../components/auth/AuthButton';
+import AuthFormMessage from '../../components/auth/AuthFormMessage';
+import AuthInputField from '../../components/auth/AuthInputField';
+import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
+import { ROUTES } from '../../constants/routes';
+import AuthDivider from './components/AuthDivider';
+import AuthLinkButton from './components/AuthLinkButton';
+import AuthSocialLoginGroup from './components/AuthSocialLoginGroup';
 import {
   AUTH_SHARED_FORM_CLASS_NAMES,
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
-} from '../components/auth/authSharedStyles';
-import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
-import AuthLayout from '../components/layout/AuthLayout';
-import { ROUTES } from '../constants/routes';
-import useLoginForm, {
-  LOGIN_FORM_FIELD_IDS,
-} from '../features/auth/hooks/useLoginForm';
+} from './components/authSharedStyles';
+import AuthLayout from './components/AuthLayout';
+import useLoginForm, { LOGIN_FORM_FIELD_IDS } from './hooks/useLoginForm';
 
 const LOGIN_MOCK_FAB_CLASS_NAME =
   'dev-floating-fab group relative flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none';

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
-import AuthFormMessage from './AuthFormMessage';
-import SocialLoginButton from '../login/SocialLoginButton';
+import AuthFormMessage from '../../../components/auth/AuthFormMessage';
+import SocialLoginButton from './SocialLoginButton';
 import {
   getSocialLoginStartUrl,
   setPendingSocialAuthProvider,
   clearPendingSocialAuthProvider,
   type SocialAuthProvider,
-} from '../../features/auth/utils/socialAuth';
+} from '../../../features/auth/utils/socialAuth';
 
 type AuthSocialLoginGroupProps = {
   className?: string;

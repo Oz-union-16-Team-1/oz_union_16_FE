@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
-import MainPageLoadingFallback from '../components/common/MainPageLoadingFallback';
-import { ROUTE_PATHS } from '../constants/routes';
-import { extractAuthApiErrorMessage } from '../features/auth/api/auth';
+import MainPageLoadingFallback from '../../components/common/MainPageLoadingFallback';
+import { ROUTE_PATHS } from '../../constants/routes';
+import { extractAuthApiErrorMessage } from '../../features/auth/api/auth';
 import {
   clearPendingSocialAuthProvider,
   getSocialCallbackAccessToken,
   getSocialCallbackAuthorizationCode,
   getSocialCallbackErrorMessage,
   hasPendingSocialAuthProvider,
-} from '../features/auth/utils/socialAuth';
+} from '../../features/auth/utils/socialAuth';
 import {
   clearAuthSession,
   ensureAuthSessionRestored,
   hydrateAuthSessionFromAccessToken,
-} from '../features/auth/utils/sessionManager';
+} from '../../features/auth/utils/sessionManager';
 
 const DEFAULT_CALLBACK_ERROR_MESSAGE =
   '소셜 로그인 정보를 확인하지 못했습니다. 다시 시도해 주세요.';

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { getCurrentUserProfile, login, logout, signup } from './auth';
-import { authKeys } from './queryKeys';
+import { getCurrentUserProfile, login, logout, signup } from '../api/auth';
+import { authKeys } from '../api/queryKeys';
 
 export const useLoginMutation = () =>
   useMutation({

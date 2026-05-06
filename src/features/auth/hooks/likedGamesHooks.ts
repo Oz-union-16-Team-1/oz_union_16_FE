@@ -6,8 +6,8 @@ import {
 } from '@tanstack/react-query';
 
 import { syncLikeMutationStateInQueryCache } from '../../games/queryCache';
-import { getLikedGames, unlikeLikedGame } from './auth';
-import { authKeys } from './queryKeys';
+import { getLikedGames, unlikeLikedGame } from '../api/auth';
+import { authKeys } from '../api/queryKeys';
 import type { LikedGamesRequest } from '../types/auth';
 
 const LIKED_GAMES_PAGE_SIZE = 20;

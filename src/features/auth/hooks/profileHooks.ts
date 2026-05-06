@@ -7,8 +7,8 @@ import {
   getProfileImagePresignedUrl,
   updateUserInfo,
   uploadFileToS3,
-} from './auth';
-import { authKeys } from './queryKeys';
+} from '../api/auth';
+import { authKeys } from '../api/queryKeys';
 import type {
   ConfirmProfileImageRequest,
   CurrentUserProfileResponse,

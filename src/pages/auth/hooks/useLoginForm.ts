@@ -5,14 +5,14 @@ import { useLocation, useNavigate } from 'react-router';
 import { api } from '../../../api/axios';
 import { ROUTES } from '../../../constants/routes';
 import { mockServiceWorkerEnabled } from '../../../lib/env';
-import { resolveLoginApiError } from '../api/auth.error.handler';
-import { useLoginMutation } from '../api/useAuthApi';
-import { AUTH_SESSION_EXPIRED_NOTICE_MESSAGE } from '../constants/session';
-import type { LoginRequest } from '../types/auth';
-import { resolveAuthFeedbackVisibility } from '../utils/feedbackPriority';
-import { focusFieldByName } from '../utils/focusField';
-import { hydrateAuthSessionFromAccessToken } from '../utils/sessionManager';
-import { getSocialCallbackErrorMessage } from '../utils/socialAuth';
+import { resolveLoginApiError } from '../../../features/auth/api/auth.error.handler';
+import { useLoginMutation } from '../../../features/auth/api/useAuthApi';
+import { AUTH_SESSION_EXPIRED_NOTICE_MESSAGE } from '../../../features/auth/constants/session';
+import type { LoginRequest } from '../../../features/auth/types/auth';
+import { resolveAuthFeedbackVisibility } from '../../../features/auth/utils/feedbackPriority';
+import { focusFieldByName } from '../../../features/auth/utils/focusField';
+import { hydrateAuthSessionFromAccessToken } from '../../../features/auth/utils/sessionManager';
+import { getSocialCallbackErrorMessage } from '../../../features/auth/utils/socialAuth';
 
 type LoginFieldName = keyof LoginRequest;
 type LoginFieldErrors = Partial<Record<LoginFieldName, string>>;
@@ -167,7 +167,8 @@ function useLoginForm() {
       })
       .catch(async () => {
         try {
-          const { mockLoginAccounts } = await import('../mocks/mockUsers');
+          const { mockLoginAccounts } =
+            await import('../../../features/auth/mocks/mockUsers');
 
           if (!isMounted) {
             return;

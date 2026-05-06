@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import LazyHeader from '../common/LazyHeader';
+import LazyHeader from '../../../components/common/LazyHeader';
 
 type AuthLayoutProps = {
   title: string;

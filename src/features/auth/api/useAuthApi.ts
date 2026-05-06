@@ -3,22 +3,22 @@ export {
   useLoginMutation,
   useLogoutMutation,
   useSignupMutation,
-} from './sessionHooks';
+} from '../hooks/sessionHooks';
 export {
   useInfiniteLikedGamesQuery,
   useLikedGamesQuery,
   useUnlikeLikedGameMutation,
-} from './likedGamesHooks';
+} from '../hooks/likedGamesHooks';
 export {
   useConfirmProfileImageMutation,
   useProfileImagePresignedUrlMutation,
   useUpdateUserInfoMutation,
   useUploadFileToS3Mutation,
-} from './profileHooks';
+} from '../hooks/profileHooks';
 export {
   useChangePasswordMutation,
   useCheckIdDuplicateMutation,
   useCheckNicknameDuplicateMutation,
   useCheckPasswordMutation,
   useDeleteAccountMutation,
-} from './accountHooks';
+} from '../hooks/accountHooks';

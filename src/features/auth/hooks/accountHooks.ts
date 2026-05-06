@@ -6,8 +6,8 @@ import {
   checkNicknameDuplicate,
   checkPassword,
   deleteAccount,
-} from './auth';
-import { authKeys } from './queryKeys';
+} from '../api/auth';
+import { authKeys } from '../api/queryKeys';
 
 export const useChangePasswordMutation = () =>
   useMutation({

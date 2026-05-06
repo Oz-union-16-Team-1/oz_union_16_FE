@@ -1,20 +1,20 @@
-import AuthButton from '../components/auth/AuthButton';
-import AuthFormMessage from '../components/auth/AuthFormMessage';
-import AuthInputActionButton from '../components/auth/AuthInputActionButton';
-import AuthInputField from '../components/auth/AuthInputField';
-import AuthRadioGroup from '../components/auth/AuthRadioGroup';
+import AuthButton from '../../components/auth/AuthButton';
+import AuthFormMessage from '../../components/auth/AuthFormMessage';
+import AuthInputField from '../../components/auth/AuthInputField';
+import ToastMessage from '../../components/mypage/ToastMessage';
+import AuthInputActionButton from './components/AuthInputActionButton';
+import AuthRadioGroup from './components/AuthRadioGroup';
 import {
   AUTH_SHARED_FORM_CLASS_NAMES,
   AUTH_SHARED_LAYOUT_CLASS_NAMES,
-} from '../components/auth/authSharedStyles';
-import AuthLayout from '../components/layout/AuthLayout';
-import ToastMessage from '../components/mypage/ToastMessage';
+} from './components/authSharedStyles';
+import AuthLayout from './components/AuthLayout';
 import useSignupForm, {
   SIGNUP_FORM_FIELD_IDS,
   SIGNUP_FORM_FIELD_MAX_LENGTHS,
   SIGNUP_FORM_GENDER_ID_PREFIX,
   SIGNUP_FORM_GENDER_OPTIONS,
-} from '../features/auth/hooks/useSignupForm';
+} from './hooks/useSignupForm';
 
 function SignupPage() {
   const {

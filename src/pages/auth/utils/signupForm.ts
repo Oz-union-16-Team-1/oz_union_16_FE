@@ -1,4 +1,7 @@
-import type { AuthGender, SignupRequest } from '../types/auth';
+import type {
+  AuthGender,
+  SignupRequest,
+} from '../../../features/auth/types/auth';
 
 export type SignupFormValues = Omit<SignupRequest, 'gender'> & {
   gender: AuthGender | '';
