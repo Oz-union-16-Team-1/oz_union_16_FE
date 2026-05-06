@@ -58,14 +58,15 @@ function SupportChatPanel({
   onInputChange,
   onSubmit,
 }: SupportChatPanelProps) {
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <div
+      id="support-chat-panel"
       ref={panelRef}
-      className={`support-chat-panel fixed right-4 bottom-24 z-90 flex h-[min(78vh,46rem)] w-[min(94vw,27rem)] origin-bottom-right flex-col overflow-hidden transition-all duration-300 ease-out motion-reduce:transition-none sm:right-6 sm:bottom-26 ${
-        isOpen
-          ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
-          : 'pointer-events-none translate-y-4 scale-95 opacity-0'
-      }`}
+      className="support-chat-panel support-chat-widget-panel pointer-events-auto fixed right-4 bottom-24 z-90 flex h-[min(78vh,46rem)] w-[min(94vw,27rem)] origin-bottom-right translate-y-0 scale-100 flex-col overflow-hidden opacity-100 transition-all duration-300 ease-out motion-reduce:transition-none sm:right-6 sm:bottom-26"
       role="dialog"
       aria-modal="false"
       aria-label="고객센터 챗봇"
