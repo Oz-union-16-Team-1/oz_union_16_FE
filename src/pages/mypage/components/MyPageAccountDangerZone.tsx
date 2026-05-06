@@ -2,7 +2,7 @@ import { ShieldAlert } from 'lucide-react';
 
 import AuthButton from '../../../components/auth/AuthButton';
 import InputControl from '../../../components/common/InputControl';
-import ConfirmModal from '../../../components/mypage/ConfirmModal';
+import ConfirmModal from './ConfirmModal';
 
 type MyPageAccountDangerZoneProps = {
   isSocialAccount: boolean;

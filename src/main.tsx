@@ -14,15 +14,15 @@ import MatchingGenreDetailPage from './pages/matching/MatchingGenreDetailPage';
 import MainPage from './pages/main/MainPage';
 import RecommendationListPage from './pages/recommendation/RecommendationListPage';
 import SurveyPage from './pages/survey/SurveyPage';
-import AuthCallbackPage from './pages/AuthCallbackPage';
+import AuthCallbackPage from './pages/auth/AuthCallbackPage';
 import RouteErrorPage from './pages/RouteErrorPage';
 import './index.css';
 
 const queryClient = new QueryClient();
 // eslint-disable-next-line react-refresh/only-export-components
-const LazyLoginPage = lazy(() => import('./pages/LoginPage'));
+const LazyLoginPage = lazy(() => import('./pages/auth/LoginPage'));
 // eslint-disable-next-line react-refresh/only-export-components
-const LazySignupPage = lazy(() => import('./pages/SignupPage'));
+const LazySignupPage = lazy(() => import('./pages/auth/SignupPage'));
 // eslint-disable-next-line react-refresh/only-export-components
 const LazyMyPage = lazy(() => import('./pages/mypage/MyPage'));
 

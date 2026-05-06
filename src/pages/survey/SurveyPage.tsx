@@ -7,7 +7,7 @@ import { ROUTES } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import SurveyChatPanel, {
   SurveyChatLoadingState,
-} from '../../features/survey/components/SurveyChatPanel';
+} from './components/SurveyChatPanel';
 import { useSurveyStore } from '../../features/survey/store/useSurveyStore';
 import { mockTopGames } from '../../features/games/mockGames';
 import { useAuthStore } from '../../store/useAuthStore';

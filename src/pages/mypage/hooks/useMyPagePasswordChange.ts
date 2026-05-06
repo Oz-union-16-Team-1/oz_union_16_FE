@@ -9,7 +9,7 @@ import { useChangePasswordMutation } from '../../../features/auth/api/useAuthApi
 import type {
   PasswordChangeFieldName,
   PasswordChangeValues,
-} from '../../../components/mypage/PasswordChangePanel';
+} from '../components/PasswordChangePanel';
 
 type PasswordTouchedState = Record<PasswordChangeFieldName, boolean>;
 type PasswordFieldErrors = Partial<Record<PasswordChangeFieldName, string>>;
