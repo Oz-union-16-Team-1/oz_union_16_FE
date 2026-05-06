@@ -1,7 +1,7 @@
 import AuthButton from '../../components/auth/AuthButton';
 import AuthFormMessage from '../../components/auth/AuthFormMessage';
 import AuthInputField from '../../components/auth/AuthInputField';
-import ToastMessage from '../../components/mypage/ToastMessage';
+import ToastMessage from '../../components/common/ToastMessage';
 import AuthInputActionButton from './components/AuthInputActionButton';
 import AuthRadioGroup from './components/AuthRadioGroup';
 import {

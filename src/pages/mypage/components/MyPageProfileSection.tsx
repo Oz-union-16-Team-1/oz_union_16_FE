@@ -9,7 +9,7 @@ import {
 } from '../../../features/auth/utils/socialAccount';
 import AuthButton from '../../../components/auth/AuthButton';
 import InputControl from '../../../components/common/InputControl';
-import ToastMessage from '../../../components/mypage/ToastMessage';
+import ToastMessage from '../../../components/common/ToastMessage';
 import type { MyPageToast } from '../types';
 import { toDisplayText } from '../utils';
 

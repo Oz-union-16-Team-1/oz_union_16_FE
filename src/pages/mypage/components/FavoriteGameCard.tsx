@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 
 import ActionButton from '../../../components/common/ActionButton';
-import type { FavoriteGamePreview } from '../../../features/mypage/types';
+import type { FavoriteGamePreview } from '../types';
 import {
   isIgdbImageId,
   normalizeThumbnailUrl,
