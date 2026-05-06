@@ -1,17 +1,17 @@
 import { Camera, CircleUserRound, LoaderCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
-import defaultProfileImage from '../../assets/프로필 이미지.png';
-import type { CurrentUserSocialResponse } from '../../features/auth/types/auth';
+import defaultProfileImage from '../../../assets/프로필 이미지.png';
+import type { CurrentUserSocialResponse } from '../../../features/auth/types/auth';
 import {
   isSocialLoginAccount,
   normalizeSocialType,
-} from '../../features/auth/utils/socialAccount';
-import type { MyPageToast } from '../../pages/mypage/types';
-import { toDisplayText } from '../../pages/mypage/utils';
-import AuthButton from '../auth/AuthButton';
-import InputControl from '../common/InputControl';
-import ToastMessage from './ToastMessage';
+} from '../../../features/auth/utils/socialAccount';
+import AuthButton from '../../../components/auth/AuthButton';
+import InputControl from '../../../components/common/InputControl';
+import ToastMessage from '../../../components/mypage/ToastMessage';
+import type { MyPageToast } from '../types';
+import { toDisplayText } from '../utils';
 
 type MyPageProfileSectionProps = {
   nickname: string;

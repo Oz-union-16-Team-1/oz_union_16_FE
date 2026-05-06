@@ -1,13 +1,13 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 
-import type { FavoriteGamePreview } from '../../features/mypage/types';
+import ActionButton from '../../../components/common/ActionButton';
+import type { FavoriteGamePreview } from '../../../features/mypage/types';
 import {
   isIgdbImageId,
   normalizeThumbnailUrl,
-} from '../../lib/normalizeThumbnailUrl';
-import { toDisplayText } from '../../pages/mypage/utils';
-import ActionButton from '../common/ActionButton';
+} from '../../../lib/normalizeThumbnailUrl';
+import { toDisplayText } from '../utils';
 
 type FavoriteGameCardProps = {
   game: FavoriteGamePreview;

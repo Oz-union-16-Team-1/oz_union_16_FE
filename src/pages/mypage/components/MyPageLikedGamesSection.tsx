@@ -2,11 +2,11 @@ import { Heart } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 import AuthButton from '../../../components/auth/AuthButton';
-import ConfirmModal from '../../../components/mypage/ConfirmModal';
-import FavoriteGameCard from '../../../components/mypage/FavoriteGameCard';
-import FavoriteGameCardSkeleton from '../../../components/mypage/FavoriteGameCardSkeleton';
-import FavoriteGamesEmptyState from '../../../components/mypage/FavoriteGamesEmptyState';
 import type { GameListItem } from '../../../features/games/types';
+import ConfirmModal from './ConfirmModal';
+import FavoriteGameCard from './FavoriteGameCard';
+import FavoriteGameCardSkeleton from './FavoriteGameCardSkeleton';
+import FavoriteGamesEmptyState from './FavoriteGamesEmptyState';
 import useMyPageLikedGames from '../hooks/useMyPageLikedGames';
 import type { MyPageToastPayload } from '../types';
 

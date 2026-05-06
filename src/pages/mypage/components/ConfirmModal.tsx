@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 
-import AuthButton from '../auth/AuthButton';
+import AuthButton from '../../../components/auth/AuthButton';
 
 const FOCUSABLE_ELEMENT_SELECTOR = [
   'a[href]',

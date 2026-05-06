@@ -1,10 +1,10 @@
 import type { FormEvent, RefObject } from 'react';
 
-import MyPageProfileSection from '../../../components/mypage/MyPageProfileSection';
+import MyPageProfileSection from './MyPageProfileSection';
 import PasswordChangePanel, {
   type PasswordChangeFieldName,
   type PasswordChangeValues,
-} from '../../../components/mypage/PasswordChangePanel';
+} from './PasswordChangePanel';
 import type { CurrentUserSocialResponse } from '../../../features/auth/types/auth';
 import type { MyPageToast } from '../types';
 

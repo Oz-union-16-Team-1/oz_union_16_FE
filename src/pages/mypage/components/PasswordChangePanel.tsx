@@ -1,8 +1,8 @@
 import type { FormEvent, RefObject } from 'react';
 
-import AuthButton from '../auth/AuthButton';
-import AuthFormMessage from '../auth/AuthFormMessage';
-import AuthInputField from '../auth/AuthInputField';
+import AuthButton from '../../../components/auth/AuthButton';
+import AuthFormMessage from '../../../components/auth/AuthFormMessage';
+import AuthInputField from '../../../components/auth/AuthInputField';
 
 export type PasswordChangeValues = {
   currentPassword: string;
