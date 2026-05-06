@@ -88,14 +88,6 @@ export const apiBaseUrl = shouldUseRelativeApiBaseUrl
 export const isMockServiceWorkerEnabled = () => mockServiceWorkerEnabled;
 export const getCurrentDevApiMode = () => devApiMode;
 
-export const setDevApiMode = (mode: DevApiMode) => {
-  if (!import.meta.env.DEV || typeof window === 'undefined') {
-    return;
-  }
-
-  persistDevApiMode(mode);
-};
-
 export const toggleDevApiMode = (mode: DevApiMode) => {
   if (!import.meta.env.DEV || typeof window === 'undefined') {
     return;

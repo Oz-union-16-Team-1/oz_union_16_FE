@@ -1,7 +1,3 @@
-export interface MyPageProfile {
-  nickname: string;
-}
-
 export interface FavoriteGamePreview {
   gameId: number;
   title: string;
