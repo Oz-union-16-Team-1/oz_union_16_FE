@@ -1,8 +1,9 @@
-import type { InputHTMLAttributes } from 'react';
+import type { InputHTMLAttributes, Ref } from 'react';
 
 type InputControlProps = {
   hasError?: boolean;
   className?: string;
+  inputRef?: Ref<HTMLInputElement>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const inputBaseClassName =
@@ -11,11 +12,13 @@ const inputBaseClassName =
 function InputControl({
   hasError = false,
   className = '',
+  inputRef,
   'aria-invalid': ariaInvalid,
   ...props
 }: InputControlProps) {
   return (
     <input
+      ref={inputRef}
       aria-invalid={ariaInvalid ?? hasError}
       className={`${inputBaseClassName} ${hasError ? 'border-red-500/90 hover:border-red-400 focus-visible:border-red-400 focus-visible:ring-red-500/30' : 'border-login-field hover:border-white/24 focus-visible:border-[#ff5d61] focus-visible:ring-[#ff5d61]/28'} ${className}`}
       {...props}

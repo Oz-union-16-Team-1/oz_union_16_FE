@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   extractAuthApiErrorMessage,
@@ -18,6 +18,12 @@ type PasswordPanelMessage = {
   tone: 'success' | 'error';
   message: string;
 } | null;
+
+const PASSWORD_CHANGE_FIELD_ORDER = [
+  'currentPassword',
+  'newPassword',
+  'newPasswordConfirm',
+] as const satisfies readonly PasswordChangeFieldName[];
 
 const initialPasswordValues: PasswordChangeValues = {
   currentPassword: '',
@@ -72,8 +78,19 @@ const mapPasswordApiFieldErrors = (
   newPasswordConfirm: fieldErrors.new_password_check,
 });
 
+const getFirstInvalidPasswordFieldName = (
+  values: PasswordChangeValues,
+  fieldErrors: Partial<Record<PasswordChangeFieldName, string>>,
+) =>
+  PASSWORD_CHANGE_FIELD_ORDER.find(
+    (fieldName) => Boolean(fieldErrors[fieldName]) || !values[fieldName].trim(),
+  ) ?? null;
+
 function useMyPagePasswordChange() {
   const changePasswordMutation = useChangePasswordMutation();
+  const currentPasswordInputRef = useRef<HTMLInputElement | null>(null);
+  const newPasswordInputRef = useRef<HTMLInputElement | null>(null);
+  const newPasswordConfirmInputRef = useRef<HTMLInputElement | null>(null);
   const [isPasswordPanelOpen, setIsPasswordPanelOpen] = useState(false);
   const [passwordValues, setPasswordValues] = useState<PasswordChangeValues>(
     initialPasswordValues,
@@ -94,6 +111,34 @@ function useMyPagePasswordChange() {
     newPassword: apiFieldErrors.newPassword ?? localFieldErrors.newPassword,
     newPasswordConfirm:
       apiFieldErrors.newPasswordConfirm ?? localFieldErrors.newPasswordConfirm,
+  };
+  const passwordFieldRefs = useMemo(
+    () => ({
+      currentPassword: currentPasswordInputRef,
+      newPassword: newPasswordInputRef,
+      newPasswordConfirm: newPasswordConfirmInputRef,
+    }),
+    [],
+  );
+
+  const focusPasswordField = (fieldName: PasswordChangeFieldName | null) => {
+    if (!fieldName) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const targetElement = passwordFieldRefs[fieldName].current;
+
+      if (!targetElement) {
+        return;
+      }
+
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      targetElement.focus({ preventScroll: true });
+    });
   };
 
   useEffect(() => {
@@ -186,6 +231,9 @@ function useMyPagePasswordChange() {
     const hasLocalError = Object.values(nextFieldErrors).some(Boolean);
 
     if (hasLocalError) {
+      focusPasswordField(
+        getFirstInvalidPasswordFieldName(passwordValues, nextFieldErrors),
+      );
       return;
     }
 
@@ -210,6 +258,9 @@ function useMyPagePasswordChange() {
 
       if (Object.values(nextApiFieldErrors).some(Boolean)) {
         setApiFieldErrors(nextApiFieldErrors);
+        focusPasswordField(
+          getFirstInvalidPasswordFieldName(passwordValues, nextApiFieldErrors),
+        );
         return;
       }
 
@@ -224,6 +275,7 @@ function useMyPagePasswordChange() {
     isPasswordPanelOpen,
     togglePasswordPanel,
     closePasswordPanel,
+    passwordFieldRefs,
     passwordValues,
     resolvedPasswordErrors,
     passwordPanelMessage,

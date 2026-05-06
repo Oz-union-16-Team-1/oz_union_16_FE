@@ -7,6 +7,7 @@ import MainPageLoadingFallback from '../../components/common/MainPageLoadingFall
 import { ROUTE_PATHS } from '../../constants/routes';
 import useAuthGate from '../../features/auth/hooks/useAuthGate';
 import useLogoutAction from '../../features/auth/hooks/useLogoutAction';
+import { isSocialLoginAccount } from '../../features/auth/utils/socialAccount';
 import GameDetailModal from '../../features/games/components/GameDetailModal';
 import type { GameListItem } from '../../features/games/types';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -33,7 +34,7 @@ function MyPage() {
   const { logout, isPending: isLogoutPending } = useLogoutAction();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const socialAccount = useAuthStore((state) => state.socialAccount);
-  const isSocialAccount = socialAccount?.is_social === true;
+  const isSocialAccount = isSocialLoginAccount(socialAccount);
   const canShowPasswordChange = isAuthenticated && !isSocialAccount;
   const [toast, setToast] = useState<MyPageToast>(null);
   const [selectedDetailGame, setSelectedDetailGame] =
@@ -91,6 +92,7 @@ function MyPage() {
             isPasswordPanelOpen={myPagePasswordChange.isPasswordPanelOpen}
             onPasswordToggle={myPagePasswordChange.togglePasswordPanel}
             passwordValues={myPagePasswordChange.passwordValues}
+            passwordFieldRefs={myPagePasswordChange.passwordFieldRefs}
             passwordErrors={myPagePasswordChange.resolvedPasswordErrors}
             passwordPanelMessage={
               myPagePasswordChange.passwordPanelMessage?.message

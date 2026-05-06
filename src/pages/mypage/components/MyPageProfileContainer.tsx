@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, RefObject } from 'react';
 
 import MyPageProfileSection from '../../../components/mypage/MyPageProfileSection';
 import PasswordChangePanel, {
@@ -25,6 +25,10 @@ type MyPageProfileContainerProps = {
   isPasswordPanelOpen: boolean;
   onPasswordToggle: () => void;
   passwordValues: PasswordChangeValues;
+  passwordFieldRefs: Record<
+    PasswordChangeFieldName,
+    RefObject<HTMLInputElement | null>
+  >;
   passwordErrors: Partial<Record<PasswordChangeFieldName, string>>;
   passwordPanelMessage?: string;
   passwordPanelMessageTone?: 'success' | 'error';
@@ -57,6 +61,7 @@ function MyPageProfileContainer({
   isPasswordPanelOpen,
   onPasswordToggle,
   passwordValues,
+  passwordFieldRefs,
   passwordErrors,
   passwordPanelMessage,
   passwordPanelMessageTone = 'error',
@@ -93,6 +98,7 @@ function MyPageProfileContainer({
       {canShowPasswordChange && isPasswordPanelOpen ? (
         <PasswordChangePanel
           values={passwordValues}
+          fieldRefs={passwordFieldRefs}
           errors={passwordErrors}
           message={passwordPanelMessage}
           messageTone={passwordPanelMessageTone}

@@ -3,6 +3,10 @@ import { useState, type ReactNode } from 'react';
 
 import defaultProfileImage from '../../assets/프로필 이미지.png';
 import type { CurrentUserSocialResponse } from '../../features/auth/types/auth';
+import {
+  isSocialLoginAccount,
+  normalizeSocialType,
+} from '../../features/auth/utils/socialAccount';
 import type { MyPageToast } from '../../pages/mypage/types';
 import { toDisplayText } from '../../pages/mypage/utils';
 import AuthButton from '../auth/AuthButton';
@@ -108,38 +112,36 @@ function MyPageProfileSection({
   const [isNicknameEditMode, setIsNicknameEditMode] = useState(false);
   const [nextNickname, setNextNickname] = useState(displayNickname);
   const [nicknameFieldError, setNicknameFieldError] = useState('');
-  const normalizedSocialType =
-    socialAccount?.social_type?.trim()?.toLowerCase() ?? '';
-  const accountBadge =
-    socialAccount?.is_social === true
-      ? normalizedSocialType === 'google'
-        ? {
-            label: '구글',
-            className:
-              'border-[#4285F4]/30 bg-[#4285F4]/14 text-[#8ab4ff] shadow-[0_8px_20px_rgba(66,133,244,0.14)]',
-          }
-        : normalizedSocialType === 'naver'
-          ? {
-              label: '네이버',
-              className:
-                'border-[#03C75A]/30 bg-[#03C75A]/14 text-[#68e6a5] shadow-[0_8px_20px_rgba(3,199,90,0.14)]',
-            }
-          : normalizedSocialType === 'kakao'
-            ? {
-                label: '카카오',
-                className:
-                  'border-[#FEE500]/24 bg-[#FEE500]/14 text-[#ffe768] shadow-[0_8px_20px_rgba(254,229,0,0.12)]',
-              }
-            : {
-                label: '소셜회원',
-                className:
-                  'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
-              }
-      : {
-          label: '일반회원',
+  const normalizedSocialType = normalizeSocialType(socialAccount);
+  const accountBadge = isSocialLoginAccount(socialAccount)
+    ? normalizedSocialType === 'google'
+      ? {
+          label: '구글',
           className:
-            'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
-        };
+            'border-[#4285F4]/30 bg-[#4285F4]/14 text-[#8ab4ff] shadow-[0_8px_20px_rgba(66,133,244,0.14)]',
+        }
+      : normalizedSocialType === 'naver'
+        ? {
+            label: '네이버',
+            className:
+              'border-[#03C75A]/30 bg-[#03C75A]/14 text-[#68e6a5] shadow-[0_8px_20px_rgba(3,199,90,0.14)]',
+          }
+        : normalizedSocialType === 'kakao'
+          ? {
+              label: '카카오',
+              className:
+                'border-[#FEE500]/24 bg-[#FEE500]/14 text-[#ffe768] shadow-[0_8px_20px_rgba(254,229,0,0.12)]',
+            }
+          : {
+              label: '소셜회원',
+              className:
+                'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
+            }
+    : {
+        label: '일반회원',
+        className:
+          'border-white/10 bg-white/[0.05] text-white/78 shadow-[0_8px_20px_rgba(255,255,255,0.05)]',
+      };
 
   const handleNicknameSave = async () => {
     const trimmedNickname = nextNickname.trim();

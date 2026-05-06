@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
+import type { InputHTMLAttributes, ReactNode, Ref } from 'react';
 import InputControl from '../common/InputControl';
 
 type AuthInputFieldMessageTone = 'success' | 'muted';
@@ -14,6 +14,7 @@ type AuthInputFieldProps = {
   action?: ReactNode;
   toast?: ReactNode;
   containerClassName?: string;
+  inputRef?: Ref<HTMLInputElement>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 function AuthInputField({
@@ -28,6 +29,7 @@ function AuthInputField({
   toast,
   containerClassName = '',
   className = '',
+  inputRef,
   ...inputProps
 }: AuthInputFieldProps) {
   const resolvedMessage = errorMessage ?? helperMessage;
@@ -54,6 +56,7 @@ function AuthInputField({
       <div className="relative flex w-full max-w-none min-w-0 flex-col items-stretch gap-3.5 sm:flex-row sm:items-stretch sm:gap-3">
         <InputControl
           id={id}
+          inputRef={inputRef}
           {...inputProps}
           hasError={Boolean(errorMessage)}
           className={`w-full max-w-none min-w-0 flex-1 ${className}`}
