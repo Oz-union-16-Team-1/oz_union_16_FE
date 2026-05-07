@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
 import { ROUTES } from '../../../constants/routes';
+import { resetGameLikedStateInQueryCache } from '../../games/queryCache';
 import { authKeys } from '../api/queryKeys';
 import { useLogoutMutation } from '../api/useAuthApi';
 import { clearAuthSession } from '../utils/sessionManager';
@@ -21,6 +22,7 @@ function useLogoutAction() {
     clearAuthSession();
     await queryClient.cancelQueries({ queryKey: authKeys.all });
     queryClient.removeQueries({ queryKey: authKeys.all });
+    resetGameLikedStateInQueryCache(queryClient);
     navigate(ROUTES.HOME, { replace: true });
   };
 
