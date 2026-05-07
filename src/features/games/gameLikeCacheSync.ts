@@ -66,6 +66,27 @@ const updateRecommendationPages = <TPage extends LikeableResultPage>(
       }
     : currentData;
 
+const resetGameListItemLikedState = (item: GameListItem): GameListItem => ({
+  ...item,
+  isLiked: false,
+});
+
+const resetRecommendationPagesLikedState = <TPage extends LikeableResultPage>(
+  currentData: InfiniteData<TPage> | undefined,
+) =>
+  currentData && Array.isArray(currentData.pages)
+    ? {
+        ...currentData,
+        pages: currentData.pages.map((page) => ({
+          ...page,
+          results: page.results.map((result) => ({
+            ...result,
+            is_liked: false,
+          })),
+        })),
+      }
+    : currentData;
+
 export const syncGameLikeStateInQueryCache = (
   queryClient: QueryClient,
   update: GameLikeCacheUpdate,
@@ -130,6 +151,64 @@ export const syncGameLikeStateInQueryCache = (
                 ? { ...result, is_liked: update.isLiked }
                 : result,
             ),
+          }
+        : currentData,
+  );
+};
+
+export const resetGameLikedStateInQueryCache = (queryClient: QueryClient) => {
+  queryClient.setQueriesData<GameDetail>(
+    { queryKey: [gamesKeys.all[0], 'detail'] },
+    (currentDetail) =>
+      currentDetail
+        ? {
+            ...currentDetail,
+            isLiked: false,
+          }
+        : currentDetail,
+  );
+
+  queryClient.setQueriesData<GameListItem[]>(
+    { queryKey: gamesKeys.top100Root() },
+    (currentGames) =>
+      Array.isArray(currentGames)
+        ? currentGames.map(resetGameListItemLikedState)
+        : currentGames,
+  );
+
+  queryClient.setQueriesData<InfiniteData<SearchGamesResult>>(
+    { queryKey: gamesKeys.searchRoot() },
+    (currentData) =>
+      currentData && Array.isArray(currentData.pages)
+        ? {
+            ...currentData,
+            pages: currentData.pages.map((page) => ({
+              ...page,
+              results: page.results.map(resetGameListItemLikedState),
+            })),
+          }
+        : currentData,
+  );
+
+  queryClient.setQueriesData<InfiniteData<LikeableResultPage>>(
+    { queryKey: ['survey-results'] },
+    (currentData) => resetRecommendationPagesLikedState(currentData),
+  );
+  queryClient.setQueriesData<InfiniteData<LikeableResultPage>>(
+    { queryKey: ['match-results'] },
+    (currentData) => resetRecommendationPagesLikedState(currentData),
+  );
+
+  queryClient.setQueriesData<MatchingCandidatesResponse>(
+    { queryKey: ['match-candidates'] },
+    (currentData) =>
+      currentData && Array.isArray(currentData.results)
+        ? {
+            ...currentData,
+            results: currentData.results.map((result) => ({
+              ...result,
+              is_liked: false,
+            })),
           }
         : currentData,
   );
